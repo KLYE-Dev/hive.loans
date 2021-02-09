@@ -19,6 +19,15 @@ socket.on('backersupdate', function(data){
   } catch(e) {
     console.log(`Error: ${e}`);
   }
+  console.log(data);
+
+  data.forEach((item, i) => {
+    if(!backerlist.includes(item.username)){
+      backerlist.push(item.username)
+    }
+  });
+console.log(backerlist);
+backercount = backerlist.length;
   $('.lendingtable').css({'width':'100%'})
   CreateTableFromJSON(data, 'backers', 'activeBackerView');
 });

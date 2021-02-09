@@ -1888,13 +1888,32 @@ async function showLoans() {
 
 async function showFaq() {
   loadingjumbo();
+  getFounders();
   let faqContent = `<center><h3 class="pagehead" style="color:white !important;">Frequently Asked Questions</h3>` +
-  `This is an unfinished DEMO<br>` +
-  `and another<br>` +
-  `and another<br></center>`;
+  `This is an unfinished DEMO of the Hive.Loans project and is in no way meant to represent the launch version<br>` +
+  `Many feautures may be broken, bugged, unstable or just straight up missing. It's advised to not use this version<br>` +
+  `Hive.Loans will allow users to create lending contracts loaning out their liquid HIVE against the colalteral of an account<br>` +
+  `This site is scheduled for release on or before the 15th of April 2021 if all goes well in development.<br>` +
+  `<br>` +
+  `The <span id="foundercount"></span> Users who Voted in Support of Proposal #154 (⚡ Founder Rank):<br><sup>( Founders get 50% off of fees site wide )</sup></center><h5><span id="founderslist"></span></h5><br>` +
+  `<br>` +
+  `<center>The <span id="backercount"></span> Users who Pledged HIVE or HBD Developement Capital Directly (💸 Backer Rank):<br><sup>( Backers get an enhanced interest rate cap of 35% )</sup><h5><span id="backerslist"></span></h5></center><br>` +
+  `<br>` +
+  `<center>The Ultra Exclusive One-of-a-Kind Project Benefactor (💰 Benefactor Rank):<br><sup>( The Backer in top spot at the end of the timer becomes Benefactor! )<br>( Get a monthly payment of 10% of the service revenue! )</sup><h5><span id="benefactorlist">@???????</span></h5></center><br>` +
+  `<br>`;
+  var backersnames = '';
+  backerlist.forEach((item, i) => {
+    backersnames += `&nbsp;<a href="https://peakd.com/@${item}" style="text-decoration:none !important; color:white;font-size:larger;">@${item}</a>&nbsp;`;
+  });
+
   $("#jumbotron").fadeOut('fast');
   $("#jumbotron").promise().done(function(){
       $("#jumbotron").html(moverAddon + faqContent);
+      console.log(foundercount)
+      console.log(founderlist)
+      $('#founderslist').html(founderlist);
+      $('#foundercount').html(foundercount);
+      $('#backerslist').html(backersnames);
       $("#jumbotron").css({'height':'85%','width':'60%'});
       $("#jumbotron").center();
       $("#jumbotron").fadeIn();

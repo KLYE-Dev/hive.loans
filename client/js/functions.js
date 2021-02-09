@@ -300,30 +300,34 @@ function infoContract(contractID) {
   })
 }
 
-function createNewLendingContract(amount, days, fee, token) {
-  console.log(`createNewLendingContract(${amount}, ${days}, ${fee}, ${token})`);
+function createNewLendingContract(amount, days, fee, utoken) {
+  if(utoken == undefined){
+    utoken = token;
+  }
+  console.log(`createNewLendingContract(${amount}, ${days}, ${fee}, ${utoken})`);
   $('#createLoanWarning').css({'color':'lawngreen'});
   $('#createLoanWarning').val(`Attempting to Create Lending Contract...`);
   socket.emit('createloan', {
     amount: amount,
     days: days,
     interest: fee,
-    token: token
+    token: utoken
   }, function(err, data){
     if(err){
+      token = err.token;
       console.log(err);
       $('#createLoanWarning').css({'color':'red'});
       $('#createLoanWarning').val(`Error Creating Loan: ${err}`);
       showErr(`Error: ${err}`);
     }
-    if(data){
+
       token = data.token;
       showSuccess(`Loan Contract Succesfully Created!`);
       $('#createLoanWarning').css({'color':'green'});
       $('#createLoanWarning').val(`Lending Contract has been Deployed!`);
       showWallet();
       console.log(data);
-    }
+
   });
 }
 
@@ -756,4 +760,33 @@ function CreateTableFromJSON(data, name, elementid) {
         }
     });
 
+}
+
+var getFounders = async() => {
+  founderlist = '';
+  socket.emit('getfounders', {data:true}, await function(err, data){
+    if(err){
+      console.log(err)
+    }
+
+    data = JSON.parse(JSON.stringify(data.founders));
+    //data = JSON.stringify(data);
+    //data = data.slice(2, data.length - 1);
+    //var namelist = data.split(`","`);
+    //var flist = data.founders;
+    for(var c = 0; c < data.length; c++){
+      founderlist += `<a href="https://peakd.com/@${data[c]}" style="text-decoration:none !important; color:white;">@${data[c]}</a>, `;
+      if (c == data.length - 2) {
+      founderlist += `<a href="https://peakd.com/@${data[c++]}" style="text-decoration:none !important; color:white;">@${data[c++]}</a>`;
+      }
+    }
+    foundercount = data.length;
+    //data.forEach((item, i) => {
+    //  founderlist += `@${item}, `;
+    //});
+
+    //console.log(founderlist);
+
+  })
+    return founderlist;
 }

@@ -10,7 +10,10 @@ var options = {
   prefix : '',
   suffix : ''
 };
-
+var founderlist = '';
+var foundercount = 0;
+var backerlist = [];
+var backercount = 0;
 var username="";
 var hkcLogin = false;
 var uHIVEbalance = 0;

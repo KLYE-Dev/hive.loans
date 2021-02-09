@@ -85,7 +85,7 @@ var pricecheck = async() => {
 pricecheck();
 
 
-var founders = async() => {
+async function founders(){
   founderslist = [];
   var votelist = await hivejs.api.callAsync('condenser_api.list_proposal_votes', [['154'], 1000, 'by_proposal_voter']) .then(res => {return res});
   votelist.forEach((item, i) => {
@@ -229,7 +229,6 @@ loanThread.on('message', function(m) {
 
   m = JSON.parse(m);
   if (m.type === 'newloanmade'){
-    token = m.token;
     jsonBreadCrumb('contracts', 'newloan', m.payload);
     var newloanmadekeys = Object.keys(userSockets);
     for (var i = 0; i< newloanmadekeys.length;i++){
@@ -854,8 +853,8 @@ exports = module.exports = function(socket, io){
     }
   });
 
-socket.on('getbackers', async function(req, cb){
-  log(`socket.on('getbackers'`);
+socket.on('getfounders', async function(req, cb){
+  return cb(null,{founders:founderslist});
 })
 
 async function sendbackersupdate() {
@@ -971,9 +970,10 @@ setInterval(function(){
       if(amount <= userData.hivebalance){
         log(`LENDING: ${user} creating a new loan - ${amount / 1000} HIVE at ${interest}% for ${days} days!`);
         loanThread.send(JSON.stringify({type:'newloan', userId: userData.id, username: userData.username, amount: amount, days: days, interest: interest, token: req.token}));
+        return cb(null, {token: userTokens[user]});
       } else {
         log(`LENDING: ${user} balance too low to create loan!`);
-        return cb('Not Enough Balance to Create Loan!', {token: req.token});
+        return cb('Not Enough Balance to Create Loan!', {token: userTokens[user]});
       }
     }
   });//END socket.on createloan
@@ -1041,6 +1041,14 @@ setInterval(function(){
     //return cb(null, 'Fetching Users Loans');
   });
 
+  socket.on("getbackers", function(req, cb) {
+    var user = socket.request.session['user'];
+    loanThread.send(JSON.stringify({type:'loadallloans', username: user}));
+    log(`Fetching all loans`)
+    //return cb(null, 'Fetching Users Loans');
+  });
+
+
   socket.on("changepass", function(req, cb) {
     if (typeof cb !== 'function') return socket.emit('muppet', 'You fucking muppet, you need a callback for this call');
     if (typeof req.password != 'string') return cb('Password must be a string', null);
@@ -1063,162 +1071,6 @@ setInterval(function(){
       }else{
         return cb('Incorrect Password', null);
       }
-    });
-  });
-
-  socket.on('populateadmintab', function(userident, cb) {
-    if(userident === 'klye'){
-      var admintabcontents = [
-        '<center class="pretty-logo">Steem~Roller</center>' +
-        "<center class='sextext' style='margin-top: -1.5em;'><b style='color:gold;font-size:1.5em;'>⛧⛧⛧</b>Website Admininistration & Server Control Panel<b style='color:gold;font-size:1.5em;'>⛧⛧⛧</b></center><hr style='margin-top: -0.2em;margin-bottom: 0.2em;'>" +
-        '<table><tbody style="background:none;outline:none;border:none;"><tr style="background:none;outline:none;border:none;">'+
-        '<td><center class="sextext">Total All Time Commission Earnings:</center></td>'+
-        '<td><center class="sextext">Currently Available Liquid STEEM:</center></td>'+
-        '</tr>'+
-        '<tr style="background:none;outline:none;border:none;">'+
-        '<td><center><div class="input-group" style="width:95%;max-height:42px;"><span class="input-group-addon addon-sexy" style="padding:5px;" >Investment<br>Commission</span><b><input type="text" class="form-control" placeholder="0.000" aria-describedby="basic-addon1" id="sitetake" style="height: 42px !important;font-size: 1.2em !important;text-align:right;border-top-left-radius:5px;border-bottom-left-radius:5px;color:white;" readonly  ></b><span class="input-group-addon addon-sexy" style="padding:5px;"><span class="icon fa-stack"><i style="color:silver;" class="fa fa-circle fa-stack-2x"></i><font style="margin-top:2.75px;" class="fa-stack"><img src="img/steem.svg" alt="STEEM" height="20px" width="20px"  /></font></span></span></div></center></td>'+
-        '<td><center><div class="input-group" style="width:95%;max-height:42px;"><span class="input-group-addon addon-sexy" style="padding:5px;" >Available<br>Commission</span><b><input type="text" class="form-control" placeholder="0.000" aria-describedby="basic-addon1" id="paydaynow" style="height: 42px !important;font-size: 1.2em !important;text-align:right;border-top-left-radius:5px;border-bottom-left-radius:5px;" readonly  ></b><span class="input-group-addon addon-sexy" style="padding:5px;"><span class="icon fa-stack"><i style="color:silver;" class="fa fa-circle fa-stack-2x"></i><font style="margin-top:2.75px;" class="fa-stack"><img src="img/steem.svg" alt="STEEM" height="20px" width="20px"  /></font></span></span></div></center></td>'+
-        '</tr>'+
-        '<tr style="background:none;outline:none;border:none;">'+
-        '<td><center class="sextext">Investment Commission Fee Rate:</center></td>'+
-        '<td><center class="sextext">Amount of STEEM Profit to Withdraw:</center></td>'+
-        '</tr>'+
-        '<tr style="background:none;outline:none;border:none;">'+
-        '<td><center><div class="input-group" style="width:60%;max-height:42px;"><span class="input-group-addon addon-sexy" style="padding:5px;" >Commission<br>Percentage</span><b><input type="text" class="form-control" placeholder="10.00" aria-describedby="basic-addon1" id="sitetakepercent" style="height: 42px !important;font-size: 1.2em !important;text-align:right;border-top-left-radius:5px;border-bottom-left-radius:5px;" readonly  ></b><span class="input-group-addon addon-sexy" style="padding:5px;"><span class="icon fa-stack"><i style="color:silver;" class="fa fa-circle fa-stack-2x fa-percent"></i></span></span></div></center></td>'+
-        '<td><center><div class="input-group" style="width:85% !important;max-height:42px;margin-left: -35px !important;"><span class="input-group-addon addon-sexy" style="padding:5px;" >Withdraw<br>Profits</span><b><input type="text" class="form-control" placeholder="0.000" aria-describedby="basic-addon1" id="profitwithdraw" style="height: 42px !important;font-size: 1.2em !important;text-align:right;border-top-left-radius:5px;border-bottom-left-radius:5px;" ></b><span class="input-group-addon addon-sexy" style="padding:5px;"><span class="icon fa-stack"><i style="color:silver;" class="fa fa-circle fa-stack-2x"></i><font style="margin-top:2.75px;" class="fa-stack"><img src="img/steem.svg" alt="STEEM" height="20px" width="20px"  /></font></span></span><span class="input-group-btn"><button type="button" class=" btn  sextext" id="sendprofit" style="z-index:999;padding: 9px;margin-left: 0px;margin-right: -38px;background: #165098;border: 2px outset #4162a8;">Withdraw</button></span></div></center></td>'+
-        '</tr>'+
-        '</tbody>'+
-        '</table>'+
-        "<script>$('#paydaynow').on('click',function(){showSuccess('Withdrawing All Liquid STEEM');$('#profitwithdraw').val(parseInt($('#paydaynow').val()).toFixed(3));});</script>"
-      ];
-      socket.emit('makeadmintab', admintabcontents);
-      return;
-    } else {
-      alert("Fuck you PLEB!");
-      socket.close();
-      return;
-    };
-
-  });//END populateadmintab
-
-  socket.on("changeServerSeed", function(req, cb) {
-    if (typeof cb !== 'function') return socket.emit('muppet', 'You fucking muppet, you need a callback for this call');
-    if (!testToken(socket, req.token)) return cb('incorrect token', {token: 0});
-
-    fs.readFile( __dirname + "/db/seeds/" + socket.request.session['user'], function(err, data){
-      if (err) return cb('DB error', null);
-      data = JSON.parse(data);
-      var ss = crypto.randomBytes(64).toString('hex');
-      var seeds = {
-        ss: ss,
-        cs: data.cs,
-        ssHash: crypto.createHmac('sha512', ss ).digest('HEX'),
-        nonce: 0,
-        balance: data.balance,
-        betid: data.betid
-      };
-      fs.writeFile(__dirname + "/db/seeds/" + socket.request.session['user'], JSON.stringify(seeds), function(err,d){
-        if (err) return cb('Save error', null);
-        return cb(null, {ssHash: seeds.ssHash, token: userTokens[socket.request.session['user']], nonce: seeds.nonce, cs: seeds.cs});
-      });
-    });
-  });
-
-  socket.on("changeClientSeed", function(req, cb) {
-    if (typeof cb !== 'function') return socket.emit('muppet', 'You fucking muppet, you need a callback for this call');
-    if (!testToken(socket, req.token)) return cb('incorrect token', {token: 0});
-    if (typeof req.cs !== 'string') return cb('please set a client seed', {token: userTokens[socket.request.session['user']]});
-    if (!alphanumeric(req.cs)) return cb('Client seed must be alphanumeric', {token: userTokens[socket.request.session['user']]});
-    if (req.cs.length>32) return cb('Client seed must be less than 32 characters', {token: userTokens[socket.request.session['user']]});
-
-    fs.readFile( __dirname + "/db/seeds/" + socket.request.session['user'], function(err, data){
-      if (err) return cb('DB error', null);
-      data = JSON.parse(data);
-
-      var seeds = {
-        ss: data.ss,
-        cs: req.cs,
-        ssHash: data.ssHash,
-        nonce: data.nonce,
-        balance: data.balance,
-        betid: data.betid
-      };
-      fs.writeFile(__dirname + "/db/seeds/" + socket.request.session['user'], JSON.stringify(seeds), function(err,d){
-        if (err) return cb('Save error', null);
-        return cb(null, {ssHash: seeds.ssHash, token: userTokens[socket.request.session['user']], nonce: seeds.nonce, cs: seeds.cs});
-      });
-    });
-  });
-
-  socket.on("tip", function(req, cb) {
-    if (typeof cb !== 'function') return socket.emit('muppet', 'You fucking muppet, you need a callback for this call');
-    if (!testToken(socket, req.token)) return cb('incorrect token', {token: 0});
-    if (typeof req.amount !== 'number') return cb('need amount to be a number', {token: userTokens[socket.request.session['user']]});
-    if (typeof req.to !== 'string') return cb('To parameter must be a string', {token: userTokens[socket.request.session['user']]});
-    if (req.to === socket.request.session['user']) return cb('This is you, you plonker!', {token: userTokens[socket.request.session['user']]});
-    reciepientToken = changeToken(req.to); //this stops user accessing the system while tip is processed
-    req.amount = parseInt(req.amount); //knock off any decimal places the dicks add on past 8
-
-    fs.readFile( __dirname + "/db/seeds/" + socket.request.session['user'], function(err, data){
-      if (err) return cb('DB error', null);
-      data = JSON.parse(data);
-
-      if (data.balance < req.amount) return cb('Not enough coin to tip', {token: userTokens[socket.request.session['user']]});
-      data.balance -= req.amount;
-      data.balance = parseInt(data.balance);
-      var tips = {
-        from: socket.request.session['user'],
-        to: req.to,
-        amount: req.amount
-      }
-      if (canUserTransact[req.to] === true) canUserTransact[req.to] = false; //disable "userto" transactions so they can't hit bet while it writes to disk. Stunna learnt that lesson!
-      fs.readFile( __dirname + "/db/seeds/" + tips.to, function(err, recipientdata){ //read reciepients data
-        if (err) return cb('No user by this name', {token: userTokens[socket.request.session['user']]}); //if file doesn't exist, user has to login again for being a twat
-        recipientdata = JSON.parse(recipientdata);
-        recipientdata.balance += tips.amount;
-        fs.writeFile(__dirname + "/db/seeds/" + tips.to, JSON.stringify(recipientdata), function(err,dto){
-          if (err) return cb('Save error', null);
-
-          fs.writeFile(__dirname + "/db/seeds/" + socket.request.session['user'], JSON.stringify(data), function(err,dfrom){
-            if (err) return cb('Save error', null);
-            fs.appendFile(__dirname + "/db/tipsto/" + tips.to, ',' + JSON.stringify(tips) + '\n', function(err, tipsto){
-              if (err) return cb('Tip Save error', null);
-              fs.appendFile(__dirname + "/db/tipsfrom/" + tips.from, ',' + JSON.stringify(tips) + '\n', function(err, tipsfrom){
-                if (err) return cb('Save error', null);
-                if (userSockets[req.to]) userSockets[req.to].emit('tipsent', {time: Date.now(), from: tips.from, to: tips.to, amount: tips.amount, balance: recipientdata.balance, token: userTokens[req.to]});
-
-                return cb(null, { token: userTokens[socket.request.session['user']], balance: data.balance});
-              });
-            });
-          });
-        });
-      });
-    });
-  });
-
-  socket.on("invest", function(req, cb) {
-    if (typeof cb !== 'function') return;
-    if (!testToken(socket, req.token)) return cb('incorrect token', {token: 0});
-
-    if (typeof req.amount !== 'number') return cb('Amount is not a number', {token: userTokens[socket.request.session['user']]}); //check they arn't being dicks and sending text
-    req.amount = parseInt(req.amount); //remove the decimals below 8
-
-    fs.readFile( __dirname + "/db/seeds/" + socket.request.session['user'], function(err, data){
-      if (err) return cb('DB error', null);
-      data = JSON.parse(data);
-
-      if (data.balance<req.amount) {
-        return cb('Not Enough Funds', {token: userTokens[socket.request.session['user']]});
-      }
-      data.balance -= req.amount;
-      data.balance = parseInt(data.balance);
-
-      fs.writeFile(__dirname + "/db/seeds/" + socket.request.session['user'], JSON.stringify(data), function(err,d){
-        if (err) return cb('DB error', null);
-        rpcThread.send(JSON.stringify({type: 'invest', balance: data.balance, amount: req.amount, user: socket.request.session['user'] , token: userTokens[socket.request.session['user']]})); //send negative number for loss to house
-        //make them wait for investments so they don't keep making them happen - token gets sent in the second emit from bankroll.
-        return cb(null, {balance: data.balance});
-      });
     });
   });
 
