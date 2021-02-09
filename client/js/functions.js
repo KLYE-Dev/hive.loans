@@ -251,7 +251,7 @@ function createLoanPreview() {
     //$('#newLendFee').val(30);
   }
   newFee = (newFee / 100);
-  var commission = (((100 / 10) * newFee));
+  var commission = (newFee * 10);
   var preview = (newAmount * newFee);
   var dailypreview = (preview / newDays);
   var weeklyrepay = (dailypreview * 7)
