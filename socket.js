@@ -955,7 +955,7 @@ setInterval(function(){
     if (fee < 10 ) return cb('Fee Must be a over 10%!', {token: req.token});
     if (days < 7) return cb('Duration Must be 7 or over!', {token: req.token});
     if (days > 91) return cb('Duration Must less than 91!', {token: req.token});
-    
+
     let userData;
     let userNameCheck = await Userdata.findOne({where:{username:user}, raw:true, nest: true}).then(result => {return result}).catch(error => {console.log(error)});
     if (userNameCheck === null) {
@@ -968,7 +968,7 @@ setInterval(function(){
         if (fee > 30 ) return cb('Fee Must be a under 30%!', {token: req.token});
       }
 
-      if(amount < userData.hivebalance){
+      if(amount <= userData.hivebalance){
         log(`LENDING: ${user} creating a new loan - ${amount / 1000} HIVE at ${interest}% for ${days} days!`);
         loanThread.send(JSON.stringify({type:'newloan', userId: userData.id, username: userData.username, amount: amount, days: days, interest: interest, token: req.token}));
       } else {
