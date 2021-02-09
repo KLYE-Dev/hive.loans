@@ -1,0 +1,722 @@
+.hidden {
+  visibility: hidden !important;
+  display: none !important;
+  max-width: 0em !important;
+  max-height: 0em !important;
+}
+
+hr {
+  width: 80% !important;
+  border-top:  2px gold !important;
+}
+
+.triangle-up {
+	width: 0 !important;
+	height: 0 !important;
+	border-left: 25px solid transparent !important;
+	border-right: 25px solid transparent !important;
+	border-bottom: 50px solid #00ff00 !important;
+}
+
+
+
+
+#chat {background: white;color: black;float: left;width: 100%;height: 93%;font-size: initial;border-radius: 10px;}
+
+#trollbox {
+  display: inline-block;
+  overflow-y: scroll;
+  position: initial;
+  overflow-x: hidden;
+  float: right;
+  width: 100%;
+  height: 95%;
+  margin-left: -15%;
+  padding: 1px;
+  font-variant: none !important;
+}
+
+#trollslot {
+  width: 85%;
+}
+
+.chatList {
+  padding-left: 5px !important;
+  padding-bottom: 1px;
+}
+
+.chatTime {
+    color: gray;
+}
+
+span.modspan {
+    padding: 0px;
+    width: 0px;
+}
+
+span.vipspan {
+    padding: 0px;
+    width: 0px;
+}
+
+.uid {
+  color: black !important;
+}
+
+.pchat {
+  color: black !important;
+}
+
+#chatText {
+  color: black !important;
+  width: 85%;
+}
+
+body {
+	background: linear-gradient(-90deg, #00ff00, #111111, #222222, #333333) !important;
+	background-size: 400% 400% !important;
+	animation: gradient 15s ease infinite !important;
+}
+
+li {
+  /* margin-left: 1.5em !important; */
+  /* float: left; */
+}
+
+@keyframes gradient {
+	0% {
+		background-position: 0% 50%;
+	}
+	50% {
+		background-position: 100% 50%;
+	}
+	100% {
+		background-position: 0% 50%;
+	}
+}
+
+.lendingtable {
+    background: #444444;
+    border-radius: 10px;
+    border: inset 2px grey;
+    width: 100% !important;
+    /* width: 1% !important; */
+    /* overflow-y: hidden; */
+    /* max-height: 20% !important; */
+}
+
+th {
+      text-transform: capitalize;
+}
+
+#header-fixed {
+  border-bottom: white 1px;
+}
+
+.casperInput {
+  background: white;
+color: black;
+text-align: center;
+width: 9vw;
+height: 3vh;
+font-size: large;
+border-radius: 10px;
+}
+
+.tdcentered {
+  display: table !important;
+}
+
+td {
+  padding: 5px;
+  text-align: center;
+}
+
+.usernamestore, .socketid, .plugintype, .newamount, .newdays, .newfee, .userrank {
+  visibility: hidden;
+}
+
+@keyframes blink {
+    /**
+     * At the start of the animation the dot
+     * has an opacity of .2
+     */
+    0% {
+      opacity: .2;
+    }
+    /**
+     * At 20% the dot is fully visible and
+     * then fades out slowly
+     */
+    20% {
+      opacity: 1;
+    }
+    /**
+     * Until it reaches an opacity of .2 and
+     * the animation can start again
+     */
+    100% {
+      opacity: .2;
+    }
+}
+
+.saving span {
+    /**
+     * Use the blink animation, which is defined above
+     */
+    animation-name: blink;
+    /**
+     * The animation should take 1.4 seconds
+     */
+    animation-duration: 1.4s;
+    /**
+     * It will repeat itself forever
+     */
+    animation-iteration-count: infinite;
+    /**
+     * This makes sure that the starting style (opacity: .2)
+     * of the animation is applied before the animation starts.
+     * Otherwise we would see a short flash or would have
+     * to set the default styling of the dots to the same
+     * as the animation. Same applies for the ending styles.
+     */
+    animation-fill-mode: both;
+}
+
+.saving span:nth-child(2) {
+    /**
+     * Starts the animation of the third dot
+     * with a delay of .2s, otherwise all dots
+     * would animate at the same time
+     */
+    animation-delay: .2s;
+}
+
+.saving span:nth-child(3) {
+    /**
+     * Starts the animation of the third dot
+     * with a delay of .4s, otherwise all dots
+     * would animate at the same time
+     */
+    animation-delay: .4s;
+}
+
+
+
+#handy {
+  font-size: 1.75vw !important;
+}
+
+.ajs-message, .alertify-notifier {
+  position: absolute;
+  top: 0 !important;
+  right: 0 !important;
+  width: 47.5% !important;
+  margin-left: auto;
+  margin-right: auto;
+  align-self: center;
+  position: flex;
+  z-index: 999999 !important;
+  line-height: 3vh;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  text-shadow: black 1px 1px 1px;
+  font-weight: 900;
+  float: right;
+  border-bottom-left-radius: 20px !important;
+}
+
+.ajs-message {
+  border: 1px black solid !important;
+    box-shadow: black 1px 1px 10px;
+    border-bottom-left-radius: 10px !important;
+}
+
+.push_button2 {
+    border:  2px #dadada outset !important;
+    font-size: 1.5em;
+    font-weight: 400 !important;
+    min-width: 8vw !important;
+    min-height: 4vh;
+    position: relative;
+    color: white;
+    display: block;
+    margin: 0 auto;
+    border-radius: 10px !important;
+    background: #111111;
+    text-align: center;
+    padding: 4px;
+    -webkit-transition: all 0.05s;
+    -moz-transition: all 0.05s;
+    transition: all 0.05s;
+    z-index: 1;
+    -webkit-box-shadow: inset 0px 4px 0px #080c17, inset 1px 5px 0px #000, inset -1px 5px 0px #000;
+    -moz-box-shadow: 0px 4px 0px #080c17, 1px 5px 0px #000, -1px 5px 0px #000;
+    box-shadow: 0px 4px 0px #080c17, 1px 5px 0px #000, -1px 5px 0px #000;
+}
+
+.push_button2:hover {
+    border:  2px white outset !important;
+    font-weight: 400 !important;
+    min-width: 8vw !important;
+    min-height: 4vh;
+    position: relative;
+    color: white;
+    display: block;
+    margin: 0 auto;
+    border-radius: 10px !important;
+    background: #121212;
+    text-align: center;
+    padding: 4px;
+    z-index: 1;
+    -webkit-box-shadow: inset 0px 4px 0px #080c17, inset 1px 5px 0px #000, inset -1px 5px 0px #000;
+    -moz-box-shadow: 0px 4px 0px #080c17, 1px 5px 0px #000, -1px 5px 0px #000;
+    box-shadow: 0px 4px 0px #080c17, 1px 5px 0px #000, -1px 5px 0px #000;
+    position: relative !important;
+    z-index: 999;
+}
+
+.push_button2:active {
+    border: 2px white outset !important;
+    background: #222222;
+    text-align: center;
+    -webkit-box-shadow: 0px 1px 0px #080c17, 0px 2px 0px #000;
+    -moz-box-shadow: 0px 1px 0px #080c17, 0px 2px 0px #000;
+    box-shadow: 0px 1px 0px #080c17, 0px 2px 0px #000;
+    position: relative !important;
+    top: 3px;
+}
+
+.push_button3 {
+    border:  2px #dadada outset !important;
+    font-size: 1.5em;
+    font-weight: 400 !important;
+    min-width: 4vw !important;
+    min-height: 4vh;
+    width: auto !important;
+    position: relative;
+    color: white;
+    display: inline-table;
+    margin: 0 auto;
+    border-radius: 10px;
+    background: #111111;
+    text-align: center;
+    padding: 4px;
+    -webkit-transition: all 0.05s;
+    -moz-transition: all 0.05s;
+    transition: all 0.05s;
+    z-index: 1;
+    -webkit-box-shadow: inset 0px 4px 0px #080c17, inset 1px 5px 0px #000, inset -1px 5px 0px #000;
+    -moz-box-shadow: 0px 4px 0px #080c17, 1px 5px 0px #000, -1px 5px 0px #000;
+    box-shadow: 0px 4px 0px #080c17, 1px 5px 0px #000, -1px 5px 0px #000;
+}
+
+.push_button3:hover {
+    border:  2px white outset !important;
+    font-weight: 400 !important;
+    min-width: 4vw !important;
+    min-height: 4vh;
+    position: relative;
+    color: white;
+    display: block;
+    margin: 0 auto;
+    border-radius: 10px;
+    background: #121212;
+    text-align: center;
+    padding: 4px;
+    z-index: 1;
+    -webkit-box-shadow: inset 0px 4px 0px #080c17, inset 1px 5px 0px #000, inset -1px 5px 0px #000;
+    -moz-box-shadow: 0px 4px 0px #080c17, 1px 5px 0px #000, -1px 5px 0px #000;
+    box-shadow: 0px 4px 0px #080c17, 1px 5px 0px #000, -1px 5px 0px #000;
+    position: relative !important;
+    z-index: 999;
+}
+
+.push_button3:active {
+    border: 2px white outset !important;
+    background: #222222;
+    text-align: center;
+    -webkit-box-shadow: 0px 1px 0px #080c17, 0px 2px 0px #000;
+    -moz-box-shadow: 0px 1px 0px #080c17, 0px 2px 0px #000;
+    box-shadow: 0px 1px 0px #080c17, 0px 2px 0px #000;
+    position: relative !important;
+    top: 3px;
+}
+
+.push_button4 {
+    border: 1px #dadada outset !important;
+    font-size: small;
+    font-weight: 700 !important;
+    min-width: 3vw !important;
+    min-height: 2vh;
+    position: relative;
+    color: white;
+    display: inline-table;
+    /* margin: 0px; */
+    height: 2.5vh;
+    border-radius: 5px;
+    background: #111111;
+    text-align: center;
+    margin-bottom: 5px !important;
+    -webkit-transition: all 0.5s;
+    -moz-transition: all 0.5s;
+    transition: all 0.5s;
+    z-index: 1;
+    -webkit-box-shadow: inset 0px 4px 0px #080c17, inset 1px 5px 0px #000, inset -1px 5px 0px #000;
+    -moz-box-shadow: 0px 4px 0px #080c17, 1px 5px 0px #000, -1px 5px 0px #000;
+    box-shadow: 0px 4px 0px #080c17, 1px 5px 0px #000, -1px 5px 0px #000;
+    /* top: 5%; */
+}
+
+.chatTime {
+  color: blue;
+}
+
+.cancelButton, .acceptButton, .infoButton {
+  padding:5px;
+}
+
+.createLoanButton1:hover {
+  color:lawngreen;
+}
+
+.cancelButton:hover {
+  color:red;
+}
+
+.acceptButton:hover {
+  color:lawngreen;
+}
+
+.infoButton:hover {
+  color:gold;
+}
+
+.content {
+  min-height: calc(100% - 3em);
+}
+
+.userstats {
+  z-index: 99999;
+  border: 1px solid black;
+  width: 13%;
+    top:20%;
+  height:auto;
+  overflow:visible;
+  position: fixed;
+  left: 1em;
+  background: #f0f0f8;
+  border-radius: 25px;
+    box-shadow: black 0px 0px 14px 0px;border: 2px outset #eae6e6; border-radius: 15px; color: black !important; background: grey;
+}
+
+
+.chatpanel {
+  z-index: 99999 !important;
+  border: 1px solid black;
+  width: 13%;
+    top:20%;
+  height:auto;
+  overflow:visible;
+  position: fixed;
+  left: 1em;
+  background: #f0f0f8;
+  border-radius: 25px;
+    box-shadow: black 0px 0px 14px 0px;border: 2px outset #eae6e6; border-radius: 15px; color: black !important; background: grey;
+}
+
+
+.userpanel {
+  z-index: 99999;
+  border: 1px solid black;
+  width: 13%;
+    top:20%;
+  height:auto;
+  overflow:visible;
+  position: fixed;
+  left: 1em;
+  background: #f0f0f8;
+  border-radius: 25px;
+    box-shadow: black 0px 0px 14px 0px;border: 2px outset #eae6e6; border-radius: 15px; color: black !important; background: grey;
+}
+
+.sitestats {top: 21%;z-index: 99999;border: 1px solid black;top: 33%;top: 33% !important;width: 14%;height: auto;overflow:visible;position: fixed;right: 1em;background: #f0f0f8;border-radius: 25px;box-shadow: black 0px 0px 14px 0px;border: 2px outset #eae6e6;border-radius: 15px;color: black !important;background: grey;}
+
+#refreshSiteStats {
+  display: inline-block;
+  right: 0.4em;
+  position: absolute;
+  top: 0.3em;
+}
+
+#jumboMove {
+  display: inline-block;
+    left: 0.4em;
+    position: absolute;
+    top: 0.3em;
+}
+
+#sitestatssMove {
+  display: inline-block;
+    left: 0.4em;
+    position: absolute;
+    top: 0.3em;
+}
+
+#refreshAcct {
+  display: inline-block;
+  right: 0.4em;
+  position: absolute;
+  top: 0.3em;
+}
+
+#backerMove {
+    display: inline-block;
+    left: 0.4em;
+    position: absolute;
+    top: 0.3em;
+}
+
+#chatMove {
+  display: inline-block;
+    left: 0.4em;
+    position: absolute;
+    top: 0.3em;
+}
+
+#panelMove {
+  display: inline-block;
+    left: 0.4em;
+    position: absolute;
+    top: 0.3em;
+}
+
+#chatClose {
+  -webkit-transition: all 0.5s;
+  -moz-transition: all 0.5s;
+  transition: all 0.5s;
+  display: inline-block;
+    right: 0.4em;
+    position: absolute;
+    top: 0.3em
+}
+
+#panelClose {
+  -webkit-transition: all 0.5s;
+  -moz-transition: all 0.5s;
+  transition: all 0.5s;
+  display: inline-block;
+    right: 0.4em;
+    position: absolute;
+    top: 0.3em
+}
+
+#refreshBacker {
+    display: inline-block;
+    right: 0.4em;
+    position: absolute;
+    top: 0.3em;
+}
+
+#statsMove {
+  display: inline-block;
+    left: 0.4em;
+    position: absolute;
+    top: 0.3em;
+}
+
+#resizer {
+  display: inline-block;
+    left: 0.4em;
+    position: absolute;
+    bottom: 0.3em;
+}
+
+.backerstats {
+    z-index: 99999;
+    border: 1px solid black;
+    width: 16vw;
+    top: 10%;
+    height: 80%;
+    width: 16vw;
+    overflow-y: hidden;
+    position: fixed;
+    left: 1em;
+    background: #f0f0f8;
+    border-radius: 25px;
+    box-shadow: black 0px 0px 14px 0px;
+    border: 2px outset #eae6e6;
+    border-radius: 15px;
+    color: black !important;
+    background: grey;
+}
+
+body {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  color: #000000 !important;
+  background-color: #404040;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25'%3E%3Cdefs%3E%3ClinearGradient id='a' gradientUnits='userSpaceOnUse' x1='0' x2='0' y1='0' y2='100%25' gradientTransform='rotate(0,1280,486)'%3E%3Cstop offset='0' stop-color='%23404040'/%3E%3Cstop offset='1' stop-color='%23000000'/%3E%3C/linearGradient%3E%3Cpattern patternUnits='userSpaceOnUse' id='b' width='300' height='250' x='0' y='0' viewBox='0 0 1080 900'%3E%3Cg fill-opacity='0.5'%3E%3Cpolygon fill='%23444' points='90 150 0 300 180 300'/%3E%3Cpolygon points='90 150 180 0 0 0'/%3E%3Cpolygon fill='%23AAA' points='270 150 360 0 180 0'/%3E%3Cpolygon fill='%23DDD' points='450 150 360 300 540 300'/%3E%3Cpolygon fill='%23999' points='450 150 540 0 360 0'/%3E%3Cpolygon points='630 150 540 300 720 300'/%3E%3Cpolygon fill='%23DDD' points='630 150 720 0 540 0'/%3E%3Cpolygon fill='%23444' points='810 150 720 300 900 300'/%3E%3Cpolygon fill='%23FFF' points='810 150 900 0 720 0'/%3E%3Cpolygon fill='%23DDD' points='990 150 900 300 1080 300'/%3E%3Cpolygon fill='%23444' points='990 150 1080 0 900 0'/%3E%3Cpolygon fill='%23DDD' points='90 450 0 600 180 600'/%3E%3Cpolygon points='90 450 180 300 0 300'/%3E%3Cpolygon fill='%23666' points='270 450 180 600 360 600'/%3E%3Cpolygon fill='%23AAA' points='270 450 360 300 180 300'/%3E%3Cpolygon fill='%23DDD' points='450 450 360 600 540 600'/%3E%3Cpolygon fill='%23999' points='450 450 540 300 360 300'/%3E%3Cpolygon fill='%23999' points='630 450 540 600 720 600'/%3E%3Cpolygon fill='%23FFF' points='630 450 720 300 540 300'/%3E%3Cpolygon points='810 450 720 600 900 600'/%3E%3Cpolygon fill='%23DDD' points='810 450 900 300 720 300'/%3E%3Cpolygon fill='%23AAA' points='990 450 900 600 1080 600'/%3E%3Cpolygon fill='%23444' points='990 450 1080 300 900 300'/%3E%3Cpolygon fill='%23222' points='90 750 0 900 180 900'/%3E%3Cpolygon points='270 750 180 900 360 900'/%3E%3Cpolygon fill='%23DDD' points='270 750 360 600 180 600'/%3E%3Cpolygon points='450 750 540 600 360 600'/%3E%3Cpolygon points='630 750 540 900 720 900'/%3E%3Cpolygon fill='%23444' points='630 750 720 600 540 600'/%3E%3Cpolygon fill='%23AAA' points='810 750 720 900 900 900'/%3E%3Cpolygon fill='%23666' points='810 750 900 600 720 600'/%3E%3Cpolygon fill='%23999' points='990 750 900 900 1080 900'/%3E%3Cpolygon fill='%23999' points='180 0 90 150 270 150'/%3E%3Cpolygon fill='%23444' points='360 0 270 150 450 150'/%3E%3Cpolygon fill='%23FFF' points='540 0 450 150 630 150'/%3E%3Cpolygon points='900 0 810 150 990 150'/%3E%3Cpolygon fill='%23222' points='0 300 -90 450 90 450'/%3E%3Cpolygon fill='%23FFF' points='0 300 90 150 -90 150'/%3E%3Cpolygon fill='%23FFF' points='180 300 90 450 270 450'/%3E%3Cpolygon fill='%23666' points='180 300 270 150 90 150'/%3E%3Cpolygon fill='%23222' points='360 300 270 450 450 450'/%3E%3Cpolygon fill='%23FFF' points='360 300 450 150 270 150'/%3E%3Cpolygon fill='%23444' points='540 300 450 450 630 450'/%3E%3Cpolygon fill='%23222' points='540 300 630 150 450 150'/%3E%3Cpolygon fill='%23AAA' points='720 300 630 450 810 450'/%3E%3Cpolygon fill='%23666' points='720 300 810 150 630 150'/%3E%3Cpolygon fill='%23FFF' points='900 300 810 450 990 450'/%3E%3Cpolygon fill='%23999' points='900 300 990 150 810 150'/%3E%3Cpolygon points='0 600 -90 750 90 750'/%3E%3Cpolygon fill='%23666' points='0 600 90 450 -90 450'/%3E%3Cpolygon fill='%23AAA' points='180 600 90 750 270 750'/%3E%3Cpolygon fill='%23444' points='180 600 270 450 90 450'/%3E%3Cpolygon fill='%23444' points='360 600 270 750 450 750'/%3E%3Cpolygon fill='%23999' points='360 600 450 450 270 450'/%3E%3Cpolygon fill='%23666' points='540 600 630 450 450 450'/%3E%3Cpolygon fill='%23222' points='720 600 630 750 810 750'/%3E%3Cpolygon fill='%23FFF' points='900 600 810 750 990 750'/%3E%3Cpolygon fill='%23222' points='900 600 990 450 810 450'/%3E%3Cpolygon fill='%23DDD' points='0 900 90 750 -90 750'/%3E%3Cpolygon fill='%23444' points='180 900 270 750 90 750'/%3E%3Cpolygon fill='%23FFF' points='360 900 450 750 270 750'/%3E%3Cpolygon fill='%23AAA' points='540 900 630 750 450 750'/%3E%3Cpolygon fill='%23FFF' points='720 900 810 750 630 750'/%3E%3Cpolygon fill='%23222' points='900 900 990 750 810 750'/%3E%3Cpolygon fill='%23222' points='1080 300 990 450 1170 450'/%3E%3Cpolygon fill='%23FFF' points='1080 300 1170 150 990 150'/%3E%3Cpolygon points='1080 600 990 750 1170 750'/%3E%3Cpolygon fill='%23666' points='1080 600 1170 450 990 450'/%3E%3Cpolygon fill='%23DDD' points='1080 900 1170 750 990 750'/%3E%3C/g%3E%3C/pattern%3E%3C/defs%3E%3Crect x='0' y='0' fill='url(%23a)' width='100%25' height='100%25'/%3E%3Crect x='0' y='0' fill='url(%23b)' width='100%25' height='100%25'/%3E%3C/svg%3E");
+  background-attachment: fixed;
+  background-size: cover;
+  margin: 0;
+}
+
+
+
+/*
+body {
+  margin: 0;
+  padding: 0;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  color: #000000 !important;
+  */
+  /*background-color: #e7e7f1;*/
+  /*
+  background-color: rgb(69 69 69);
+  height: 100%;
+}
+
+
+*/
+
+/*
+ * Formatting the header area
+ */
+header {
+  position: fixed !important;
+  padding: 0;
+  margin: 0;
+  z-index: 999 !important;
+  width: 100%;
+  top: 0em;
+}
+
+footer {
+
+      position: fixed !important;
+      height: 1vh;
+      background-color: #E31337;
+      color: #f0f0f8;
+      opacity: 1 !important;
+      z-index: 9 !important;
+      width: 100%;
+      bottom: 0em;
+      line-height:1vh;
+
+    box-shadow: #292929 0px 20px 20px 20px;
+
+}
+
+#discord {
+  position: fixed !important;
+  height: 1vh;
+    padding-left: 0.5em;
+    padding-right: 0.5em;
+    color: #f0f0f8;
+    float: right;
+    margin-top: -0.16em;
+    right: -0.2em;
+    line-height:1vh;
+}
+
+.hl-logo {
+    z-index: 999 !important;
+}
+
+.sexyblackoutline {
+text-shadow:  1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000, rgb(69, 69, 69) 0px 1px 0px, rgb(46, 46, 46) 0px 2px 1px;
+    z-index: 999 !important;
+}
+
+.navbar {
+  position: absolute;
+  height: 3.3em;
+  background-color:#E31337;
+  color:#f0f0f8;
+  box-shadow: black 1px 1px 15px;
+  border-bottom-right-radius: 15px;
+  z-index:999999;
+  -webkit-transition: all 2s;
+  -moz-transition: all 2s;
+  transition: all 2s;
+}
+
+#handbees {
+  position:fixed;left: 9.2em;width:1.5em;margin-top:-1em;left: 1.6em;"><i class="fas fa-2x fa-hand-holding sexyblackoutline" style="position:fixed;margin-top:-0.4em;left: 0.69em;
+}
+
+#toptext {
+  color: #f0f0f8;
+    left: 1em;
+}
+
+header h1.logo {
+  margin: 0;
+  font-size: 1.7em;
+  color: #fff;
+  text-transform: uppercase;
+  float: left;
+      z-index: 999;
+}
+header h1.logo:hover {
+  color: #fff;
+  text-decoration: none;
+}
+
+/*
+ * Centering the body content
+ */
+
+.container {
+  width: 1200px;
+  margin: 0 auto;
+}
+
+div.home {
+  padding: 10px 0 30px 0;
+  background-color: #E6E6FA;
+  -webkit-border-radius: 6px;
+     -moz-border-radius: 6px;
+          border-radius: 6px;
+}
+div.about {
+  padding: 10px 0 30px 0;
+  background-color: #E6E6FA;
+  -webkit-border-radius: 6px;
+     -moz-border-radius: 6px;
+          border-radius: 6px;
+}
+h2 {
+  font-size: 3em;
+  text-align: center;
+  letter-spacing: -2px;
+      z-index: 999 !important;
+}
+h3 {
+  font-size: 1.7em;
+  font-weight: 600;
+  text-align: center;
+  letter-spacing: -1px;
+  color: #333;
+      z-index: 999 !important;
+}
+.menu {
+  margin-top: 1.1em;
+  margin-right: 1em;
+  z-index: 999 !important;
+}
+.menu li {
+  display: inline;
+  z-index: 999 !important;
+}
+.menu li + li {
+  /* margin-left: 35px; */
+  z-index: 999 !important;
+}
+.menu li a {
+  color: #f0f0f8 !important;
+  text-decoration: none;
+}
+
+#resizablesitestats { width: 150px; height: 150px; padding: 0.5em; }
+#resizablesitestats h3 { text-align: center; margin: 0; }

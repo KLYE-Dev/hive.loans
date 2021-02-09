@@ -1,0 +1,38 @@
+{
+  "development": {
+    "username": "root",
+    "password": "1939chev",
+    "database": "hiveloans_dev",
+    "host": "127.0.0.1",
+    "port": "6666",
+    "dialect": "mysql",
+    "logging": false,
+    "debug": false,
+    "verbose": false,
+    "dialectOptions": {"supportBigNumbers": true}
+  },
+  "test": {
+    "username": "root",
+    "password": "1939chev",
+    "database": "hiveloans_test",
+    "host": "127.0.0.1",
+    "port": "6666",
+    "dialect": "mysql",
+    "logging": false,
+    "debug": false,
+    "verbose": false,
+    "dialectOptions": {"supportBigNumbers": true}
+  },
+  "production": {
+    "username": "root",
+    "password": "1939chev",
+    "database": "hiveloans_dev",
+    "host": "127.0.0.1",
+    "port": "6666",
+    "dialect": "mysql",
+    "logging": false,
+    "debug": false,
+    "verbose": false,
+    "dialectOptions": {"supportBigNumbers": true}
+  }
+}
