@@ -19,6 +19,7 @@ dotenv.config();
 const DB = require('./database/models');
 const sequelize = DB.sequelize;
 const DataBase = sequelize;
+const { Op } = require("sequelize");
 const Userdata = DataBase.models.Users;
 const Loandata = DataBase.models.Loans;
 const Depositdata = DataBase.models.Deposits;
@@ -860,8 +861,8 @@ socket.on('getfounders', async function(req, cb){
 async function sendbackersupdate() {
   await Depositdata.findAll({
     limit: 100,
-    where: { },
-    order: [ [ 'amount', 'DESC' ]],
+    where: {amount: {[Op.gte]: 100000}},
+    order: [[ 'amount', 'DESC' ]],
     raw: true
   }).then(function(entries){
       var loadedDeposits = [];
