@@ -222,7 +222,7 @@ var withdrawButtonWallet = async(user, coin) => {
 
 
             let sendingContent = `<center><h4 style="margin: none !important;">Withdraw ${coin} from ${user}'s Hive.Loans Account</h4>` +
-           `<h3 style="margin: none !important;"><table style="width:100%;align-content:center;"><tbody><tr><td style="width:40%;"><a href="https://hiveblocks.com/@hive.loans" target="_blank" style="text-decoration:none !important;">hive.loans</a></td><td><i class="fas fa-long-arrow-alt-right"></i></td><td style="width:40%;"><a href="https://hiveblocks.com/@${user}" style="text-decoration: none !important;" target="_blank">${user}</a></td></tr></tbody></table></h3>`+
+           `<h3 style="margin: none !important;"><table style="width:100%;align-content:center;font-size: larger;"><tbody><tr><td style="width:40%;"><a href="https://hiveblocks.com/@hive.loans" target="_blank" style="text-decoration:none !important;">hive.loans</a></td><td><i class="fas fa-long-arrow-alt-right"></i></td><td style="width:40%;"><a href="https://hiveblocks.com/@${user}" style="text-decoration: none !important;" target="_blank">${user}</a></td></tr></tbody></table></h3>`+
          //  `<h3 style="margin: none !important;"><a href="https://hiveblocks.com/@${user}" style="text-decoration: none !important;" target="_blank">${user}</a> <i class="fas fa-long-arrow-alt-right"></i> <a href="https://hiveblocks.com/@hive.loans" target="_blank" style="text-decoration:none !important;">hive.loans</a></h3><br>`+
            `<b id="acctflash1">Specify Amount of ${coin} to Withdraw:</b><br><input type="number" min="0" step="0.001" decimal="3" id="withdrawInteger" style="background: white;color: black;text-align: center;width: 18vw;height: 3vh;font-size: large; border-radius:10px;" placeholder="0.000" onkeyup="calctotal($('#rawfee').val(), '${coin}')" ><br>` +
            `<sub>( Account Balance: <span id="tipbalance" placeholder="0.000" onClick="$('#withdrawInteger').val($('#tipbalance').val());calctotal(${data.fee}, '${coin}')"></span> ${coin} <span id="tipBalspan"></span> )</sub><br><br>`+
@@ -709,7 +709,7 @@ function skcusersocket(user) {
                   socket.emit('setSocketId', userdata);
                   //$("#initChat").remove();
                   alertChatMessage({
-                      message: "Welcome to Hive.Loans v0.0.7",
+                      message: "Welcome to Hive.Loans v0.0.8",
                       time: Date.now()
                   });
                   alertChatMessage({
@@ -757,6 +757,7 @@ function skcusersocket(user) {
                   $("#arrowin").show();
                   $('#userhivebalance').val(data.hivebalance);
                   $('#userhbdbalance').val(data.hbdbalance);
+                  scrollToTop($("#trollbox"));
                 }
                   };//END Else data == true
                 });
@@ -1427,6 +1428,7 @@ async function showWallet() {
 
 async function showProfile() {
   loadingjumbo();
+
   var userDelegations = []
   var total_vesting_shares;
   var total_vesting_fund;
@@ -1436,6 +1438,7 @@ async function showProfile() {
     total_vesting_shares = parseInt(result.total_vesting_shares);
     total_vesting_fund = parseInt(result.total_vesting_fund_hive);
   });
+
 
   await hive.api.getAccounts([user], async function(err, result) {
     console.log(`getAccounts`)
@@ -1448,91 +1451,101 @@ async function showProfile() {
       var hivePower = parseInt(resultData.vesting_shares);
       var recoverAcct = resultData.recovery_account;
       var hivePower = parseInt(resultData.vesting_shares);
-      $("#recoverAcct").html(`<b>Recovery Account</b>:<br><span id="recName">${recoverAcct}</span><br>`);
-      $("#profileRecoverAcct").html(`<span id="precacct">${recoverAcct}</span>`);
-      $("#showRecAcct").html(`@${recoverAcct}`);
-      $("#hivePowerHeld").html(`<b>HIVE Power</b>:<br>${toThree(hiveVested)}<br>`);
-      $("#loansHPdisplay").html(`<span id="hplevel">${toThree(hiveVested)}</span> HP<br>`);
-      $("#urank").html(`${$('#userrank').val()}`);
-      loanMax = parseFloat(hiveVested * 0.7);
-      if(recoverAcct !== 'hive.loans' && recoverAcct !== 'anonsteem' && recoverAcct !== 'beeanon' && recoverAcct !== 'blocktrades') {
-        $("#recName").css({"color":"red"});
-        $("#precacct").css({"color":"red"});
-        $("#prawarn").css({"color":"red"});
-        $("#showRecAcct").css({"color":"red"});
-        $("#prawarn").html(`❌ Incompatible Recovery Account! <b><a href="#" id="changeRecoveryAcct" style="color:white !important; text-decoration:none !important;" onClick="showRecoveryPanel();">Change Recovery Account</a></b>`);
-        $("#recAlert").html(`<sub><b style="color:red;">Recovery Account Invalid!</b><br>Please set @hive.loans as recovery account!<br><br>Click here to change recovery account<br><sub>( This will take 30 days to complete )</sub></sub>`);
-      } else {
-        $("#recName").css({"color":"lawngreen"});
-        $("#precacct").css({"color":"lawngreen"});
-        $("#prawarn").css({"color":"white"});
-        $("#showRecAcct").css({"color":"lawngreen"});
-        $("#prawarn").html(`✔️`);
-        $("#recAlert").html(`<sub><b style="color:black;">Recovery Account Valid!</b><br>You're ready to borrow! Remember to follow the site guidelines while lending.<br><sub>( Attempts to cheat the system have fees )</sub></sub>`);
-      }
-    }
-  });
+      memo_key = resultData.memo_key.toString();
+      owner_key = resultData.owner.key_auths[0].toString();
+      active_key = resultData.active.key_auths[0].toString();
+      posting_key = resultData.posting.key_auths[0].toString();
+      owner_key = owner_key.split(',')[0];
+      active_key = active_key.split(',')[0];
+      posting_key = posting_key.split(',')[0];
+      profiledata = resultData.posting_json_metadata;
+      dateCreated = resultData.created;
 
-/*
-  await hive.api.getAccounts([user], async function(err, result) {
-
-  })
-*/
-
-  await hive.api.getWithdrawRoutes(`"${user}"`, 1, function(err, data) {
-  	console.log(err, data);
-  });
-
-
-
-
-  await hive.api.getVestingDelegations(`'${user}'`, '', 0, function(err, result) {
-    if(err !== null) {
-      console.log(`Error: ${err}`);
-    }
-    if(result.length > 0){
-      result.forEach((item, i) => {
-        var user = item.delegatee;
-        var vests = parseFloat(item.vesting_shares);
-        var hiveVested = ( Number(total_vesting_fund) *  Number(vests) ) / Number(total_vesting_shares);
-        var entry = ` <span class="profileDelegateUsr"><a href="https://hiveblocks.com/@${user}" class="histuserlink" style="color: white !important; text-decoration:none !important;" target="_blank" title="Click to View This Account on HiveBlocks.com in a New Window">@${user} <i class="fas fa-external-link-square-alt" title=""></i></a></span> <span class="profileDelegateAmt">${hiveVested.toFixed(3)} HIVE</span><br>`; //- ${item.id}
-        userDelegations.push(entry)
+      await hive.api.getWithdrawRoutes(`"${user}"`, 1, function(err, data) {
+      	console.log(err, data);
       });
+
+
+
+
+      await hive.api.getVestingDelegations(`'${user}'`, '', 0, function(err, result) {
+        if(err !== null) {
+          console.log(`Error: ${err}`);
+        }
+        if(result.length > 0){
+          result.forEach((item, i) => {
+            var user = item.delegatee;
+            var vests = parseFloat(item.vesting_shares);
+            var hiveVested = ( Number(total_vesting_fund) *  Number(vests) ) / Number(total_vesting_shares);
+            var entry = ` <span class="profileDelegateUsr"><a href="https://hiveblocks.com/@${user}" class="histuserlink" style="color: white !important; text-decoration:none !important;" target="_blank" title="Click to View This Account on HiveBlocks.com in a New Window">@${user} <i class="fas fa-external-link-square-alt" title=""></i></a></span> <span class="profileDelegateAmt">${hiveVested.toFixed(3)} HIVE</span><br>`; //- ${item.id}
+            userDelegations.push(entry)
+          });
+        }
+      });
+
+    if(userDelegations.length == 0){
+      userDelegations = `No Active Delegations`;
     }
+    hypertabletwo = `<table style="width:100%;"><tbody><tr><td colspan="3"><span id="metaprofile"><span id="userpic" style="float:right;"></span><br><span id="nameid"></span> <code>( @${user} )</code><br><i class="fas fa-fw fa-globe"></i><span id="locationid"></span><br><b style="font-size:larger;">Rank: ${$('#userrank').val()}</b><br><span id="profilestring"></span></td></tr><tr><td colspan="3"><div class="autoBettitleC2 autoBettitleC2p levelHolder" style="position:relative">
+            <span class="thisLevel" id="thisLevel" style="margin: 0vh 0 0vh 0.5vh;color: white;">&nbsp;13&nbsp;</span>
+            <span class="levelprogress" title="Progress to next Account Level" style="width: 34.95%;"></span>
+            <span class="autoBettitleTT Logoml nextLevel" id="nextLevel">&nbsp;14&nbsp;</span>
+            </div></td></tr><tr><td><span id="statsBal"></span></td><td><p id="hivePowerHeld"></p></td><td><span id="statHBDsBal"></span></td></tr><tr><td  id="recoverAcct">REcovery shit here</td><td>last login</td><td>Date Created:<br>${dateCreated}</td></tr><tr><td colspan="3"><span id="recAlert"></span><hr><b>Scope Keys & Permissions:<br><br><code>Posting Public Key:</code><br>${posting_key} <i class="far fa-fw fa-eye"></i><br><br><code>Active Public Key:</code><br>${active_key} <i class="far fa-fw fa-eye"></i><br><br><code>Owner Public Key:</code><br>${owner_key} <i class="far fa-fw fa-eye"></i><br><br><code>Memo Public Key:</code><br>${memo_key} <i class="far fa-fw fa-eye"></i></td></tr></tbody></table>`;
+            $("#jumbotron").fadeOut('fast');
+            $("#jumbotron").promise().done(function(){
+          $("#jumbotron").html(moverAddon + hypertabletwo);
+          $("#metaprofile").val(profiledata['profile']);
+          $('#delegationShow').html(userDelegations);
+          $('#urank').val($('#userrank').val());
+          $("#jumbotron").css({'height':'70%','width':'25%'});
+          $("#jumbotron").center();
+          $("#jumbotron").fadeIn();
+            getAcct();
+          profiledata = JSON.parse(profiledata);
+
+
+
+          console.log(profiledata);
+          var userc = profiledata.profile.profile_image;
+          var userabout = profiledata.profile.about;
+          var userlocation = profiledata.profile.location;
+          var username = profiledata.profile.name;
+          $("#userpic").html(`<img src="${userc}" style="width:5vw;height:5vw;border-radius:15px;border: inset 2px grey;">`);
+          $("#locationid").html(`${profiledata.profile.location}`);
+          $("#nameid").html(`${username}`);
+          $("#profilestring").html(`${userabout}`);
+          $("#recoverAcct").html(`<span><b>Recovery Account</b>:<br><span id="recName">${recoverAcct}</span><span id="prawarn"></span></span>`);
+          $("#profileRecoverAcct").html(`<span id="precacct">${recoverAcct}</span>`);
+          $("#showRecAcct").html(`@${recoverAcct}`);
+          $("#hivePowerHeld").html(`<b>HIVE Power</b>:<br>${toThree(hiveVested)} HP`);
+          $("#loansHPdisplay").html(`<span id="hplevel">${toThree(hiveVested)}</span> HP`);
+          $("#urank").html(`${$('#userrank').val()}`);
+          loanMax = parseFloat(hiveVested * 0.7);
+
+          if(recoverAcct !== 'hive.loans' && recoverAcct !== 'anonsteem' && recoverAcct !== 'beeanon' && recoverAcct !== 'blocktrades') {
+            $("#recName").css({"color":"red"});
+            $("#precacct").css({"color":"red"});
+            $("#prawarn").css({"color":"red"});
+            $("#showRecAcct").css({"color":"red"});
+            $("#prawarn").html(`❌ Incompatible Recovery Account! <b><a href="#" id="changeRecoveryAcct" style="color:white !important; text-decoration:none !important;" onClick="showRecoveryPanel();">Change Recovery Account</a></b>`);
+            $("#recAlert").html(`<sub><b style="color:red;">Recovery Account Invalid!</b><br>Please set @hive.loans as recovery account!<br><br>Click here to change recovery account<br><sub>( This will take 30 days to complete )</sub></sub>`);
+          } else {
+            $("#recName").css({"color":"lawngreen"});
+            $("#precacct").css({"color":"lawngreen"});
+            $("#prawarn").css({"color":"white"});
+            $("#showRecAcct").css({"color":"lawngreen"});
+            $("#prawarn").html(`✔️`);
+            $("#recAlert").html(`<sub><b style="color:lawngreen;">Recovery Account Valid!</b><br><code onclick="showLoans()">You're ready to borrow! Remember to follow the site guidelines while lending..</code></sub>`);
+
+          }
+      });
+
+
+
+    }
+
   });
-
-if(userDelegations.length == 0){
-  userDelegations = `No Active Delegations`;
 }
-
-  let profileContent = `<center><h3 class="pagehead"  style="color:white !important;">Profile & Settings</h3></center>` +
-  `Information about your account as well as various settings and options to customize your experience on the Hive.Loans Application.<hr>` +
-  `Username: <a href="https://peakd.com/@${user}" title="click here to view account in a new tab" target="_blank" style="text-decoration:none !important; color:white !important;">@${user} <i class="fas fa-external-link-square-alt"></i></a><br><br>` +
-  `Status: Active<br><br>` +
-  `Rank: <span id="urank">User</span><br><br>` +
-  `Level: 1 - noob<br><br>` +
-  `XP: 1 / 1000<br><br>` +
-  //`HIVE Account Balances: <span id="statsBalTop"></span><br><br>`+
-  `HIVE Power: ${hiveVested.toFixed(3)} HIVE<br><br>` +
-  `Recovery Account: <span id="profileRecoverAcct">Loading</span> <span id="prawarn"></span><br><br>` +
-  `Last Login: Unknown<br><br>` +
-  `Active Delegations:<br>`+
-  `<span id="delegationShow"></span><br>`+
-  `<br><br>`+
-  `<hr>`+
-  `Show Chatroom on Login?<br>`;
-  $("#jumbotron").fadeOut('fast');
-  $("#jumbotron").promise().done(function(){
-      $("#jumbotron").html(moverAddon + profileContent);
-      $('#delegationShow').html(userDelegations);
-      $('#urank').val($('#userrank').val());
-      $("#jumbotron").css({'height':'90%','width':'25%'});
-      $("#jumbotron").center();
-        //getAcct();
-      $("#jumbotron").fadeIn();
-  });
-}
-
 
 
 async function showRecoveryPanel() {
@@ -1559,249 +1572,21 @@ async function showRecoveryPanel() {
   });
 }
 
-/*
+async function showKeysRecoveryPanel() {
+  loadingjumbo();
+  //window.location.href = '../recovery/index.html'; //one level up
 
-index
+var keyrecoveryContent = `<iframe src='../recovery/index.html' id="frame1" name="frame1" style="width:100%;height:100%;"></iframe>`;
 
-<div class="container pt-3">
-    <h1 class="text-center mb-5">Hive Account Recovery</h1>
-    <hr>
+  $("#jumbotron").fadeOut('fast');
+  $("#jumbotron").promise().done(function(){
+      $("#jumbotron").html(moverAddon + keyrecoveryContent);
+      $("#jumbotron").css({'height':'85%','width':'25%'});
+      $("#jumbotron").center();
+      $("#jumbotron").fadeIn();
+  });
 
-    <div class="row">
-        <div class="col-md-4 text-center">
-            <a href="recover-account.html" class="box blue">
-                Recover Account
-            </a>
-            <p>If you need to recover access to a lost account click this box.</p>
-        </div>
-        <div class="col-md-4 text-center">
-            <a href="request-recovery.html" class="box green">
-                Request Recovery
-            </a>
-            <p>If you are trusty or recovery account of any other Hive account, this is for you.</p>
-        </div>
-        <div class="col-md-4 text-center">
-            <a href="change-recovery.html" class="box red">
-                Change Recovery Account
-            </a>
-            <p>If you want to change your account's recovery account checkout this page.</p>
-        </div>
-    </div>
-
-    <hr>
-    <p class="text-center">
-        Brought to you by <a href="https://hive.blog/@reazuliqbal">@reazuliqbal</a>
-    </p>
-</div>
-*/
-
-
-/*
-change-recovery.HTML
-
-<div class="container pt-3">
-       <a href="./">
-           <h1 class="text-center">Hive Account Recovery</h1>
-       </a>
-       <hr>
-       <h2 class="text-center mb-5">Change Recovery Account</h2>
-
-       <div class="row">
-           <div class="offset-md-2 col-md-8">
-               <p class="text-muted">Each account lists another account as their recovery account. The recovery account
-                   has the ability to create account_recovery_requests for the account to recover. An account can
-                   change their recovery account at any time with a 30 day delay.</p>
-
-               <div class="alert" id="alert-change-rec"></div>
-
-               <form id="change-recovery-account" class="mt-5 mb-5">
-                   <div class="form-group">
-                       <label for="change-rec-atr">Account To Recover</label>
-                       <input type="text" name="change-rec-atr" id="change-rec-atr" class="form-control"
-                           autocomplete="no">
-                       <p class="form-text text-muted">Hive username of account you are trying to change recovery
-                           account.</p>
-                   </div>
-
-                   <div class="form-group">
-                       <label for="change-rec-new">New Recovery Account</label>
-                       <input type="text" name="change-rec-new" id="change-rec-new" class="form-control"
-                           autocomplete="no">
-                       <p class="form-text text-muted">Hive username of the new recovery account. <span
-                               class="text-info">Be careful this account can request account recovery.</span></p>
-                   </div>
-
-                   <div class="form-group">
-                       <label for="change-rec-pass" class="control-label">Master Password</label>
-                       <input type="password" name="change-rec-pass" id="change-rec-pass" class="form-control">
-                       <p class="form-text text-muted">MASTER PASSWORD of account to recover.</p>
-                   </div>
-
-                   <button class="btn btn-success btn-block">Change Account Recovery</button>
-               </form>
-           </div>
-       </div>
-
-       <hr>
-       <p class="text-center">
-           Brought to you by <a href="https://hive.blog/@reazuliqbal">@reazuliqbal</a>
-       </p>
-   </div>
-
-
-*/
-
-/*
-recover-account.html
-<div class="container pt-3">
-  <a href="./">
-    <h1 class="text-center">Hive Account Recovery</h1>
-  </a>
-  <hr>
-  <h2 class="text-center mb-5">Recover Account</h2>
-
-  <div class="row">
-    <div class="offset-md-2 col-md-8">
-
-      <form id="get-owner-key" method="post" class="mt-5 mb-5">
-        <h4 class="mb-2">Step 1: Generate New Password</h4>
-
-        <div class="alert" id="alert-get-owner-key"></div>
-
-        <div class="form-group">
-          <label for="atr" class="control-label">Account To Recover</label>
-          <input type="text" name="atr" id="atr" class="form-control">
-          <p class="form-text text-muted">Hive username of the account need recovery.</p>
-        </div>
-
-        <div class="form-group">
-          <label for="new-password" class="control-label">New Password</label>
-          <div class="input-group">
-            <input type="text" name="new-password" id="new-password" class="form-control">
-            <div class="input-group-append">
-              <button class="btn btn-success" id="regen-password"><svg width="24" height="24"
-                  xmlns="http://www.w3.org/2000/svg" fill-rule="evenodd" clip-rule="evenodd">
-                  <path style="fill:#ffffff"
-                    d="M7 9h-7v-7h1v5.2c1.853-4.237 6.083-7.2 11-7.2 6.623 0 12 5.377 12 12s-5.377 12-12 12c-6.286 0-11.45-4.844-11.959-11h1.004c.506 5.603 5.221 10 10.955 10 6.071 0 11-4.929 11-11s-4.929-11-11-11c-4.66 0-8.647 2.904-10.249 7h5.249v1z" />
-                </svg></button>
-            </div>
-          </div>
-          <p class="form-text text-muted">New PASSWORD for the account need recovery. <span
-              class="text-info">Please save it somewhere safe before sending the PUBLIC OWNER KEY to
-              the Trustee.</span></p>
-        </div>
-
-        <div class="form-group">
-          <label for="public-owner-key" class="control-label">New Public Owner Key</label>
-          <input type="text" name="public-owner-key" id="public-owner-key" class="form-control" readonly>
-          <p class="form-text text-muted">PUBLIC OWNER KEY generated using username and password. Please
-            check if the username is correct and backup the password and send it to the Trustee account.
-          </p>
-        </div>
-
-        <button class="btn btn-success btn-block">Get Owner Key</button>
-      </form>
-
-      <hr>
-      <h4>Step 2: Send PUBLIC OWNER KEY to the Trustee</h4>
-      <hr>
-
-      <form id="recover-account" method="POST" class="mt-5 mb-5">
-        <h4 class="mb-2">Step 3: Recover Account</h4>
-
-        <div class="alert" id="alert-recover-account"></div>
-
-        <div class="form-group">
-          <label for="user-atr">Account To Recover</label>
-          <input type="text" name="user-atr" id="user-atr" class="form-control">
-          <p class="form-text text-muted">Hive username of the account need recovery and a request
-            already been placed by the recovery account.</p>
-        </div>
-
-        <div class="form-group">
-          <label for="user-new-pass" class="control-label">New Password</label>
-          <input type="password" name="user-new-pass" id="user-new-pass" class="form-control">
-          <p class="form-text text-muted">New PASSWORD that you have generated when generating PUBLIC
-            OWNER KEY.</p>
-        </div>
-
-        <div class="form-group">
-          <label for="user-old-pass" class="control-label">Recent Password</label>
-          <input type="password" name="user-old-pass" id="user-old-pass" class="form-control">
-          <p class="form-text text-muted">Recent PASSWORD of the account but must not be older than 30
-            days.</p>
-        </div>
-
-        <button class="btn btn-success btn-block">Recover Account</button>
-      </form>
-    </div>
-  </div>
-
-  <hr>
-  <p class="text-center">
-    Brought to you by <a href="https://hive.blog/@reazuliqbal">@reazuliqbal</a>
-  </p>
-</div>
-
-*/
-
-/*
-request-recovery.html
-
-<div class="container pt-3">
-		<a href="./">
-			<h1 class="text-center">Hive Account Recovery</h1>
-		</a>
-		<hr>
-		<h2 class="text-center mb-5">Request Recovery</h2>
-
-		<div class="row">
-			<div class="offset-md-2 col-md-8">
-
-				<form id="create-recovery-request" class="mt-5 mb-5" method="POST">
-					<div class="alert" id="alert-create-recovery"></div>
-
-					<div class="form-group">
-						<label for="trustee-atr" class="control-label">Account To Recover</label>
-						<input type="text" name="trustee-atr" id="trustee-atr" class="form-control" autocomplete="no"
-							required>
-						<p class="form-text text-muted">Hive username of the account need recovery.</p>
-					</div>
-
-					<div class="form-group">
-						<label for="atr-new-key" class="control-label">New Public Owner Key</label>
-						<input type="text" name="atr-new-key" id="atr-new-key" class="form-control" autocomplete="no"
-							required>
-						<p class="form-text text-muted">PUBLIC OWNER KEY for the account need recovery provided by the
-							real owner of the account.</p>
-					</div>
-
-					<div class="form-group">
-						<label for="trustee-account" class="control-label">Trustee Account</label>
-						<input type="text" name="trustee-account" id="trustee-account" class="form-control" required>
-						<p class="form-text text-muted">Hive username of the trustee account (recovery account).</p>
-					</div>
-
-					<div class="form-group">
-						<label for="trustee-key" class="control-label">Active Private Key</label>
-						<input type="password" name="trustee-key" id="trustee-key" class="form-control">
-						<p class="form-text text-muted">PRIVATE ACTIVE KEY of the trustee account (recovery account).
-							<strong>Leave it blank to use Hive Keychain.</strong>
-						</p>
-					</div>
-
-					<button class="btn btn-success btn-block">Submit Recovery Request</button>
-				</form>
-			</div>
-		</div>
-
-		<hr>
-		<p class="text-center">
-			Brought to you by <a href="https://hive.blog/@reazuliqbal">@reazuliqbal</a>
-		</p>
-	</div>
-
-*/
+}
 
 async function showAcctRecoverPanel() {
   loadingjumbo();
@@ -1858,6 +1643,9 @@ async function showAcctRecoverPanel() {
   });
 }
 
+
+
+
 var loanMax;
 
 async function showLoans() {
@@ -1866,11 +1654,13 @@ async function showLoans() {
   var lendMax;
     var hpFloat;
   let borrowContent = `<center><h3 class="pagehead"  style="color:white !important;">Loans Contract Pool Overview</h3>` +
+  `<span id="loanEnabled"></span><br>`+
   `<b>Leverage your HIVE account as collateral and get liquid HIVE into your Hive.Loans Account in less than 30 seconds!</b><br>` +
   `If your account is cleared to accept Lending Contracts you may pick a loan offer below by clicking "Accept Loan" beside the entry you choose.<br>` +
   `Be aware that at this time you may only have 1 loan contract accepted and you'll not be able to cancel the contract until full repayment is complete<br><br>` +
   `<table style="text-align: center; width: 90%;"><tbody><tr><td><b>Your Current HIVE Power Level:</b><br><span id="loansHPdisplay"></span></td><td><b>Maximum HIVE Loan Allowed:</b><br><b><span id="loanMax" value=""></span> HIVE</b></td></tr></tbody></table><br>`+
-  `<h4><b>Available HIVE Loan Contracts</b></h4><br><span id="loadAllLoans"></span><table id="header-fixed"></table><br><br>`+
+  `<b><span id="contractcount"></span>Available HIVE Lending Contracts</b><br><span id="loadAllLoans"></span><table id="header-fixed" style="max-height:30%;"></table><br><br>`+
+  `<b>Lending Contract Data Browser:</b><br><span id="loadloaninfo"></span><br><br>`+
   `<br></center>`;
   $("#jumbotron").fadeOut('fast');
   $("#jumbotron").promise().done(function(){
@@ -1882,6 +1672,9 @@ async function showLoans() {
         loanMax = Math.floor(loanMax);
       $('span#loanMax').val(`${loanMax.toFixed(3)}`);
       $('span#loanMax').html(`${loanMax.toFixed(3)}`);
+      var hyperdatatable = `<table class=" " style="background: #444444; border-radius: 10px; border: inset 2px grey; width: 100% !important; height: 5% !important;"><tbody><tr><td><code>Contract #</code><br>~</td><td><code>Contract ID:</code><br>~</td><td><code>Lender:</code><br>~</td><td><code>Amount:</code><br>~</td><td><code>Interest Rate:</code><br>~</td><td><code>Repayment Total:</code><br>~</td><td><code>Duration:</code><br>~</td><td><code>Borrower:</code><br>~</td><td><code>Payments:</code><br>~ / ~</td><td><code>Active:</code><br>~</td><td><code>Completed:</code><br>~</td><td><code>Created:</code><br>~</td></tr></tbody></table>`;
+        $('#loadloaninfo').html(`${hyperdatatable}`);
+      //$('#loadloaninfo').html(`Select a lending contract to inspect above`);
       $("#jumbotron").fadeIn();
   });
 }
@@ -1892,6 +1685,7 @@ async function showFaq() {
   let faqContent = `<center><h3 class="pagehead" style="color:white !important;">Frequently Asked Questions</h3>` +
   `This is an unfinished DEMO of the Hive.Loans project and is in no way meant to represent the launch version<br>` +
   `Many feautures may be broken, bugged, unstable or just straight up missing. It's advised to not use this version<br>` +
+  `<a href="https://peakd.com/coding/@klye/a-quick-look-at-an-early-working-prototype-of-the-upcoming-hive-loans-account-as-collateral-community-lending-pool">Check out this post for more information</a><br>`+
   `Hive.Loans will allow users to create lending contracts loaning out their liquid HIVE against the colalteral of an account<br>` +
   `This site is scheduled for release on or before the 15th of April 2021 if all goes well in development.<br>` +
   `<br>` +

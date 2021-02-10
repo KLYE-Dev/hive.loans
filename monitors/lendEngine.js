@@ -211,6 +211,7 @@ process.on('message', async function(m) {
             error: null,
             username: m.username,
             loanId: m.loanId,
+            loandata: loanData,
             token: m.token
         }));
     }

@@ -1,5 +1,14 @@
+var hiveloanslogo = `
+██╗░░██╗██╗██╗░░░██╗███████╗░░░██╗░░░░░░█████╗░░█████╗░███╗░░██╗░██████╗
+██║░░██║██║██║░░░██║██╔════╝░░░██║░░░░░██╔══██╗██╔══██╗████╗░██║██╔════╝
+███████║██║╚██╗░██╔╝█████╗░░░░░██║░░░░░██║░░██║███████║██╔██╗██║╚█████╗░
+██╔══██║██║░╚████╔╝░██╔══╝░░░░░██║░░░░░██║░░██║██╔══██║██║╚████║░╚═══██╗
+██║░░██║██║░░╚██╔╝░░███████╗██╗███████╗╚█████╔╝██║░░██║██║░╚███║██████╔╝
+╚═╝░░╚═╝╚═╝░░░╚═╝░░░╚══════╝╚═╝╚══════╝░╚════╝░╚═╝░░╚═╝╚═╝░░╚══╝╚═════╝░\n\nv0.0.8 Alpha - By @KLYE`;
 
-var banlist = ["test", "test2"];
+console.log(hiveloanslogo);
+
+var banlist = [];
 
 var loginKey = function(event){
     var keycode = (event.keyCode ? event.keyCode : event.which);
@@ -53,8 +62,8 @@ function CountDownTimer(dt, id) {
         if (distance < 0) {
 
             clearInterval(timer);
-            document.getElementById(id).innerHTML = 'EXPIRED!';
-
+            var winnner = $('#currentWinner').val();
+            document.getElementById(id).innerHTML = "Winner is: " + winnner;
             return;
         }
         var days = Math.floor(distance / _day);
@@ -108,37 +117,8 @@ function getNumber(theNumber)
     }
 }
 
-//JS generated sound shit
-var context = new AudioContext()
-var o = null
-var g = null
 
-document.addEventListener('DOMContentLoaded', function(){
-  $(".js_play_sound").on("click", function(e){
-    e.preventDefault()
-    var $target = $(e.target)
-    eval($target.data("source"))
-  })
 
-  $(".js_stop_sound").on("click", function(e){
-    e.preventDefault()
-    o.stop()
-  })
-}, false)
-
-function soundgen(frequency, type){
-  o = context.createOscillator()
-   g = context.createGain()
-   o.type = type
-   o.connect(g)
-   o.frequency.value = frequency
-   g.connect(context.destination)
-   o.start(0)
-
-   g.gain.exponentialRampToValueAtTime(
-     0.00001, context.currentTime + 1
-   )
-}
 //END JS sound shit
 
 var showErr = function(text){
@@ -149,29 +129,6 @@ var showSuccess = function(text){
   alertify.closeAll()
   alertify.success('<i class="fa fa-2x fag-2x fa-check-circle" style="color:green;float:left;    margin-left: 0.5vw;"></i>' + text).dismissOthers();
 }
-
-
-var populateMyBets = function(data){
-    var i,j,direction;
-    var $mybets =  $("#myBets");
-    for (i=0;i<data.length;i++){
-
-      data[i]['betIDSmall']=data[i].betid.slice(37);
-      data[i]['amount']='';
-      data[i]['target']='';
-      for (j=0;j<data[i].bet.length;j++){
-        direction = '';
-        if (data[i].bet[j].direction==='hi') direction+=" > ";
-        if (data[i].bet[j].direction==='lo') direction+=" < ";
-        direction += (data[i].bet[j].num).toFixed(4) + '<br>';
-        data[i]['target'] += (direction).toFixed(4);
-        data[i]['amount'] += (data[i].bet[j].amount).toFixed(8) + '<br>';
-
-      }
-    }
-
-    var tableContents = $mybets.bootstrapTable('load', data);
-};
 
 var flashsec = function(elements) {
   $(elements).css({'color':'#cc0000 !important'});
@@ -280,11 +237,14 @@ function cancelContract(contractID) {
 
 function acceptContract(contractID) {
   socket.emit('acceptloan', {loanId: contractID, token: token}, function(err, data){
+      showSuccess(`Claim Contract #${contractID}`);
       if(err) {
         console.log(err)
       }
       if(data) {
+        console.log(data);
         showSuccess(`Accepted Contract #${contractID}`);
+        alert(`ERROR: Cannot Complete Lending Contract Request!\nThis site is under construction and not yet fully operational!\n\nWith your current Hive Power you could borrow up to ${data.limit} HIVE!\n\nLooking forward to launch, hope to see you there!`);
       }
   })
 }
@@ -295,7 +255,7 @@ function infoContract(contractID) {
         console.log(err)
       }
       if(data) {
-        showSuccess(`Fetched Contract #${contractID} Data!`);
+        showSuccess(`Fetched Contract #${contractID.slice(0, 10)}... Data!`);
       }
   })
 }
@@ -361,6 +321,7 @@ var formatChatMessage = function(message, prepend){
     if (message.username == 'klye') {
         message.username = 'klye';
         message.flair = '<b title="Owner">🧙</b>';
+        $(`.chatUserName.${message.rng}`).css({"color":"lightgreen"});
     } else {
       if(message.rank == 'founder'){
         message.flair = '<b title="Founder">⚡</b>';
@@ -376,10 +337,10 @@ var formatChatMessage = function(message, prepend){
     }
 
     if (prepend == true) {
-        $("#trollbox").prepend(`<div class="chatList" id="${message.rng}"><span class="chatTime"><a href="#" title="${date}"><i class="far fa-clock" style="color:grey; text-decoration: none !important;"> </i></a></span> <span class="modspan ${message.rng}"></span> <span class="vipspan ${message.rng}"></span><span class="uid sextext" title="User Identification Number">(${message.userId})</span><span class="chatFlair">${message.flair}</span><span class="chatUser" onClick='userMenu(this, \"${message.username}\", \"${message.rng}\");'><a href="#" class="chatUserName" title="Double Click to Open Trollbox Menu" onClick='userMenu(this, \"${message.username}\", \"${message.id}\");'>@<b>${message.username}</b></a></span><span class="userLvL ${message.rng}" title="Account Level"></span> <span class="pchat" style="color: white"></span></div>`);
+        $("#trollbox").prepend(`<div class="chatList" id="${message.rng}"><span class="chatTime"><a href="#" title="${date}"><i class="far fa-clock" style="color:grey; text-decoration: none !important;"> </i></a></span> <span class="modspan ${message.rng}"></span> <span class="vipspan ${message.rng}"></span><span class="uid sextext" title="User Identification Number">(${message.userId})</span><span class="chatFlair">${message.flair}</span><span class="chatUser" onClick='userMenu(this, \"${message.username}\", \"${message.rng}\");'><a href="#" class="chatUserName ${message.rng}" title="Double Click to Open Trollbox Menu" onClick='userMenu(this, \"${message.username}\", \"${message.id}\");'>@<b>${message.username}</b></a></span><span class="userLvL ${message.rng}" title="Account Level"></span> <span class="pchat" style="color: white"></span></div>`);
         $(".pchat").eq(0).text(message.msg);
     } else if (prepend == false){
-        $("#trollbox").append(`<div class="chatList" id="${message.rng}"><span class="chatTime"><a href="#" title="${date}"><i class="far fa-clock" style="color:grey; text-decoration: none !important;"> </i></a></span> <span class="modspan ${message.rng}"></span> <span class="vipspan ${message.rng}"></span><span class="uid sextext" title="User Identification Number">(${message.userId})</span><span class="chatFlair">${message.flair}</span><span class="chatUser" onClick='userMenu(this, \"${message.username}\", \"${message.rng}\");'><a href="#" class="chatUserName" title="Double Click to Open Trollbox Menu" onClick='userMenu(this, \"${message.username}\", \"${message.id}\");'>@<b>${message.username}</b></a></span><span class="userLvL ${message.rng}" title="Account Level"></span> <span class="pchat" style="color: white"></span></div>`);
+        $("#trollbox").append(`<div class="chatList" id="${message.rng}"><span class="chatTime"><a href="#" title="${date}"><i class="far fa-clock" style="color:grey; text-decoration: none !important;"> </i></a></span> <span class="modspan ${message.rng}"></span> <span class="vipspan ${message.rng}"></span><span class="uid sextext" title="User Identification Number">(${message.userId})</span><span class="chatFlair">${message.flair}</span><span class="chatUser" onClick='userMenu(this, \"${message.username}\", \"${message.rng}\");'><a href="#" class="chatUserName ${message.rng}" title="Double Click to Open Trollbox Menu" onClick='userMenu(this, \"${message.username}\", \"${message.id}\");'>@<b>${message.username}</b></a></span><span class="userLvL ${message.rng}" title="Account Level"></span> <span class="pchat" style="color: white"></span></div>`);
         $(".pchat").eq(-1).text(message.msg);
     }
     scrollToTop($("#trollbox"));
@@ -500,6 +461,7 @@ function CreateTableFromJSON(data, name, elementid) {
             console.log(`Undefined entry!`)
         } else {
             var th = document.createElement("th");
+                //th.classList.add("tg-ul38");
             //th.classList.add(name + "-" +col[i]);      // TABLE HEADER.
             th.innerHTML = col[i];
             tr.appendChild(th);
@@ -529,13 +491,13 @@ function CreateTableFromJSON(data, name, elementid) {
                         }
                         if (col[j] == 'username') {
                                 if((i + 1) == 1) {
-                                  $('#currentWinner').html(`@${data[i][col[j]]}`)
+                                  $('#currentWinner').html(`👑${data[i][col[j]]}`)
                                 }
-                                data[i][col[j]] = `<span style="float:left;">#${i + 1}</span> <a href="https://hiveblocks.com/@${data[i][col[j]]}" class="histuserlink" style="color:black !important;" target="_blank" title="Click to View This Account on HiveBlocks.com in a New Window">@${data[i][col[j]]}</a>`;
+                                data[i][col[j]] = `<span style="float:left;">#${i + 1}</span> 👑<a href="https://hiveblocks.com/@${data[i][col[j]]}" class="histuserlink" style="color:white !important;" target="_blank" title="Click to View This Account on HiveBlocks.com in a New Window">@${data[i][col[j]]}</a>`;
                         }
 
                         if (col[j] == 'block') {
-                                data[i][col[j]] = `<a href="https://hiveblocks.com/b/${data[i][col[j]]}" class="histuserlink" style="color:black !important;" target="_blank" title="Click to View This Block on HiveBlocks.com in a New Window">#${data[i][col[j]]}</a>`;
+                                data[i][col[j]] = `<a href="https://hiveblocks.com/b/${data[i][col[j]]}" class="histuserlink" style="color:white !important;" target="_blank" title="Click to View This Block on HiveBlocks.com in a New Window">#${data[i][col[j]]}</a>`;
                         }
                       }
 

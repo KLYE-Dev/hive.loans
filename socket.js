@@ -127,6 +127,83 @@ function jsonBreadCrumb(name, action, payload) {
     })//END Broadcast
 };//END jsonBreadCrumb
 
+/*
+async function sendbackersupdate() {
+  await Depositdata.findAll({
+    limit: 100,
+    where: {amount: {[Op.gte]: 100000}},
+    order: [[ 'amount', 'DESC' ]],
+    raw: true
+  }).then(async function(entries){
+      var loadedDeposits = [];
+      let cleanedDeposits = entries.map(function(key) {
+          if (key.id !== -1) {
+              delete key.id;
+          }
+          if (key.userId !== -1) {
+              delete key.userId;
+          }
+          //if (key.username !== -1) {
+          //    delete key.username;
+          //}
+          if (key.borrower !== -1) {
+              delete key.borrower;
+          }
+          if (key.collected !== -1) {
+              delete key.collected;
+          }
+          if (key.currentpayments !== -1) {
+              delete key.currentpayments;
+          }
+          if (key.totalpayments !== -1) {
+              delete key.totalpayments;
+          }
+          if (key.completed !== -1) {
+              delete key.completed;
+          }
+          if (key.confirms !== -1) {
+              delete key.confirms;
+          }
+          if (key.txid !== -1) {
+              delete key.txid;
+          }
+          if (key.confirmed !== -1) {
+              delete key.confirmed;
+          }
+          if (key.coin !== -1) {
+              delete key.coin;
+          }
+          if (key.nextcollect !== -1) {
+              delete key.nextcollect;
+          }
+          if (key.updatedAt !== -1) {
+              delete key.updatedAt;
+          }
+          if (key.createdAt !== -1) {
+              delete key.createdAt;
+          }
+          return key;
+      });
+      cleanedDeposits.forEach((item, i) => {
+        loadedDeposits.push(item);
+      });
+      //loadedBets.push(entries);
+      var updatekeys = Object.keys(userSockets);
+      for (var i = 0; i< updatekeys.length;i++){
+        if (userSockets[updatekeys[i]]) {
+          userSockets[updatekeys[i]].emit('backersupdate', {deposits: loadedDeposits});
+        }
+      }
+    })
+}
+
+sendbackersupdate();
+
+var backerTimer = setInterval(function(){
+  sendbackersupdate();
+}, 30000);
+*/
+
 
 var getHivePower = async(user) => {
   var resultData;
@@ -229,6 +306,7 @@ rpcThread.on('message', function(m) {
 
 loanThread.on('message', function(m) {
 
+
   m = JSON.parse(m);
   if (m.type === 'newloanmade'){
     jsonBreadCrumb('contracts', 'newloan', m.payload);
@@ -237,6 +315,12 @@ loanThread.on('message', function(m) {
       if (userSockets[newloanmadekeys[i]]) {
         userSockets[newloanmadekeys[i]].emit('newloanmade', {username: m.user});
       }
+    }
+  } else if (m.type === 'infoloandata'){
+    //log(`MYLOANS FIRED`)
+    //log(m);
+    if (userSockets[m.username]) {
+      userSockets[m.username].emit('infoloandata', {loandata: m.loandata, token: m.token});
     }
   } else if (m.type === 'myloans'){
     //log(`MYLOANS FIRED`)
@@ -277,7 +361,83 @@ loanThread.on('message', function(m) {
 
 exports = module.exports = function(socket, io){
 
+/*
+async function initback() {
+  var initbakerupdate = await sendbackersupdate();
 
+  io.emit('backersupdate', {deposits: loadedDeposits});
+}
+initback();
+*/
+async function sendbackersupdate() {
+  await Depositdata.findAll({
+    limit: 100,
+    where: {amount: {[Op.gte]: 100000}},
+    order: [[ 'amount', 'DESC' ]],
+    raw: true
+  }).then(function(entries){
+      var loadedDeposits = [];
+      let cleanedDeposits = entries.map(function(key) {
+          if (key.id !== -1) {
+              delete key.id;
+          }
+          if (key.userId !== -1) {
+              delete key.userId;
+          }
+          //if (key.username !== -1) {
+          //    delete key.username;
+          //}
+          if (key.borrower !== -1) {
+              delete key.borrower;
+          }
+          if (key.collected !== -1) {
+              delete key.collected;
+          }
+          if (key.currentpayments !== -1) {
+              delete key.currentpayments;
+          }
+          if (key.totalpayments !== -1) {
+              delete key.totalpayments;
+          }
+          if (key.completed !== -1) {
+              delete key.completed;
+          }
+          if (key.confirms !== -1) {
+              delete key.confirms;
+          }
+          if (key.txid !== -1) {
+              delete key.txid;
+          }
+          if (key.confirmed !== -1) {
+              delete key.confirmed;
+          }
+          if (key.coin !== -1) {
+              delete key.coin;
+          }
+          if (key.nextcollect !== -1) {
+              delete key.nextcollect;
+          }
+          if (key.updatedAt !== -1) {
+              delete key.updatedAt;
+          }
+          if (key.createdAt !== -1) {
+              delete key.createdAt;
+          }
+          return key;
+      });
+      cleanedDeposits.forEach((item, i) => {
+        loadedDeposits.push(item);
+      });
+      //loadedBets.push(entries);
+          io.emit('backersupdate', {deposits: loadedDeposits});
+    })
+}
+
+sendbackersupdate();
+
+var backerspew = setInterval(function(){
+  sendbackersupdate();
+}, 30000);
 
   socket.on("disconnect", function() {
     console.log('User Disconnect:', socket.request.session['user']);
@@ -859,76 +1019,6 @@ socket.on('getfounders', async function(req, cb){
   return cb(null,{founders:founderslist});
 })
 
-async function sendbackersupdate() {
-  await Depositdata.findAll({
-    limit: 100,
-    where: {amount: {[Op.gte]: 100000}},
-    order: [[ 'amount', 'DESC' ]],
-    raw: true
-  }).then(function(entries){
-      var loadedDeposits = [];
-      let cleanedDeposits = entries.map(function(key) {
-          if (key.id !== -1) {
-              delete key.id;
-          }
-          if (key.userId !== -1) {
-              delete key.userId;
-          }
-          //if (key.username !== -1) {
-          //    delete key.username;
-          //}
-          if (key.borrower !== -1) {
-              delete key.borrower;
-          }
-          if (key.collected !== -1) {
-              delete key.collected;
-          }
-          if (key.currentpayments !== -1) {
-              delete key.currentpayments;
-          }
-          if (key.totalpayments !== -1) {
-              delete key.totalpayments;
-          }
-          if (key.completed !== -1) {
-              delete key.completed;
-          }
-          if (key.confirms !== -1) {
-              delete key.confirms;
-          }
-          if (key.txid !== -1) {
-              delete key.txid;
-          }
-          if (key.confirmed !== -1) {
-              delete key.confirmed;
-          }
-          if (key.coin !== -1) {
-              delete key.coin;
-          }
-          if (key.nextcollect !== -1) {
-              delete key.nextcollect;
-          }
-          if (key.updatedAt !== -1) {
-              delete key.updatedAt;
-          }
-          if (key.createdAt !== -1) {
-              delete key.createdAt;
-          }
-          return key;
-      });
-      cleanedDeposits.forEach((item, i) => {
-        loadedDeposits.push(item);
-      });
-      //loadedBets.push(entries);
-          io.emit('backersupdate', {deposits: loadedDeposits});
-    })
-}
-
-sendbackersupdate();
-
-setInterval(function(){
-  sendbackersupdate();
-}, 30000);
-
   socket.on('changenode', function(req) {
     var user = socket.request.session['user'];
     if(user !== 'klye') return log(`${user} tried to change nodes!`);
@@ -986,15 +1076,16 @@ setInterval(function(){
     var user = socket.request.session['user'];
     log(`socket.on('acceptloan',`)
     log(req);
-    var gottenHP = getHivePower(user);
-    log(gottenHP);
-    var firstpass = (parseFloat(usersHivePower[user]) * 0.7);
+    var gottenHP = await getHivePower(user);
+    var firstpass = (parseFloat(usersHivePower[user]) * 0.7).toFixed(3);
     log(firstpass);
+    log(`ACCEPT-LOAN: User can Loan up to ${firstpass} HIVE`);
 
     //if (typeof cb !== 'function') return socket.emit('muppet', {message:'You fucking muppet, you need a callback for this call', token: req.token});
     //if (typeof loanId != 'string') return cb('LoanID Specified was Not a String?!', {token: req.token});
     //if (!testToken(socket, req.token)) return cb('incorrect token', {token: req.token});
     //loanThread.send(JSON.stringify({type:'acceptloan', username: user, loanId: loanId, token: req.token}));
+      return cb(null, {limit: firstpass, token: req.token});
   });//END socket.on createloan
 
 

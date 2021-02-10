@@ -1,0 +1,52 @@
+a {
+    text-decoration: none;
+}
+a:hover,
+a:focus,
+a:active {
+    text-decoration: none;
+}
+
+label {
+    font-weight: 500;
+}
+
+
+body {
+      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      color: #FFFFFF !important;
+      background: grey !important;
+}
+
+.sexyblackoutline {
+    text-shadow: 1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000, rgb(69 69 69) 0px 1px 0px, rgb(46 46 46) 0px 2px 1px;
+    z-index: 999 !important;
+}
+
+.box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100px;
+    color: #fff;
+    font-size: 30px;
+    padding: 2px;
+    text-align: center;
+    margin-bottom: 20px;
+}
+.box:hover,
+.box:focus,
+.boc:active {
+    text-decoration: none;
+    color: #fff;
+}
+
+.blue {
+    background-color: #30A9DE;
+}
+.red {
+    background-color: #E53A40;
+}
+.green {
+    background-color: #75D701;
+}

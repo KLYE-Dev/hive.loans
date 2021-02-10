@@ -1,15 +1,43 @@
-<!doctype html>
-<section class="head">
+<html>
+
 <head>
-<section class="favicon"><link rel="shortcut icon" type="image/x-icon" href="/favicon.ico"></section>
-<section class="title"><title>Hive.Loans - v0.0.7</title></section>
+<title>Hive.Loans - v0.0.8</title>
+
 <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.2/css/all.css">
 <link rel="stylesheet" href="/css/mainstatic.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/alertifyjs@1.13.1/build/css/themes/bootstrap.min.css"/>
 <link rel="stylesheet" href="/css/contextMenu.css"/>
 <link rel="shortcut icon" type="image/x-icon" href="/img/favicon.ico">
 </head>
-</section>
+<div class="container" style="padding:5px;">
+  <svg id="trippyassbackground">
+<filter id="glow">
+  <feGaussianBlur stdDeviation="2"/>
+  <feComposite in2="SourceGraphic"
+               operator="out" result="glow" />
+  <feFlood flood-color="white" flood-opacity="0.2" />
+  <feComposite in2="SourceGraphic"
+               operator="atop" result="light" />
+  <feComposite in="glow" in2="light" />
+</filter>
+<pattern id="p" patternUnits="userSpaceOnUse"
+         width="180px" height="120px"
+         patternTransform="scale(1,0.8660254)">
+  <g filter="url(#glow)">
+    <g class="wrapper">
+      <path id="hex" pathLength="388.5"
+               d="M-30,-60 30,-60 60,0
+                       30,60 -30,60 -60,0Z"
+               transform="scale(0.935)" />
+    </g>
+    <use xlink:href="#hex" x="0" y="+120" />
+    <use xlink:href="#hex" x="+90" y="+60" />
+    <use xlink:href="#hex" x="+180" y="0" />
+    <use xlink:href="#hex" x="+180" y="120" />
+  </g>
+</pattern>
+<rect fill="url(#p)" width="100%" height="100%"/>
+</svg>
 <body class="context">
 <div class="navbar" style="padding-left: 0em;">
   <i class="fas fa-2x fa-flip-horizontal fa-hand-holding-heart sexyblackoutline"></i><i class="fab fa-3x fa-hive sexyblackoutline"></i><i class="fas fa-2x fa-hand-holding-heart sexyblackoutline"></i><b id="handy" class="sexyblackoutline" style="padding-left:0.5em; top: 0em !important; font-variant: petite-caps !important;">Hive.Loans</b>
@@ -29,7 +57,8 @@
   </ul>
 </nav>
 </div>
-<div class="content"><!--START content-->
+<div class="content">
+  <!--START content-->
   <!--<span id="userstats" class="userstats hidden" style="padding:5px;text-align: center">
   <span id="statsMove" title="Click and Drag to Move Window"><i class="fas fa-arrows-alt"></i></span><span id="statsName" style="display: inline-block">Loading</span> HIVE Account<span id="refreshAcct" style-"float:right" title="Click to Refresh" onClick="getAcct();"><i class="fas fa-sync"></i></span><hr>
   <span id="statsWrapper">
@@ -44,7 +73,7 @@
 <span id="backerstats" class="backerstats " style="padding:5px;text-align: center">
 <span id="backerMove" title="Click and Drag to Move Window"><i class="fas fa-arrows-alt"></i></span>
 <h4><b class="sexyblackoutline" style="color:lawngreen;font-size:larger;">💎 LIMITED TIME OFFER 💎</b>
-<br><br><b><i class="far fa-clock"></i> <span id="countdown">Loading...</span><b><br><br>#1 Spot at End of Timer Becomes <b style="color:gold;">Benefactor</b><br>Current King of the Leaderboard: <span id="currentWinner"></span><hr><b style="color:white; font-weight:900;" class="sexyblackoutline">Project Backers Pledge List:</b></h4><span id="refreshBacker" style-"float:right" title="Click to Refresh" onClick="getBackers();"><i class="fas fa-sync"></i></span>
+<br><br><b><i class="far fa-clock"></i> <span id="countdown">Loading...</span><b><br><br>#1 Spot at End of Timer Becomes <b style="color:gold;" class="sexyblackoutline">Benefactor</b><br>Current King of the Leaderboard: <span id="currentWinner"></span><hr><b style="color:white; font-weight:900;" class="sexyblackoutline">Project Backers Pledge List:</b></h4><span id="refreshBacker" style-"float:right" title="Click to Refresh" onClick="getBackers();"><i class="fas fa-sync"></i></span>
 <span id="backerWrapper">
 <center>
 <span id="activeBackerView" style="padding:15px; width:100% !important;"></span>
@@ -90,7 +119,7 @@
 <i class="fas fa-vector-square resizer"></i>-->
 </span><!--END statwrapper-->
 </span><!--END userstats-->
-  <div class="container" style="padding:5px;">
+
     <div class="jumbotron sexyblackoutline" id="jumbotron" style="box-shadow: black 0px 0px 14px 0px;height: 85%; display: block;top:6%; border: 2px outset #eae6e6; border-radius: 15px; color: white !important; background: grey;position:fixed;padding-left:10px;padding-right:10px;">
       <center>
       <h2 class="sexyblackoutline" style="margin-top:0.25em;margin-bottom:0">P2P Lending Contracts on Hive.Loans</h2> <!--Hive.Loans Secured Lending Contract Platform-->
@@ -109,25 +138,24 @@
     </div>
    </div>
 </div><!--END content-->
-<section class="footer"><span id="usernamestore"></span><span id="socketid"></span><span id="plugintype"></span><span id="useraddress"></span><span id="newamount"></span><span id="newdays"></span><span id="newfee"></span><span id="userrank"></span>
-
- <footer style="padding:1vh;" class="sexyblackoutline"><b>&copy; 2021 Hive.Loans v0.0.7 Alpha</b> | <b>P2P Lending Contract Platform built by <a href="https://vote.hive.uno/@klye" style="color:#f0f0f8 !important;text-decoration: none !important;">@KLYE</a></b><span id="blocknumberholder" class="hidden"> | <b>Latest HIVE Block <span id="blocknumber"></span>&nbsp;</b></span><span id="discord" style="color:#f0f0f8 !important;text-decoration: none !important;">Need Help or Have Questions? <a href="https://discord.gg/mtwvCpS" target="_blank" rel="noopener noreferrer" style="color:#f0f0f8 !important;text-decoration: none !important;"><i class="fab fa-fw fa-2x fa-discord sexyblackoutline" style="padding-left:0.5em;padding-right:0.5em;color:#f0f0f8; float:right;margin-right: 2vw; font-size: 1.5em !important; line-height: 0.75em !important; "></i> <b>Join Our Discord</b> <i class="fas fa-angle-right"></i></a></span><span id="github" style='color: #f0f0f8;float: right;margin-top: -0.22em;margin-right: 1.3em;vertical-align: middle;'><a href="https://github.com/KLYE-Dev/hive.loans" target="_blank" rel="noopener noreferrer" style="z-index: 999999; color:#f0f0f8 !important;text-decoration: none !important;"><i class="fab fa-fw fa-2x fa-github-square sexyblackoutline" style="padding-left:0.5em;padding-right:0.5em;color:#f0f0f8; float:right; font-size: 1.5em !important; line-height: 0.75em !important; "></i></a></span>
+<span id="usernamestore"></span><span id="socketid"></span><span id="plugintype"></span><span id="useraddress"></span><span id="newamount"></span><span id="newdays"></span><span id="newfee"></span><span id="userrank"></span>
+ <footer style="padding:1vh;" class="sexyblackoutline"><b>&copy; 2021 Hive.Loans v0.0.8 Alpha</b> | <b>P2P Lending Contract Platform built by <a href="https://vote.hive.uno/@klye" style="color:#f0f0f8 !important;text-decoration: none !important;">@KLYE</a></b><span id="blocknumberholder" class="hidden"> | <b>Latest HIVE Block <span id="blocknumber"></span>&nbsp;</b></span><span id="discord" style="color:#f0f0f8 !important;text-decoration: none !important;">Need Help or Have Questions? <a href="https://discord.gg/mtwvCpS" target="_blank" rel="noopener noreferrer" style="color:#f0f0f8 !important;text-decoration: none !important;"><i class="fab fa-fw fa-2x fa-discord sexyblackoutline" style="padding-left:0.5em;padding-right:0.5em;color:#f0f0f8; float:right;margin-right: 2vw; font-size: 1.5em !important; line-height: 0.75em !important; "></i> <b>Join Our Discord</b> <i class="fas fa-angle-right"></i></a></span><span id="github" style='color: #f0f0f8;float: right;margin-top: -0.22em;margin-right: 1.3em;vertical-align: middle;'><a href="https://github.com/KLYE-Dev/hive.loans" target="_blank" rel="noopener noreferrer" style="z-index: 999999; color:#f0f0f8 !important;text-decoration: none !important;"><i class="fab fa-fw fa-2x fa-github-square sexyblackoutline" style="padding-left:0.5em;padding-right:0.5em;color:#f0f0f8; float:right; font-size: 1.5em !important; line-height: 0.75em !important; "></i></a></span>
  </footer>
 </body>
+</html>
 <script src="https://cdn.jsdelivr.net/npm/hivesigner@3.2.1/dist/hivesigner.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@hiveio/hive-js/dist/hive.min.js"></script>
+
 <script src="/js/packages/jquery.min.js" /></script>
 <script src="/js/packages/jquery-ui/jquery-ui.min.js" /></script>
 <script src="/socket.io/socket.io.js"></script>
 <script src="/js/packages/countup.js"></script>
-<script src="/js/packages/dhive.js"></script>
 <script src="/js/packages/bootstrap.js"></script>
 <script src="/js/packages/bootstrap-table.min.js"></script>
 <script src="/js/packages/contextMenu.min.js"></script>
 <script src="/js/packages/bootbox.min.js"></script>
 <script src="/js/packages/alertify.min.js"></script>
 <script src="/js/packages/colorFader.js"></script>
-<script src="/js/packages/acctrecover.js"></script>
 <script src="/js/packages/contextMenu.min.js"></script>
 <script src="/js/dialogs.js"></script>
 <script src="/js/variables.js"></script>
@@ -147,8 +175,8 @@ window.onload=function(){
       });
   }
   CountDownTimer('02/15/2021 0:0 AM', 'countdown');
-  getSiteStats();
-  history.pushState("",null, "https://hive.loans");
+  //getSiteStats();
+  //history.pushState("",null, "https://hive.loans");
 }
 
 $("#menuburger").on('click', function() {
@@ -177,7 +205,7 @@ let tokencheck = window.localStorage.getItem("token");
 let user;
 console.log(`usercheck: ${usercheck}`);
 console.log(`tokencheck: ${tokencheck}`);
-var client;
+
 let linkColor = "black";
 
 var hiveVested;
@@ -351,14 +379,6 @@ function logout() {
 }
 
 async function getAcct() {
-  console.log(`getAcct() called:`);
-  $("#hivePowerHeld").html(`<b>HIVE Power</b>:<br>Loading<br>`);
-  $("#statsBal").html(`<b>HIVE Balance</b>:<br>Loading<br>`);
-  $("#statHBDsBal").html(`<b>HBD Balance</b>:<br>Loading<br>`);
-  $("#recoverAcct").html(`<b>Recovery Account</b>:<br><span id="recName">Loading</span><br>`);
-  $("#recName").css({"color":"black"});
-  $("#recName").html(`Loading`);
-  $("#recAlert").html(``);
   if(hkcLogin == true){
     user = window.localStorage.getItem("user");
     await hive.api.getAccounts([user], async function(err, result) {
@@ -366,10 +386,8 @@ async function getAcct() {
       if(result){
         resultData = result;
       }
-
       var total_vesting_shares;
       var total_vesting_fund;
-
       console.log(resultData);
       resultData = resultData[0];
       var statsName = resultData.name;
@@ -397,20 +415,24 @@ async function getAcct() {
         $("#hivePowerHeld").html(`<b>HIVE Power</b>:<br>${toThree(hiveVested)}<br>`);
         $("#loansHPdisplay").html(`<span id="hplevel">${toThree(hiveVested)}</span> HP<br>`);
         loanMax = parseFloat(hiveVested * 0.7);
-        if(recoverAcct !== 'hive.loans' && recoverAcct !== 'anonsteem' && recoverAcct !== 'beeanon' && recoverAcct !== 'blocktrades') {
+        if(recoverAcct !== 'hive.loans' && recoverAcct !== 'anonsteem' && recoverAcct !== 'beeanon' && recoverAcct !== 'blocktrades' && recoverAcct !== 'someguy123') {
           $("#recName").css({"color":"red"});
           $("#precacct").css({"color":"red"});
+          $("#loanEnabled").css({"color":"red"});
           $("#prawarn").css({"color":"red"});
           $("#showRecAcct").css({"color":"red"});
-          $("#prawarn").html(`Incompatible Recovery Account!<br><center><b><a href="#" id="changeRecoveryAcct" style="color:white !important; text-decoration:none !important;" onClick="showRecoveryPanel();">Click Here to Change Recovery Account</a></b></center>`);
+          $("#prawarn").html(`❌ Incompatible Recovery Account! <b><a href="#" id="changeRecoveryAcct" style="color:white !important; text-decoration:none !important;" onClick="showRecoveryPanel();">Change Recovery Account</a></b>`);
+          $("#loanEnabled").html(`<i class="fa fa-exclamation-triangle" style="color:gold;" aria-hidden="true"></i> Incompatible Recovery Account!<br><center><b><a href="#" id="changeRecoveryAcct" style="color:white !important; text-decoration:none !important;" onClick="showRecoveryPanel();"><sup><i class="fas fa-fw fa-users-cog"></i> Click Here to Change Recovery Account</sup></a></b></center>`);
           $("#recAlert").html(`<sub><b style="color:red;">Recovery Account Invalid!</b><br>Please set @hive.loans as recovery account!<br><br>Click here to change recovery account<br><sub>( This will take 30 days to complete )</sub></sub>`);
         } else {
           $("#recName").css({"color":"lawngreen"});
           $("#precacct").css({"color":"lawngreen"});
+          $("#loanEnabled").css({"color":"lawngreen"});
           $("#prawarn").css({"color":"white"});
           $("#showRecAcct").css({"color":"lawngreen"});
-          $("#prawarn").html(`Compatible Recovery Account!`);
-          $("#recAlert").html(`<sub><b style="color:black;">Recovery Account Valid!</b><br>You're ready to borrow! Remember to follow the site guidelines while lending.<br><sub>( Attempts to cheat the system have fees )</sub></sub>`);
+          $("#prawarn").html(`✔️`);
+          $("#loanEnabled").html(`Your Account is Cleared to Accept Lending Contracts! ✔️<br>`);
+          $("#recAlert").html(`<sub><b style="color:lawngreen;">Recovery Account Valid!</b><br><code onclick="showLoans()">You're ready to borrow! Remember to follow the site guidelines while lending..</code></sub>`);
         }
       });
     });
@@ -439,14 +461,24 @@ async function getAcct() {
         $("#hivePowerHeld").html(`<b>HIVE Power</b>:<br>${toThree(hiveVested)}<br>`);
         $("#loansHPdisplay").html(`<span id="hplevel">${toThree(hiveVested)}</span> HP<br>`);
         loanMax = parseFloat(hiveVested * 0.7);
-        if(recoverAcct !== 'hive.loans' && recoverAcct !== 'anonsteem' && recoverAcct !== 'beeanon' && recoverAcct !== 'blocktrades') {
+        if(recoverAcct !== 'hive.loans' && recoverAcct !== 'anonsteem' && recoverAcct !== 'beeanon' && recoverAcct !== 'blocktrades' && recoverAcct !== 'someguy123') {
           $("#recName").css({"color":"red"});
           $("#precacct").css({"color":"red"});
+          $("#loanEnabled").css({"color":"red"});
+          $("#prawarn").css({"color":"red"});
+          $("#showRecAcct").css({"color":"red"});
+          $("#prawarn").html(`Incompatible Recovery Account!<br><center><b><a href="#" id="changeRecoveryAcct" style="color:white !important; text-decoration:none !important;" onClick="showRecoveryPanel();">Click Here to Change Recovery Account</a></b></center>`);
+          $("#loanEnabled").html(`<i class="fa fa-exclamation-triangle" style="color:gold;" aria-hidden="true"></i> Incompatible Recovery Account!<br><center><b><a href="#" id="changeRecoveryAcct" style="color:white !important; text-decoration:none !important;" onClick="showRecoveryPanel();"><sup><i class="fas fa-fw fa-users-cog"></i> Click Here to Change Recovery Account</sup></a></b></center>`);
           $("#recAlert").html(`<sub><b style="color:red;">Recovery Account Invalid!</b><br>Please set @hive.loans as recovery account!<br><br>Click here to change recovery account<br><sub>( This will take 30 days to complete )</sub></sub>`);
         } else {
           $("#recName").css({"color":"lawngreen"});
           $("#precacct").css({"color":"lawngreen"});
-          $("#recAlert").html(`<sub><b style="color:black;">Recovery Account Valid!</b><br>You're ready to borrow! Don't change your recovery account while borrowing!<br><sub>( Harsh penalties for scam attempts )</sub></sub>`);
+          $("#loanEnabled").css({"color":"lawngreen"});
+          $("#prawarn").css({"color":"white"});
+          $("#showRecAcct").css({"color":"lawngreen"});
+          $("#prawarn").html(`Compatible Recovery Account!`);
+          $("#loanEnabled").html(`Your Account is Cleared to Accept Lending Contracts! ✔️<br>`);
+          $("#recAlert").html(`<sub><b style="color:black;">Recovery Account Valid!</b><br>You're ready to borrow! Remember to follow the site guidelines while lending.<br><sub>( Attempts to cheat the system have fees )</sub></sub>`);
         }
       });
       $("#statsName").html(`@${statsName}`);
@@ -496,10 +528,12 @@ function navbarBlitz() {
   var screenWidth = window.innerWidth;
   if((screenWidth / $('.navbar').width()) < 2 ){
     $('.navbar').css({"width":"40%"});
+    $('li').animate({"margin-left":"3px"}, 900);
     $('#arrowin').html('<i class="fas fa-chevron-right" title="Click here to Grow Menu"></i>');
   }
   if ((screenWidth / $('.navbar').width()) > 2 ) {
     $('.navbar').css({"width":"99%"});
+    $('li').animate({"margin-left":"40px"}, 900);
     $('#arrowin').html('<i class="fas fa-chevron-left" title="Click here to Shrink Menu"></i>');
   }
 }

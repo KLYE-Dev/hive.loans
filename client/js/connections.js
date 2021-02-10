@@ -13,21 +13,53 @@ socket.on('token', function(data){
   token = data.token;
 });
 
+socket.on('infoloandata', function(data){
+  try {
+    token = data.token
+    data = data.loandata;
+  } catch(e) {
+    console.log(`Error: ${e}`);
+  }
+  console.log(data);
+
+  //{"id":7,"userId":1,"loanId":"e15f732fdfaf1324e4d4bb0b15c26105","username":"klye","amount":1000,"days":7,"interest":10,"borrower":null,"nextcollect":"2021-02-09T18:41:20.000Z","collected":0,"currentpayments":0,"totalpayments":0,"active":0,"completed":0,"createdAt":"2021-02-09T18:41:20.000Z","updatedAt":"2021-02-09T18:41:20.000Z"}
+  var newinterest = (data.interest / 100);
+  data.totalpayments = (data.days / 7);
+  var totalrepay =  data.amount + (data.amount * newinterest);
+  var paymentSum = totalrepay / data.totalpayments;
+  if(data.borrower == null){
+    data.borrower = 'none';
+  }
+  if(data.active == 0){
+    data.active = `<center><button class="acceptButton push_button4" style="float:left;" id="acceptButton" onclick="acceptContract('${data.loanId}');">Accept <i class="fas fa-fw fa-coins" style="color:gold;"></i></button></center>`;
+  } else {
+    data.active = 'Active';
+  }
+  if(data.conpleted === 0){
+    data.conpleted = 'Waiting';
+  }
+
+  var date = new Date(data.createdAt);
+  date = date.toString();
+  date = date.slice(0, (date.length - 20));
+
+  var hyperdatatable = `<table class=" " style="background: #444444; border-radius: 10px; border: inset 2px grey; width: 100% !important; height: 5% !important;"><tbody><tr><td><code>Contract #</code><br>${data.id}</td><td><code>Contract ID:</code><br>${data.loanId}</td><td><code>Lender:</code><br>@${data.username}</td><td><code>Amount:</code><br>${(data.amount / 1000)} HIVE</td><td><code>Interest Rate:</code><br>${data.interest}%</td><td><code>Repayment Total:</code><br>${(totalrepay / 1000)} HIVE</td><td><code>Duration:</code><br>${data.days} days</td><td><code>Borrower:</code><br>${data.borrower}</td><td><code>Payments:</code><br>${data.currentpayments} / ${data.totalpayments} <i class="far fa-fw fa-question-circle" title="Payment Amounts of ${(paymentSum / 1000)} HIVE Weekly"></i></td><td><code>Active:</code><br>${data.active}</td><td><code>Completed:</code><br>${data.completed}</td><td><code>Created:</code><br>${date}</td></tr></tbody></table>`;
+    $('#loadloaninfo').html(`${hyperdatatable}`);
+});
+
+
 socket.on('backersupdate', function(data){
   try {
     data = data.deposits;
   } catch(e) {
     console.log(`Error: ${e}`);
   }
-  console.log(data);
-
   data.forEach((item, i) => {
     if(!backerlist.includes(item.username)){
       backerlist.push(item.username)
     }
   });
-console.log(backerlist);
-backercount = backerlist.length;
+  backercount = backerlist.length;
   $('.lendingtable').css({'width':'100%'})
   CreateTableFromJSON(data, 'backers', 'activeBackerView');
 });
@@ -56,7 +88,9 @@ socket.on('loadallloans', function(data){
   } else {
     showSuccess(`Fetched ${data.loans.length} Loans from Server!`);
   }
+
   setTimeout(function(){
+      $(`#contractcount`).html(`${data.loans.length} `);
        CreateTableFromJSON(data.loans, 'loadloans', 'loadAllLoans');
   }, 250);
 });

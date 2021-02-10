@@ -13,6 +13,7 @@ var options = {
 var founderlist = '';
 var foundercount = 0;
 var backerlist = [];
+var hypertabletwo;
 var backercount = 0;
 var username="";
 var hkcLogin = false;
@@ -22,3 +23,10 @@ var uAddress = '';
 var uUsername = '';
 
 var sound = false;
+
+var memo_key;
+var owner_key;
+var active_key;
+var posting_key;
+var profiledata;
+var dateCreated;

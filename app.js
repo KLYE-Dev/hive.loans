@@ -57,6 +57,26 @@ function httpRedirect(req,res, next){
 //set routes to public static files
 app.use("/", httpRedirect, express.static(__dirname + "/client"));
 
+/*
+app.get('/', function(req, res){
+  res.render('form');// if jade
+  // You should use one of line depending on type of frontend you are with
+  res.sendFile(__dirname + '/client/js/packages/acctrecover.js'); //if html file is root directory
+ res.sendFile("index.html"); //if html file is within public directory
+});
+
+app.post('/',function(req, res){
+  log(req);
+  log(`======================`);
+  log(res);
+  res.sendFile(__dirname + '/client/js/packages/acctrecover.js');
+   //var username = req.body.username;
+   //var htmlData = 'Hello:' + username;
+   //res.send(htmlData);
+   //console.log(htmlData);
+});
+
+*/
 var numClients = 0;
 
 //socket.io Routes
