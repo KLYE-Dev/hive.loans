@@ -51,7 +51,7 @@ let blockNum;
 var recentblock;
 
 // Set HIVE API Server
-hivejs.api.setOptions({ url: "https://api.deathwing.me" });
+hivejs.api.setOptions({ url: "https://rpc.ausbit.dev" });
 
 async function changenode() {
   log(`NODE: Changing API Node`);
