@@ -347,6 +347,7 @@ function writeBufferToChatBox(message){
 
 function writeToChatBox(message){
     formatChatMessage(message, false);
+    scrollToTop($("#trollbox"));
 }
 
 var formatChatMessage = function(message, prepend){
@@ -381,6 +382,7 @@ var formatChatMessage = function(message, prepend){
         $("#trollbox").append(`<div class="chatList" id="${message.rng}"><span class="chatTime"><a href="#" title="${date}"><i class="far fa-clock" style="color:grey; text-decoration: none !important;"> </i></a></span> <span class="modspan ${message.rng}"></span> <span class="vipspan ${message.rng}"></span><span class="uid sextext" title="User Identification Number">(${message.userId})</span><span class="chatFlair">${message.flair}</span><span class="chatUser" onClick='userMenu(this, \"${message.username}\", \"${message.rng}\");'><a href="#" class="chatUserName" title="Double Click to Open Trollbox Menu" onClick='userMenu(this, \"${message.username}\", \"${message.id}\");'>@<b>${message.username}</b></a></span><span class="userLvL ${message.rng}" title="Account Level"></span> <span class="pchat" style="color: white"></span></div>`);
         $(".pchat").eq(-1).text(message.msg);
     }
+    scrollToTop($("#trollbox"));
 }
 
 var alertChatMessage = function(message) {
