@@ -492,8 +492,11 @@ function CreateTableFromJSON(data, name, elementid) {
                         if (col[j] == 'username') {
                                 if((i + 1) == 1) {
                                   $('#currentWinner').html(`👑${data[i][col[j]]}`)
+                                    data[i][col[j]] = `<span style="float:left;">#${i + 1}</span> 👑<a href="https://hiveblocks.com/@${data[i][col[j]]}" class="histuserlink" style="color:white !important;" target="_blank" title="Click to View This Account on HiveBlocks.com in a New Window">@${data[i][col[j]]}</a>`;
+                                } else {
+                                    data[i][col[j]] = `<span style="float:left;">#${i + 1}</span> <a href="https://hiveblocks.com/@${data[i][col[j]]}" class="histuserlink" style="color:white !important;" target="_blank" title="Click to View This Account on HiveBlocks.com in a New Window">@${data[i][col[j]]}</a>`;
                                 }
-                                data[i][col[j]] = `<span style="float:left;">#${i + 1}</span> 👑<a href="https://hiveblocks.com/@${data[i][col[j]]}" class="histuserlink" style="color:white !important;" target="_blank" title="Click to View This Account on HiveBlocks.com in a New Window">@${data[i][col[j]]}</a>`;
+
                         }
 
                         if (col[j] == 'block') {
