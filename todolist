@@ -1,0 +1,54 @@
+================
+----------------
+The To-Do List
+This list is a best guess on what needs done before the next version of the site goes live (v0.0.8)
+It may not include everything that needs done to safely operate the site as an alpha test..
+----------------
+================
+
+================
+Profile Page
+================
+- profile needs to properly parse metadata and have defaults if none found
+
+================
+Wallet Page
+================
+- transaction history on wallet page needs to be implemented. (new popup or extend current?)
+
+================
+Tool Page
+================
+- add active lend check on local account recovery Manager
+- finish (or hide for now) the secure escrow instance
+
+================
+Lending Page
+================
+- fix cancel button being way too large ✔️
+- clean up the @null display for deployed but not accepted contracts
+- fix / finish up the click contextMenu.js menu, add greater filtering for menu items
+- make the "create new lending contract" table not look like ass, ensure the days have default 7 value
+- put client side balance display and HP credit balance. Add logic to not show accept for contracts too high for account
+-
+
+===============
+Settings Page
+===============
+- add emergency withdrawal address
+
+===============
+Surrender panel / accept loan contract
+===============
+- fix width of account surrender / claim contract table width
+- ensure that new posting, active and memo scope keys given when claiming contract
+
+===============
+Alert / Confirm Popup
+===============
+- Finish implementing the toggleable in settings alert popup for critical actions
+
+===============
+Mobile Version
+===============
+-Just like.. everything

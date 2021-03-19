@@ -9,6 +9,15 @@ body {
 }
 */
 
+
+
+#jumbotron {
+  -webkit-transition: all 0.5s;
+  -moz-transition: all 0.5s;
+  transition: all 0.5s;
+}
+
+
 a {
   text-decoration: none !important;
 }
@@ -83,8 +92,10 @@ hr {
 }
 
 
-.activeLendView, .loadAllLoans {
+
+.activeLendView  {
   width: 100%;
+
 }
 
 .pagehead {
@@ -101,6 +112,14 @@ hr {
   border-bottom-right-radius: 90px !important;
 }
 
+.alertify {
+    z-index: 999999 !important;
+}
+
+.ajs-modal {
+  background: grey;
+    z-index: 999999 !important;
+}
 
 .ajs-message, .alertify-notifier {
   position:fixed !important;
@@ -216,7 +235,7 @@ hr {
   z-index: 99999;
   border: 1px solid black;
   width: 16vw;
-  height:80%;
+  height:20%;
   overflow-y:hidden;
   position: fixed;
   left: 1em;
@@ -227,13 +246,17 @@ hr {
 .chatpanel {
   z-index: 99999;
   border: 1px solid black;
-  width: 13%;
-  height:auto;
   overflow:visible;
-  position: fixed;
   left: 1em;
   background: #f0f0f8;
   border-radius: 25px;
+  padding: 5px;
+    text-align: center;
+    height: 89%;
+    position: absolute;
+    bottom: 1vh !important;
+    right: 15vw !important;
+    width: 25% !important;
 }
 
 .userpanel {
@@ -334,8 +357,12 @@ span.vipspan {
 }
 
 #chatText {
-  color: black !important;
-	width: 85%;
+  background: #444;
+  width: 92%;
+  border-bottom-left-radius: 8px;
+  border-radius: 15px;
+  color: white;
+  font-weight: 700;
 }
 
 #chat {
@@ -382,6 +409,8 @@ border-radius: 10px;
     top: 0.3em
 }
 
+
+
 #panelClose {
   -webkit-transition: all 0.5s;
   -moz-transition: all 0.5s;
@@ -405,6 +434,24 @@ border-radius: 10px;
     position: absolute;
     top: 0.3em;
 }
+
+#alertMove {
+  display: inline-block;
+    left: 0.4em;
+    position: absolute;
+    top: 0.3em;
+}
+
+#alertClose {
+  -webkit-transition: all 0.5s;
+  -moz-transition: all 0.5s;
+  transition: all 0.5s;
+  display: inline-block;
+    right: 0.4em;
+    position: absolute;
+    top: 0.3em
+}
+
 
 #resizer {
   display: inline-block;
@@ -472,13 +519,6 @@ text-shadow:  1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000, rgb(69, 
     z-index: 999 !important;
 }
 
-.navbar {
-  height: 3.3em;
-  background-color:#E31337;
-  color:#f0f0f8;
-  box-shadow: black 1px 1px 15px;
-}
-
 div.bootbox.modal.fade.in, .modal-dialog, .modal-content {
   padding-right: 0px !important;
   position: relative !important;
@@ -527,6 +567,10 @@ div.bootbox.modal.fade.in, .modal-dialog, .modal-content {
   font-size: x-large !important;
   left: 1em;
   font-variant: small-caps;
+}
+
+.firstload {
+ position: fixed;
 }
 
 

@@ -10,7 +10,129 @@ $(document).ready(function() {
   } catch (e){
     console.log(`Couldn't get user or token`);
   }
+  $('#jumboMove').click();
+
+
+  // ParticlesJS Config.
+  particlesJS("particles-js", {
+    "particles": {
+      "number": {
+        "value": 100,
+        "density": {
+          "enable": true,
+          "value_area": 700
+        }
+      },
+      "color": {
+        "value": "#000000"
+      },
+      "shape": {
+         "type": "image",
+         "stroke": {
+           "width": 1,
+           "color": "#444444"
+         },
+         "image": {
+           "src": "https://hive.loans/img/logo-hive.png",
+            "width": 110,
+            "height": 100
+          }
+        },
+      "opacity": {
+        "value": 1,
+        "random": false,
+        "anim": {
+          "enable": false,
+          "speed": 2,
+          "opacity_min": 0.1,
+          "sync": false
+        }
+      },
+      "size": {
+        "value": 10,
+        "random": true,
+        "anim": {
+          "enable": false,
+          "speed": 2,
+          "size_min": 50,
+          "sync": false
+        }
+      },
+      "line_linked": {
+        "enable": true,
+        "distance": 100,
+        "color": "#ffffff",
+        "opacity": 0.4,
+        "width": 1
+      },
+      "move":{
+        "enable":true,
+        "speed":2,
+        "direction":"none",
+        "random":true,
+        "straight":false,
+        "out_mode":"out",
+        "bounce":false,
+        "attract":{
+          "enable":false,
+          "rotateX":0,
+          "rotateY":0
+        }
+      }
+    },
+    "interactivity": {
+      "detect_on": "window",
+      "events": {
+        "onhover": {
+          "enable": true,
+          "mode": "bubble"
+        },
+        "onclick": {
+          "enable": true,
+          "mode": "push"
+        },
+        "resize": true
+      },
+      "modes": {
+        "grab": {
+          "distance": 140,
+          "line_linked": {
+            "opacity": 1
+          }
+        },
+        "bubble": {
+          "distance": 15,
+          "size": 15,
+          "duration": 1,
+          "opacity": 1,
+          "speed": 1
+        },
+        "repulse": {
+          "distance": 20,
+          "duration": 1,
+        },
+        "attract": {
+          "distance": 50,
+          "duration": 1
+        },
+        "push": {
+          "particles_nb": 3
+        },
+        "remove": {
+          "particles_nb": 3
+        }
+      }
+    },
+    "retina_detect": false
+  });
 });
+
+//Logout button
+$("#logout").on('click',function(){
+	socket.close();
+  socket.open();
+});
+
 
 /****************************************************************************
 * Mouse actions
@@ -35,173 +157,12 @@ $("#login").on('click',function(){
 */
 
 window.onload = function() {
-  $("#username").focus();
+
+
 };
 
-//Logout button
-$("#logout").on('click',function(){
-	socket.close();
-  socket.open();
-});
 
 
-
-$("#betOdds").keyup(function (e) {
-	if (e.which != 8 && e.which != 0 && (e.which < 48 || e.which > 57 ) ) {
-      return false;
-  }
- //if the letter is not digit then display error and don't type anything *** Line 17 is giving us some problems for sure...
-  if ((($("#betOdds").val()<=99) && ($("#betOdds").val()>0.01)) || $("#betOdds").val()!==""){
-		$("#multiplier").val(round(99/$("#betOdds").val(),8));
-		$("#toWin").val(floor($("#betAmount").val()*($("#multiplier").val()*1),8));
-		$("#hiNum").text("> " + ceil((99.9999-$("#betOdds").val()),4));
-		$("#loNum").text("< " + round(($("#betOdds").val()),4));
-  }else{
-		$("#hiNum").text("> " + ceil((99.9999-$("#betOdds").val()),4));
-		$("#loNum").text("< " + round(($("#betOdds").val()),4));
-		$("#toWin").val("0");
-	}
-});
-
-$('.maxWager').click(function(e){
-	if ($('#sound').hasClass("soundon")){
-		clicksound.play();
-	}
-	var yolobet = $("#balance").val();
-	showErr('<i class="fa fa-2x far-2x fa-exclamation-circle" style="color:red;float:left;margin-top:-1%;"></i> Warning: Betting it All!');
-	var yoloAnim = new CountUp("betAmount", $("#betAmount").val(), $("#balance").val(), 8, .1, options);
-  yoloAnim.start(updatebet($("#betAmount"), yolobet));
-});
-var updatebet = function(el, amount){
-  el.val(amount).keyup();
-}
-
-$('.minChance').click(function(e){
-	if ($('#sound').hasClass("soundon")){
-		clicksound.play();
-	}
-
-	showErr('Warning: Low Chance');
-	$("#betOdds").val(0.0001);
-  if ((($("#betOdds").val()<=99) && ($("#betOdds").val()>0.01)) || $("#betOdds").val()!==""){
-		$("#multiplier").val(round(99/$("#betOdds").val(),4));
-		$("#toWin").val(floor($("#betAmount").val()*($("#multiplier").val()*1),8));
-		$("#hiNum").text("> " + ceil((99.9999-$("#betOdds").val()),4));
-		$("#loNum").text("< " + round(($("#betOdds").val()),4));
-  }else{
-		$("#betOdds").val(0.01);
-	}
-});
-
-$('.halfChance').click(function(e){
-	if ($('#sound').hasClass("soundon")){
-		clicksound.play();
-	}
-
-  if ($("#betOdds").val()>=1.0001){
-	$("#betOdds").val($("#betOdds").val() - 1);
-  }else{
-    $("#betOdds").val(0.0001),4;
-    showErr("Chance Must Be >= 0.0001%");
-  }
-
-
-  if ((($("#betOdds").val()<=99) && ($("#betOdds").val()>0.01)) || $("#betOdds").val()!==""){
-		$("#multiplier").val(round(99/$("#betOdds").val(),4));
-		$("#toWin").val(floor($("#betAmount").val()*($("#multiplier").val()*1),8));
-		$("#hiNum").text("> " + ceil((99.9999-$("#betOdds").val()),4));
-		$("#loNum").text("< " + round(($("#betOdds").val()),4));
-  }else{
-	    $("#betOdds").val(0.0001);
-  }
-  });
-
-$('.doubleChance').click(function(e){
-		if ($('#sound').hasClass("soundon")){
-		    clicksound.play();
-		}
-
-    if ($("#betOdds").val()<=98){
-      $("#betOdds").val( function(i, oldval) {
-        return ++oldval;
-      });
-    }else{
-    	$("#betOdds").val(98.99);
-      $("#toWin").val(floor($("#betAmount").val()*($("#multiplier").val()*0.00010101),8));
-      showErr("Chance Must Be <= 98.99%");
-    }
-
-
-		if ((($("#betOdds").val()<=99) && ($("#betOdds").val()>0.0001)) || $("#betOdds").val()!==""){
-  		$("#multiplier").val(round(99/$("#betOdds").val(),4));
-  		$("#toWin").val(floor($("#betAmount").val()*($("#multiplier").val()*1),8));
-  		$("#hiNum").text("> " + ceil((99.9999-$("#betOdds").val()),4));
-  		$("#loNum").text("< " + round(($("#betOdds").val()),4));
-    }else{
-		  $("#betOdds").val(98.99);
-	  }
-});
-
-$('.maxChance').click(function(e){
-	if ($('#sound').hasClass("soundon")){
-		clicksound.play();
-	}
-	$("#betOdds").val(98.99);
-	if ((($("#betOdds").val()<=99) && ($("#betOdds").val()>0.0001)) || $("#betOdds").val()!==""){
-		$("#multiplier").val(round(99/$("#betOdds").val(),4));
-		$("#toWin").val(floor($("#betAmount").val()*($("#multiplier").val()*0.00010101),8));
-		$("#hiNum").text("> " + ceil((99.9999 - $("#betOdds").val()),4));
-		$("#loNum").text("< " + round(($("#betOdds").val()),4));
-    }else{
-		$("#toWin").val(0);
-	}
-});
-
-
-$("#clearDebug").on('click',function (e) {
-    $("#output").html('');
-});
-
-$("#invest").on('click',function(e){
-  socket.emit('invest', {token: token, amount: parseInt($("#investamount").val()*100000000)}, function(err, data){
-    if (err) return showErr(err);
-    showSuccess("Invest Accepted");
-  });
-});
-
-$('#investall').on('click', function(){
-  var balancetoinvest = $("#balance").val();
-  $('#investamount').val(balancetoinvest);
-});
-
-$("#divest").on('click',function(e){
-  socket.emit('divest', {token: token, amount: parseInt($("#divestamount").val()*100000000)}, function(err,d){
-    if (err) showErr(err);
-  });
-});
-
-$("#divestall").on('click',function(e){
-  $("#divestamount").val($("#invested").val());
-  socket.emit('divest', {token: token, amount: parseInt($("#divestamount").val()*100000000)}, function(err,d){
-    if (err) showErr(err);
-  });
-});
-
-//All Bets Tab buttons
-$("#allbetsTabbed").on('click', function(){
-
-	 $("#globalbetsdefault").fadeOut('fast');
-	 $("#globalbetsOn").fadeIn('fast');
-	 //startallbets();
-});
-
-$("#tip").on('click',function(e){
-  socket.emit('tip', {token: token, to: $("#tipto").val(), amount: parseInt($("#tipamount").val()*100000000)}, function(err, data){
-
-    token = data.token;
-    if (err) return showErr(err);
-  });
-});
 
 //Chat input hotkey disabler - needs work still
 $('#chatText.trollslot').click(function()  {
@@ -250,11 +211,6 @@ $("#autoOdds").keyup(function (e) {
     		$("#autoToWin").val(floor($("#autoBetAmount").val()*($("#autoMultiplier").val()-1),8));
 });
 
-$("#autoMultiplier").keyup(function (e) {
-	$("#autoOdds").val((99/$("#autoMultiplier").val()).toFixed(4));
-  $("#autoToWin").val(floor($("#autoBetAmount").val()*($("#autoMultiplier").val()-1),8));
-
-});
 $("#autoToWin").keyup(function (e) {
 	$("#autoBetAmount").val(ceil($("#autoToWin").val()/($("#autoMultiplier").val()-1),8));
 });
@@ -272,15 +228,26 @@ $("#betAmount").keyup( function (e) {
 });
 
 function openLendingTab() {
-    socket.emit('loadmyloans', {token: token});
+    socket.emit('loadmyloans', {token: token}, function(err, data){
+      if(err) showErr(err);
+      if(data) {
+        //showSuccess(data);
+      }
+    });
 }
 
 function openAllLoansTab() {
-    socket.emit('loadallloans', {token: token});
+    socket.emit('loadallloans', {token: token}, function(err, data){
+      if(err) showErr(err);
+      if(data) {
+        //showSuccess(data);
+      }
+    });
 }
 
 function derp() {
-  createNewLendingContract(parseInt($("#newamount").val()), parseInt($("#newdays").val()), parseInt($("#newfee").val()), token);
+  console.log(`derp called`);
+  createNewLendingContract(parseInt($("#newamount").val()), parseInt($("#newdays").val()), parseInt($("#newfee").val()));
 }
 
 function loginPush(username, token) {
@@ -297,16 +264,12 @@ function loginPush(username, token) {
   })
 }
 
-$("#newLendAmount").change(function (e) {
- //if the letter is not digit then display error and don't type anything
-    if (e.which != 8 && e.which != 0 && (e.which < 48 || e.which > 57 ) ) {
-        return false;
-    } else {
-      if(parseFloat($("#newLendAmount").val()) < 0){
-        $("#newLendAmount").val(0);
-      }
-    }
-});
+jQuery.fn.center = function () {
+    this.css("position","absolute");
+    this.css("top", Math.max(0, (($(window).height() - $(this).outerHeight()) / 2) + $(window).scrollTop()) + "px");
+    this.css("left", Math.max(0, (($(window).width() - $(this).outerWidth()) / 2) +  $(window).scrollLeft()) + "px");
+    return this;
+}
 
 /*******************************************************************************************************************
 * Key presses actions
@@ -319,20 +282,147 @@ function getBackers() {
       data = data.deposits;
       console.log(data);
       $('.lendingtable').css({'width':'100%'})
-      CreateTableFromJSON(data, 'backers', 'activeBackerView');
+      //CreateTableFromJSON(data, name, elementid, tablename, tableheadname)
+      CreateTableFromJSON(data, 'backers', 'activeBackerView', 'activeBackerTable', 'activeBackerHead');
     }
   })
 }
 
 
+var contractMenu = function(ele, contractID, data) {
+  $('.iw-contextMenu').contextMenu('destroy'); $('.iw-cm-menu').contextMenu('destroy');
+  var contMenu;
+  if(contractID == undefined) return;
+  if(ele == undefined) return;
+  data = JSON.parse(JSON.stringify(data));
+  socket.emit("loanmenu", {
+      element: ele,
+      data: data,
+      contractID: contractID
+  }, function(err, data) {
+      if (err) {
+          return showErr(`Error: ${err}`);
+      }
+      if (data) {
+          console.log(data);
+          var menutype = data.menu;
+          var loanId = data.loanId;
+          var messageid = contractID;
+
+          if(menutype === "admin"){
+            contMenu = [
+              {
+                  name: `<code style="font-size:smaller;align-text:center;color:black;text-shadow:none;">${data.loanId}</code>`,
+                  fun: function () {
+                    console.log(`This is just the loan ID`)
+                  }
+              },
+              {
+                  name: '🧾View Contract',
+                  fun: function () {
+                          getUserBlog(user)
+                  }
+              },
+              {
+                  name: '💀Nuke Contract',
+                  fun: function () {
+                          getUserBlog(user)
+                  }
+              },
+              {
+                  name: '🛠Edit Contract',
+                  fun: function () {
+                          getUserBlog(user)
+                  }
+              },
+              {
+                  name: '💸View Lender Profile',
+                  fun: function () {
+                          getUserBlog(user)
+                  }
+              },
+              {
+                  name: '🤑View Borrower Profile',
+                  fun: function () {
+                          getUserBlog(user)
+                  }
+              }
+            ];
+          } else if (menutype === "moderator") {
+            contMenu = [
+              {
+                name: `<code style="font-size:smaller;align-text:center;color:black;text-shadow:none;">${data.loanId}</code>`,
+                  fun: function () {
+                    console.log(`This is just the loan ID`)
+                  }
+              },
+              {
+                  name: '🧾View Contract',
+                  fun: function () {
+                          getUserBlog(user)
+                  }
+              },
+              {
+                  name: '💸View Lender Profile',
+                  fun: function () {
+                          getUserBlog(user)
+                  }
+              },
+              {
+                  name: '🤑View Borrower Profile',
+                  fun: function () {
+                          getUserBlog(user)
+                  }
+              }
+            ];
+          } else {
+            contMenu = [
+              {
+                name: `<code style="font-size:smaller;align-text:center;color:black;text-shadow:none;">${data.loanId}</code>`,
+                  fun: function () {
+                    console.log(`This is just the loan ID`)
+                  }
+              },
+              {
+                  name: '🧾View Contract',
+                  fun: function () {
+                          getUserBlog(user)
+                  }
+              },
+              {
+                  name: '💸View Lender Profile',
+                  fun: function () {
+                          getUserBlog(user)
+                  }
+              },
+              {
+                  name: '🤑View Borrower Profile',
+                  fun: function () {
+                          getUserBlog(user)
+                  }
+              },
+            ];
+          }
+          console.log(ele)
+          //ele.context.activeElement
+          // triggerOn:'contextmenu'
+          try {
+            $(ele[0]).contextMenu(contMenu, {'sizeStyle': 'content', 'closeOther': true,  'displayAround': 'cursor', 'closeOnClick': true, 'trigger': 'focusin', 'containment': ele[0].firstChild, 'position': 'left'});
+          } catch(e){
+            console.log(e)
+          }
+      }
+});
+}
 /*********************************************************************************
 * CHAT
 ********************************************************************************/
 
-var userMenu = function(el, data, msgid){
-
+var userMenu = function(el, data, msgid) {
+  $('.iw-contextMenu').contextMenu('destroy'); $('.iw-cm-menu').contextMenu('destroy');
     var menutype = data.menu;
     var socketid = data.socketid;
+    console.log(el)
     socket.emit("chatmenu", {
         username: data,
         socketid: socketid
@@ -346,23 +436,14 @@ var userMenu = function(el, data, msgid){
             user = data.user;
             source = data.source;
             uid = data.uid;
-            messageid = data.messageid;
+            messageid = data.rng;
         }
 
         if (menutype === "admin") {
-
-            menud = [
-              {
-                  name: '🔎Blog',
-                  fun: function () {
-                          getUserBlog(user)
-                  }
-              },
-              {
-                    name: '<b>💲Tip</b>',
-                    fun: function() {
-                        $("#tipbalance").val($("#balance").val());
-
+            menu = [
+              {name: '👤 Profile',fun: function () {getUserProfile(user)}},
+              {name: '🔎Blog <i class="fas fa-external-link-alt" title="Clicking this will Open a New Window"></i>',fun: function () {getUserBlog(user)}},
+              {name: '<b>💲Tip</b>',fun: function() {$("#tipbalance").val($("#balance").val());
                         bootbox.dialog({
                             message: '<center><span class="input-group autoBettitleC" style="width:69%;background:#181E28;"><span class="input-group-addon addon-sexy" style=""><i class="fa fa-at fa-2x"></i></span>' +
                                 '<b><input type="text" class="form-control" placeholder="User" aria-describedby="basic-addon1" id="tipto" style="" ></b><span class="input-group-addon addon-sexy" style="">User</span></span>' +
@@ -397,16 +478,7 @@ var userMenu = function(el, data, msgid){
                         $("#tipto").val(user);
                     }
                 },
-
-                {
-                    name: '<b>💬Message</b>',
-                    fun: function() {
-                        $("#chatText").val(`/msg ${user} `);
-                        $("#chatText").focus();
-                    }, //END fun:function
-
-                },
-
+                {name: '<b>💬Message</b>',fun: function(){$("#chatText").val(`/msg ${user} `);$("#chatText").focus();},},
                 {
                     name: '<b>📊Stats</b>',
                     fun: function() {
@@ -724,9 +796,15 @@ var userMenu = function(el, data, msgid){
                 }
             ];
         } else if (menutype === "moderator") {
-            menud = [
+            menu = [
               {
-                  name: '🔎Blog',
+                  name: '👤 Profile',
+                  fun: function () {
+                          getUserProfile(user)
+                  }
+              },
+              {
+                  name: '🔎Blog <i class="fas fa-external-link-alt" title="Clicking this will Open a New Window"></i>',
                   fun: function () {
                           getUserBlog(user)
                   }
@@ -1026,324 +1104,109 @@ var userMenu = function(el, data, msgid){
           },
             ];
         } else {
-            menud = [
-              {
-                  name: '🔎Blog',
-                  fun: function () {
-                          getUserBlog(user)
-                  }
-              },
-              {
-              name: '<b>💲Tip</b>',
-              fun: function() {
-                  $("#tipbalance").val($("#balance").val());
-                  bootbox.dialog({
-                      message: '<center><span class="input-group autoBettitleC" style="width:69%;background:#181E28;"><span class="input-group-addon addon-sexy" style=""><i class="fa fa-at fa-2x"></i></span>' +
-                          '<b><input type="text" class="form-control" placeholder="User" aria-describedby="basic-addon1" id="tipto" style="" ></b><span class="input-group-addon addon-sexy" style="">User</span></span>' +
-                          '<br><span class="input-group autoBettitleC" style="width:69%;background:#181E28;"><span class="input-group-addon addon-sexy" style=""><b>Tip</b></span>' +
-                          '<b><input type="number" class="form-control" placeholder="0.000" id="tipamount" aria-describedby="basic-addon1"></b>' +
-                          '<span class="input-group-addon addon-sexy" style="padding:5px;"><img src="img/rhom.svg" class="modalLogo"></span></span>' +
-                          "<script>var currencyLogo = $('img.dd-selected-image').attr('src');$('img.modalLogo').attr('src', currencyLogo);</script>",
-                      title: `<center><b class="sexytitle">Rhom-Roller.com</b><br>Tip Some ${$('#currentCurrency').val().toUpperCase()} to Another User Instantly</center>`,
-                      buttons: {
-                          main: {
-                              label: "Send",
-                              className: "push_button2",
-                              callback: function() {
-                                  socket.emit('tip', {
-                                      amount: parseInt($("#tipamount").val() * 100000000),
-                                      to: $("#tipto").val(),
-                                      token: token
-                                  }, function(err, data) {
-                                      if (err) {
-                                          token = data.token;
-                                          return showErr("Tip Send Failed!");
-                                      }
-                                      //console.log(data);
-                                      token = data.token; //token is always returned
-                                      $("#balance").val((data.balance/ 100000000).toFixed(8));
-                                      showSuccess("Tip Sent!");
-                                  });
-                              }
-                          }
-                      }
-                  });
-                  $("#tipto").val(user);
-              }
-          },
-          {
-              name: '<b>💬Message</b>',
-              fun: function() {
-                  $("#chatText").val(`/msg ${user} `);
-                  $("#chatText").focus();
-              }, //END fun:function
+          menu = [
+            {
+                name: '👤 Profile',
+                fun: function () {
+                        getUserProfile(user)
+                }
+            },
+            {
+                name: '🔎Blog <i class="fas fa-external-link-alt" title="Clicking this will Open a New Window"></i>',
+                fun: function () {
+                        getUserBlog(user)
+                }
+            },
+            {
+            name: '<b>💲Tip</b>',
+            fun: function() {
+                $("#tipbalance").val($("#balance").val());
+                bootbox.dialog({
+                    message: '<center><span class="input-group autoBettitleC" style="width:69%;background:#181E28;"><span class="input-group-addon addon-sexy" style=""><i class="fa fa-at fa-2x"></i></span>' +
+                        '<b><input type="text" class="form-control" placeholder="User" aria-describedby="basic-addon1" id="tipto" style="" ></b><span class="input-group-addon addon-sexy" style="">User</span></span>' +
+                        '<br><span class="input-group autoBettitleC" style="width:69%;background:#181E28;"><span class="input-group-addon addon-sexy" style=""><b>Tip</b></span>' +
+                        '<b><input type="number" class="form-control" placeholder="0.000" id="tipamount" aria-describedby="basic-addon1"></b>' +
+                        '<span class="input-group-addon addon-sexy" style="padding:5px;"><img src="img/rhom.svg" class="modalLogo"></span></span>' +
+                        "<script>var currencyLogo = $('img.dd-selected-image').attr('src');$('img.modalLogo').attr('src', currencyLogo);</script>",
+                    title: `<center><b class="sexytitle">Rhom-Roller.com</b><br>Tip Some ${$('#currentCurrency').val().toUpperCase()} to Another User Instantly</center>`,
+                    buttons: {
+                        main: {
+                            label: "Send",
+                            className: "push_button2",
+                            callback: function() {
+                                socket.emit('tip', {
+                                    amount: parseInt($("#tipamount").val() * 100000000),
+                                    to: $("#tipto").val(),
+                                    token: token
+                                }, function(err, data) {
+                                    if (err) {
+                                        token = data.token;
+                                        return showErr("Tip Send Failed!");
+                                    }
+                                    //console.log(data);
+                                    token = data.token; //token is always returned
+                                    $("#balance").val((data.balance/ 100000000).toFixed(8));
+                                    showSuccess("Tip Sent!");
+                                });
+                            }
+                        }
+                    }
+                });
+                $("#tipto").val(user);
+            }
+        },
+        {
+            name: '<b>💬Message</b>',
+            fun: function() {
+                $("#chatText").val(`/msg ${user} `);
+                $("#chatText").focus();
+            }, //END fun:function
 
-          },
-          {
-              name: '<b>📊Stats</b>',
-              fun: function() {
-                  userstatsDialog(user);
-              }
-          }
-            ];
+        },
+        {
+            name: '<b>📊Stats</b>',
+            fun: function() {
+                userstatsDialog(user);
+            }
         }
-        $(el).contextMenu(menud);
-    });
+          ];
+        }
+        try {
+          $(el).contextMenu(menu, {'sizeStyle': 'content', 'closeOther': true, 'displayAround': 'cursor', 'closeOnClick': true, 'trigger': 'focusin', 'containment': el.firstChild, 'position': 'top'});
+
+        } catch(e) {
+          console.log(e)
+        }
+      });
 
 
 };
 
 $("#sendChat").on('click',function(){
-    socket.emit('chatmessage', {message: $("#chatText").val(), token: chatToken}, function(err, data){
+    socket.emit('chatmessage', {message: $("#trollslot").val(), token: chatToken}, function(err, data){
       if (err) showErr(err);
-      $("#chatText").val("");
+      $("#trollslot").val("");
     });
-
 });
 
-$("#chatText").keypress(function(event){
+$("#trollslot").keypress(function(event){
     var keycode = (event.keyCode ? event.keyCode : event.which);
     if(keycode == "13"){
-        socket.emit('chatmessage', {message: $("#chatText").val(), token: chatToken}, function(err, data){
+        socket.emit('chatmessage', {message: $("#trollslot").val(), token: chatToken}, function(err, data){
           if (err) showErr(err);
-          $("#chatText").val("");
+          $("#trollslot").val("");
         });
     }
 });
 
 function copyStringToClipboard (str) {
-   // Create new element
    var el = document.createElement('textarea');
-   // Set value (string to be copied)
    el.value = str;
-   // Set non-editable to avoid focus and move outside of view
    el.setAttribute('readonly', '');
    el.style = {position: 'absolute', left: '-9999px'};
    document.body.appendChild(el);
-   // Select text inside element
    el.select();
-   // Copy text to clipboard
    document.execCommand('copy');
    showSuccess("Copied to Clipboard!");
-   // Remove temporary element
    document.body.removeChild(el);
 }
-
-// Generates Aall Private Keys from username and password
-function getPrivateKeys(username, password, roles = ['owner', 'active', 'posting', 'memo']) {
-  const privKeys = {};
-  roles.forEach((role) => {
-    privKeys[role] = dhive.PrivateKey.fromLogin(username, password, role).toString();
-    privKeys[`${role}Pubkey`] = dhive.PrivateKey.from(privKeys[role]).createPublic().toString();
-  });
-
-  return privKeys;
-};
-
-// Creates a suggested password
-function suggestPassword() {
-  const array = new Uint32Array(10);
-  window.crypto.getRandomValues(array);
-  return 'P' + dhive.PrivateKey.fromSeed(array).toString();
-}
-
-// Getting public owner key from username and password
-function getPublicOwnerKey(username, password) {
-  return (getPrivateKeys(username, password, ['owner'])).ownerPubkey;
-}
-
-// Checks if an account is eligible for recovery
-async function checkEligibility(username) {
-  const [account] = await client.database.getAccounts([username]);
-  const now = new Date();
-  const lastUpdate = new Date(`${account.last_owner_update}Z`);
-
-  return ((now.getTime() - lastUpdate.getTime()) < (86400000 * 30));
-}
-
-$(document).ready(async function () {
-
-  // Auto fills password field
-  $('#new-password').val(suggestPassword());
-  $('#regen-password').click(function (e) {
-    e.preventDefault();
-    $(this).closest('.input-group').find('#new-password').val(suggestPassword());
-    $('#public-owner-key').val('');
-  });
-
-  // Processing Owner key form
-  $('#get-owner-key').submit(async function (e) {
-    e.preventDefault();
-
-    const feedback = $('#alert-get-owner-key');
-    const username = $('#atr').val();
-    const password = $('#new-password').val();
-
-    if (username === '') {
-      $('#atr').focus();
-    } else {
-      const isEligible = await checkEligibility(username);
-
-      if (isEligible) {
-        feedback.empty().removeClass('alert-warning');
-        $('#public-owner-key').addClass('is-valid').val(getPublicOwnerKey(username, password));
-      } else {
-        $('#public-owner-key').removeClass('is-valid').val('');
-        feedback.addClass('alert-warning');
-        feedback.html(`Owner authority of <strong>${username}</strong> has not changed in last 30 days!`);
-      }
-    }
-  });
-
-  // Processing create recovery request form
-  $('#create-recovery-request').submit(async function (e) {
-    e.preventDefault();
-
-    const feedback = $('#alert-create-recovery');
-    const username = $('#trustee-atr').val();
-    const ownerPubKey = $('#atr-new-key').val();
-    const trustee = $('#trustee-account').val();
-    const activeKey = $('#trustee-key').val();
-
-
-    if (username === '') {
-      $('#trustee-atr').focus();
-    } else {
-      feedback.empty().removeClass('alert-success').removeClass('alert-warning');
-
-      const isEligible = await checkEligibility(username);
-
-      if (isEligible) {
-        const op = ['request_account_recovery', {
-          recovery_account: trustee,
-          account_to_recover: username,
-          new_owner_authority: dhive.Authority.from(ownerPubKey),
-          extensions: []
-        }];
-
-        if (activeKey === '') {
-          if (window.hive_keychain) {
-            window.hive_keychain.requestBroadcast(trustee, [op], 'active', function (response) {
-              if (response.success) {
-                feedbackDiv.addClass('alert-success').text(`Account recovery request for <strong>${username}</strong> has been submitted successfully.`);
-              } else {
-                feedbackDiv.addClass('alert-danger').text(response.message);
-              }
-            });
-          } else {
-            alert('Hive Keychain is not installed.');
-          }
-        } else {
-          client.broadcast.sendOperations([op], dhive.PrivateKey.from(activeKey))
-            .then((r) => {
-              console.log(r);
-              feedback.addClass('alert-success').html(`Account recovery request for <strong>${username}</strong> has been submitted successfully.`);
-            })
-            .catch(e => {
-              console.log(e);
-              feedback.addClass('alert-danger').text(e.message);
-            });
-        }
-      } else {
-        feedback.addClass('alert-warning');
-        feedback.html(`Owner authority of <strong>${username}</strong> has not changed in last 30 days!`);
-      }
-    }
-  });
-
-  // Processing recover account form
-  $('#recover-account').submit(async function (e) {
-    e.preventDefault();
-
-    const feedback = $('#alert-recover-account');
-    const username = $('#user-atr').val();
-    const newPassword = $('#user-new-pass').val();
-    const oldPassword = $('#user-old-pass').val();
-
-
-    if (username === '') {
-      $('#user-atr').focus();
-    } else {
-      feedback.empty().removeClass('alert-success').removeClass('alert-warning').removeClass('alert-danger');
-
-      const recoveryRequest = await client.database.call('get_recovery_request', [username])
-
-      if (recoveryRequest && new Date(`${recoveryRequest.expires}Z`).getTime() > new Date().getTime()) {
-
-        const newOwner = getPrivateKeys(username, newPassword, ['owner', 'active', 'posting', 'memo']);
-        const oldOwner = getPrivateKeys(username, oldPassword, ['owner']);
-
-        const op = ['recover_account', {
-          account_to_recover: username,
-          new_owner_authority: dhive.Authority.from(newOwner.ownerPubkey),
-          recent_owner_authority: dhive.Authority.from(oldOwner.ownerPubkey),
-          extensions: []
-        }];
-
-        const [account] = await client.database.getAccounts([username]);
-
-        const accountUpdateObj = {
-          account: username,
-          active: dhive.Authority.from({ weight_threshold: account.active.weight_threshold, account_auths: account.active.account_auths, key_auths: [[newOwner.activePubkey, 1]] }),
-          posting: dhive.Authority.from({ weight_threshold: account.posting.weight_threshold, account_auths: account.posting.account_auths, key_auths: [[newOwner.postingPubkey, 1]] }),
-          memo_key: newOwner.memoPubkey,
-          json_metadata: account.json_metadata,
-        };
-
-        // Signing the operation with both old and new owner key
-        client.broadcast.sendOperations([op], [dhive.PrivateKey.from(oldOwner.owner), dhive.PrivateKey.from(newOwner.owner)])
-          .then(async (r) => {
-            console.log(r);
-            feedback.addClass('alert-success').html(`<strong>${username}</strong> has been recovered successfully.</strong>`);
-
-            // Updating account with the new posting and active key
-            client.broadcast.updateAccount(accountUpdateObj, dhive.PrivateKey.from(newOwner.owner))
-              .then(async (r) => {
-                console.log(r);
-              })
-              .catch(e => {
-                console.log(e);
-              });
-          })
-          .catch(e => {
-            console.log(e);
-            feedback.addClass('alert-danger').text(e.message);
-          });
-      } else {
-        feedback.addClass('alert-warning').html(`Unable to find recovery request for <strong>${username}</strong> or the request has expired. Please start the procedure again.`);
-      }
-    }
-  });
-
-  // Processing change recovery account form
-  $('#change-recovery-account').submit(async function (e) {
-    e.preventDefault();
-
-    const feedback = $('#alert-change-rec');
-    const username = $('#change-rec-atr').val();
-    const newRecovery = $('#change-rec-new').val();
-    const password = $('#change-rec-pass').val();
-
-    feedback.empty().removeClass('alert-success').removeClass('alert-danger');
-
-    if (username !== '' && newRecovery !== '' && password !== '') {
-      const op = ['change_recovery_account', {
-        account_to_recover: username,
-        new_recovery_account: newRecovery,
-        extensions: [],
-      }];
-
-      const ownerKey = getPrivateKeys(username, password, ['owner']);
-
-      client.broadcast.sendOperations([op], dhive.PrivateKey.from(ownerKey.owner))
-        .then((r) => {
-          console.log(r);
-          feedback.addClass('alert-success').html(`Change account recovery request for <strong>${username}</strong> has been submitted successfully. It would take 30 days to take effect.`);
-        })
-        .catch(e => {
-          console.log(e);
-          feedback.addClass('alert-danger').text(e.message);
-        });
-    }
-  });
-});

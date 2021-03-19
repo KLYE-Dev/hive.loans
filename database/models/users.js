@@ -5,7 +5,7 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
 
     }
-  };
+  }
   Users.init({
     userId: DataTypes.INTEGER,
     username: DataTypes.STRING,

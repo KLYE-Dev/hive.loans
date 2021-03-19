@@ -1,12 +1,207 @@
-var hiveloanslogo = `
-██╗░░██╗██╗██╗░░░██╗███████╗░░░██╗░░░░░░█████╗░░█████╗░███╗░░██╗░██████╗
-██║░░██║██║██║░░░██║██╔════╝░░░██║░░░░░██╔══██╗██╔══██╗████╗░██║██╔════╝
-███████║██║╚██╗░██╔╝█████╗░░░░░██║░░░░░██║░░██║███████║██╔██╗██║╚█████╗░
-██╔══██║██║░╚████╔╝░██╔══╝░░░░░██║░░░░░██║░░██║██╔══██║██║╚████║░╚═══██╗
-██║░░██║██║░░╚██╔╝░░███████╗██╗███████╗╚█████╔╝██║░░██║██║░╚███║██████╔╝
-╚═╝░░╚═╝╚═╝░░░╚═╝░░░╚══════╝╚═╝╚══════╝░╚════╝░╚═╝░░╚═╝╚═╝░░╚══╝╚═════╝░\n\nv0.0.8 Alpha - By @KLYE`;
 
-console.log(hiveloanslogo);
+
+  function addData(data, chart) {
+    if(data == undefined) return;
+
+    dataChart.push(data);
+
+    hivechart.update();
+  }
+
+  function removeData(chart) {
+      chart.data.labels.pop();
+      chart.data.datasets.forEach((dataset) => {
+          dataset.data.pop();
+      });
+      chart.update();
+  }
+
+  function commaNumber(nStr) {
+      nStr += '';
+      var x = nStr.split('.');
+      var x1 = x[0];
+      var x2 = x.length > 1 ? '.' + x[1] : '';
+      var rgx = /(\d+)(\d{3})/;
+      while (rgx.test(x1)) {
+          x1 = x1.replace(rgx, '$1' + ',' + '$2');
+      }
+      return x1 + x2;
+  };
+
+  function cmcpricecheck() {
+    try {
+       fetch(`https://api.coingecko.com/api/v3/coins/listings/latest?vs_currency=usd&ids=hive`)
+        .then(res => res.json()).then(json => {
+          console.log(json);
+        }).catch(e => {console.log(e)});
+
+      } catch(error) {
+        console.log(error);
+      }
+    };
+
+
+var showErr = function (text) {
+    alertify.closeAll();
+    alertify.error('<i class="fa fa-2x fa-exclamation-circle circle-background-white" style="float: left;bottom: 4px;position: relative;"></i></span> ' + text + '<i class="fa fa-times ajs-close hidden" style="float: right;bottom: 4px;position: relative;"></i>').dismissOthers();//<i class="fa fa-2x fag-2x fa-exclamation-circle" style="color:red;float:left;    margin-left: 0.5vw;"></i>
+};
+var showSuccess = function (text) {
+    alertify.closeAll();
+    alertify.success('<i class="fa fa-2x fa-check-circle circle-background-white" style="float: left;bottom: 4px;position: relative;"></i> ' + text + '<i class="fa fa-times ajs-close hidden" style="float: right;bottom: 4px;position: relative;"></i>').dismissOthers();
+};
+
+function getSiteStats() {
+  $("#sitestatsBal").html(`<b>HIVE Balance</b>:<br>Loading<br>`);
+  $("#recName").css({"color":"black"});
+  $("#recName").html(`Loading`);
+  $("#recAlert").html(``);
+  hive.api.getAccounts(['hive.loans'], function(err, result) {
+    if(err){return alert(`Failed to fetch site stats!\n${err}`)}
+    if(result){
+      console.log(result);
+      var res = result[0];
+      var statsName = res.name;
+      console.log(statsName)
+      var acct = res.account;
+      var statsBal = res.balance;
+      var statsHBDBal = res.hbd_balance;
+      var hivePower = parseInt(res.vesting_shares);
+      $("#sitestatsName").html(`@${statsName}`);
+      $("#sitestatsBal").html(`<b>HIVE Balance</b>:<br>${statsBal}<br>`);
+    }
+  /*
+  <div style="font-size:1.5em;width:100%;"><span id="sitestatssMove" title="Click and Drag to Move Window"><i class="fas fa-arrows-alt"></i></span><span id="sitestatsName" style="display: inline-block">Site Statistics</span><span id="refreshSiteStats" style-"float:right" title="Click to Refresh" onClick="getSiteStats();"><i class="fas fa-sync"></i></span></div><hr>
+  <span id="sitestatsWrapper">
+  <span id="sitestatsBal"><b>Available HIVE Pool</b>:<br>Loading<br></span>
+  <span id="siteLoaned"><b>HIVE Loaned Out</b>:<br>Loading<br></span><br>
+  <span id="sitePaid"><b>HIVE Repaid</b>:<br>Loading<br></span><br>
+  <span id="siteOnLoan"><b>HIVE Outstanding</b>:<br></span><br>
+  */
+});
+}
+
+
+async function getAcct() {
+  console.log(`getAcct called`);
+  if(hkcLogin == true){
+     await hive.api.getAccounts([user], async function(err, result) {
+      if(err){ console.log(err)}
+      if(result){
+      //result = JSON.parse(JSON.stringify(result));
+      resultData = result
+      //var hivePowerCalc = await hive.formatter.estimateAccountValue(result);
+      //console.log(`hivePowerCalc`)
+      //console.log(hivePowerCalc)
+      var total_vesting_shares;
+      var total_vesting_fund;
+      resultData = resultData[0];
+      var statsName = result.name;
+      var acct = result.account;
+      var statsBal = result.balance;
+      var statsBalTop = result.balance;
+      var statsHBDBal = result.hbd_balance;
+      var recoverAcct = result.recovery_account;
+      var hivePower = parseInt(result.vesting_shares);
+      $("#userouthivebalance").html(`${statsBalTop}`);
+      $("#userouthbdbalance").html(`${statsHBDBal}`);
+      $("#statsName").html(`@${statsName}`);
+      $("#statsBal").html(`<b>HIVE Balance</b>:<br>${statsBal}<br>`);
+      $("#lendingBalance").html(`${statsBal} HIVE`);
+      $("#statsBalTop").html(`<b>${statsBalTop} ${statsHBDBal}</b>`);
+      $("#statHBDsBal").html(`<b>HBD Balance</b>:<br>${statsHBDBal}<br>`);
+      $("#recoverAcct").html(`<b>Recovery Account</b>:<br><span id="recName">${recoverAcct}</span><br>`);
+      $("#profileRecoverAcct").html(`<span id="precacct">${recoverAcct}</span>`);
+      $("#showRecAcct").html(`@${recoverAcct}`);
+      await hive.api.getDynamicGlobalProperties( await function(err, result) {
+        if(err){console.log(err)}
+        total_vesting_shares = parseInt(result.total_vesting_shares);
+        total_vesting_fund = parseInt(result.total_vesting_fund_hive);
+        hiveVested = ( Number(total_vesting_fund) *  Number(hivePower) ) / Number(total_vesting_shares);
+        $("#hivePowerHeld").html(`<b>HIVE Power</b>:<br>${toThree(hiveVested)}<br>`);
+        $("#loansHPdisplay").html(`<span id="hplevel">${toThree(hiveVested)}</span> HP<br>`);
+        loanMax = parseFloat(hiveVested * 0.7);
+        if(recoverAcct !== 'hive.loans' && recoverAcct !== 'anonsteem' && recoverAcct !== 'beeanon' && recoverAcct !== 'blocktrades' && recoverAcct !== 'someguy123') {
+          $("#recName").css({"color":"red"});
+          $("#precacct").css({"color":"red"});
+          $("#loanEnabled").css({"color":"red"});
+          $("#prawarn").css({"color":"red"});
+          $("#showRecAcct").css({"color":"red"});
+          $("#prawarn").html(`❌ Incompatible Recovery Account! <b><a href="#" id="changeRecoveryAcct" style="color:white !important; text-decoration:none !important;" onClick="showRecoveryPanel();">Change Recovery Account</a></b>`);
+          $("#loanEnabled").html(`<i class="fa fa-exclamation-triangle" style="color:gold;" aria-hidden="true"></i> Incompatible Recovery Account!<br><center><b><a href="#" id="changeRecoveryAcct" style="color:white !important; text-decoration:none !important;" onClick="showRecoveryPanel();"><sup><i class="fas fa-fw fa-users-cog"></i> Click Here to Change Recovery Account</sup></a></b></center>`);
+          $("#recAlert").html(`<sub><b style="color:red;">Recovery Account Invalid!</b><br>Please set @hive.loans as recovery account!<br><br>Click here to change recovery account<br><sub>( This will take 30 days to complete )</sub></sub>`);
+        } else {
+          $("#recName").css({"color":"lawngreen"});
+          $("#precacct").css({"color":"lawngreen"});
+          $("#loanEnabled").css({"color":"lawngreen"});
+          $("#prawarn").css({"color":"white"});
+          $("#showRecAcct").css({"color":"lawngreen"});
+          $("#prawarn").html(`✔️`);
+          $("#loanEnabled").html(`Your Account is Cleared to Accept Lending Contracts! ✔️<br>`);
+          $("#recAlert").html(`<sub><b style="color:lawngreen;">Recovery Account Valid!</b><br><code onclick="showLoans()">You're ready to borrow! Remember to follow the site guidelines while lending..</code></sub>`);
+        }
+      });
+    };
+    });
+  } else {
+    hivesignerclient.me(function (err, res) {
+      if(err){
+        console.log(err);
+      }
+      //var link = client.getLoginURL(state);
+      var total_vesting_shares;
+      var total_vesting_fund;
+      var hiveVested;
+      console.log(res);
+      var statsName = res.name;
+      var acct = res.account;
+      var statsBal = acct.balance;
+      var statsBalTop = acct.balance;
+      var statsHBDBal = acct.hbd_balance;
+      var recoverAcct = acct.recovery_account;
+      var hivePower = parseInt(acct.vesting_shares);
+      hive.api.getDynamicGlobalProperties(function(err, result) {
+        if(err){console.log(err)}
+        total_vesting_shares = parseInt(result.total_vesting_shares);
+        total_vesting_fund = parseInt(result.total_vesting_fund_hive);
+        hiveVested = ( Number(total_vesting_fund) *  Number(hivePower) ) / Number(total_vesting_shares);
+        $("#hivePowerHeld").html(`<b>HIVE Power</b>:<br>${toThree(hiveVested)}<br>`);
+        $("#loansHPdisplay").html(`<span id="hplevel">${toThree(hiveVested)}</span> HP<br>`);
+        loanMax = parseFloat(hiveVested * 0.7);
+        if(recoverAcct !== 'hive.loans' && recoverAcct !== 'anonsteem' && recoverAcct !== 'beeanon' && recoverAcct !== 'blocktrades' && recoverAcct !== 'someguy123') {
+          $("#recName").css({"color":"red"});
+          $("#precacct").css({"color":"red"});
+          $("#loanEnabled").css({"color":"red"});
+          $("#prawarn").css({"color":"red"});
+          $("#showRecAcct").css({"color":"red"});
+          $("#prawarn").html(`Incompatible Recovery Account!<br><center><b><a href="#" id="changeRecoveryAcct" style="color:white !important; text-decoration:none !important;" onClick="showRecoveryPanel();">Click Here to Change Recovery Account</a></b></center>`);
+          $("#loanEnabled").html(`<i class="fa fa-exclamation-triangle" style="color:gold;" aria-hidden="true"></i> Incompatible Recovery Account!<br><center><b><a href="#" id="changeRecoveryAcct" style="color:white !important; text-decoration:none !important;" onClick="showRecoveryPanel();"><sup><i class="fas fa-fw fa-users-cog"></i> Click Here to Change Recovery Account</sup></a></b></center>`);
+          $("#recAlert").html(`<sub><b style="color:red;">Recovery Account Invalid!</b><br>Please set @hive.loans as recovery account!<br><br>Click here to change recovery account<br><sub>( This will take 30 days to complete )</sub></sub>`);
+        } else {
+          $("#recName").css({"color":"lawngreen"});
+          $("#precacct").css({"color":"lawngreen"});
+          $("#loanEnabled").css({"color":"lawngreen"});
+          $("#prawarn").css({"color":"white"});
+          $("#showRecAcct").css({"color":"lawngreen"});
+          $("#prawarn").html(`Compatible Recovery Account!`);
+          $("#loanEnabled").html(`Your Account is Cleared to Accept Lending Contracts! ✔️<br>`);
+          $("#recAlert").html(`<sub><b style="color:black;">Recovery Account Valid!</b><br>You're ready to borrow! Remember to follow the site guidelines while lending.<br><sub>( Attempts to cheat the system have fees )</sub></sub>`);
+        }
+      });
+      $("#statsName").html(`@${statsName}`);
+      $("#statsBal").html(`<b>HIVE Balance</b>:<br>${statsBal}<br>`);
+      $("#statsBalTop").html(`<b>${statsBalTop} ${statsHBDBal}</b>`);
+      $("#lendingBalance").html(`${statsBal} HIVE`);
+      $("#statHBDsBal").html(`<b>HBD Balance</b>:<br>${statsHBDBal}<br>`);
+      $("#recoverAcct").html(`<b>Recovery Account</b>:<br><span id="recName">${recoverAcct}</span><br>`);
+      $("#profileRecoverAcct").html(`<span id="precacct">${recoverAcct}</span>`);
+      $("#showRecAcct").html(`@${recoverAcct}`);
+  });
+  }
+}
+
+
+
+
 
 var banlist = [];
 
@@ -18,10 +213,152 @@ var loginKey = function(event){
 
 };
 
+var hiveAmountChecker = async(amount, asset) => {
+  var response = await hive.formatter.amount(_amount, asset);
+  return response;
+}
+
+
 function changenode(){
   console.log(`changenode!`);
-  socket.emit('changenode', {username: $('#usernamestore').val()});
+  socket.emit('changenode', {token: token}, function(err, data){
+    if(err) {
+
+    }
+    if(data){
+
+    }
+  });
 }
+
+function handsBlink(side) {
+  var flipped = '';
+  var flash;
+  var hand;
+  var handselector = Math.floor(Math.random() * (5 - 1) + 1);
+  if(side == 'left') {
+    flipped = ' fa-flip-horizontal ';
+    flash = 'leftflash';
+    hand = 'lefthand';
+  } else {
+    flash = 'rightflash';
+    hand = 'righthand';
+  }
+  switch(handselector){
+    case 1:
+    string = `<i class="fas fa-2x fa-hand-holding-medical ${flipped} ${hand}"></i>`;
+    break;
+    case 2:
+    string = `<i class="fas fa-2x fa-hand-holding-heart ${flipped} ${hand}"></i>`;
+    break;
+    case 3:
+    string = `<i class="fas fa-2x fa-hand-holding-usd ${flipped} ${hand}"></i>`;
+    break;
+    case 4:
+    string = `<i class="fas fa-2x fa-hand-holding-water ${flipped} ${hand}"></i>`;
+    break;
+    case 5:
+    string = `<i class="fas fa-2x fa-hand-holding ${flipped} ${hand}"></i>`;
+    break;
+  }
+  $(`#${flash}`).hide();
+  $(`#${flash}`).html(`${string}`);
+  $(`#${flash}`).fadeIn('slow');
+}
+var blonkcount = 0;
+
+  var blonker = setInterval(function(){
+    blonkcount++;
+    if(blonkcount % 2 == 0){
+        handsBlink('left');
+    } else {
+        handsBlink('right');
+    }
+  }, 3000);
+
+
+
+function navbarBlitz(data) {
+  clearInterval(blonker);
+  var screenWidth = window.innerWidth;
+  if((screenWidth / $('.navbar').width()) < 3 ){
+    $('.navbar').css({"width":"20%"});
+    //$('li').animate({"margin-left":"3px"}, 900);
+    $('#arrowin').html('<i class="fas fa-chevron-right" title="Click here to Grow Menu"></i>');
+    $("#acct").addClass('hidden');
+    $("#loans").addClass("hidden");
+    $("#lend").addClass("hidden");
+    $("#tools").addClass("hidden");
+    $("#faq").addClass("hidden");
+    $("#wallet").addClass("hidden");
+    $("#profile").addClass("hidden");
+    $("#loansmenu").addClass("hidden");
+    $("#futures").addClass("hidden");
+    $("#login").addClass('hidden');
+    $("#logout").addClass('hidden');
+    $("#jumbotron").css({'height':`'${($("#jumbotron").height() + 5)}%'`});
+    return true;
+  } else if ((screenWidth / $('.navbar').width()) > 3 ) {
+    $('.navbar').css({"width":"99%"});
+    //$('li').animate({"margin-left":"40px"}, 900);
+    $('#arrowin').html('<i class="fas fa-chevron-left" title="Click here to Shrink Menu"></i>');
+    setTimeout(function(){
+      $("#acct").removeClass('hidden');
+      $("#loans").removeClass("hidden");
+      $("#lend").removeClass("hidden");
+      $("#tools").removeClass("hidden");
+      $("#faq").removeClass("hidden");
+      $("#wallet").removeClass("hidden");
+      $("#profile").removeClass("hidden");
+      $("#loansmenu").removeClass("hidden");
+      $("#futures").removeClass("hidden");
+      //$("#login").addClass('hidden').fadein('fast');
+      $("#logout").removeClass('hidden');
+      $("#jumbotron").css({'height':`'${($("#jumbotron").height() - 5)}%'`});
+    }, 900)
+    return true;
+  } else {
+    return false;
+  }
+}
+
+function toThree(n) {
+    var number = n.toString().substring(0, n.toString().indexOf(".") + 4);
+    parseFloat(number);
+    return number;
+}
+
+
+function deposit(amount, type, memo){
+  const op = ['transfer', {
+    from: '__signer',
+    to: 'hive.loans',
+    amount: amount + " " + type.toUpperCase(),
+    memo: memo
+  }];
+  hivesigner.sendOperation(op, {}, function(err, result) {
+    if(err){showErr("Transfer Failed to Send!")}
+    if(result){
+      return console.log(result);
+    }
+  });
+}
+
+function sendPopup(type, addess){
+  var dep = window.prompt(`How Much ${type} do You Wish to Deposit?`, "");
+  if (!dep) {
+    console.log(`User Cancelled the Deposit`);
+  }
+  if(dep <= 0){
+    showErr("Your Deposit Must be Greater Than 0!");
+  } else if (isNaN(dep)) {
+    showErr("Invalid Deposit Amount!");
+  } else {
+    deposit(dep, type, uAddress);
+  }
+}
+
+
 
 // time rewuired format: 'MM/DD/YYYY 0:0 AM'
 //CountDownTimer('02/19/2012 10:1 AM', 'countdown');
@@ -29,7 +366,16 @@ function changenode(){
 //<div id="countdown"></div>
 //<div id="newcountdown"></div>
 
+
+
+function getUserProfile(user) {
+  //showSuccess(`Fetching ${user}'s Profile'`);
+  viewUserProfile(user);
+  window.open(`https://peakd.com/@${user}`);
+}
+
 function getUserBlog(user) {
+  showSuccess(`Opening ${user}'s Blog on Peakd.com '`);
   window.open(`https://peakd.com/@${user}`);
 }
 
@@ -46,21 +392,19 @@ async function withdrawButton() {
   })
 }
 
+/*
 function CountDownTimer(dt, id) {
     var end = new Date(dt);
-
     var _second = 1000;
     var _minute = _second * 60;
     var _hour = _minute * 60;
     var _day = _hour * 24;
     var timer;
-
     function showRemaining() {
-          flashsec($('#countdown'));
+        flashsec($('#countdown'));
         var now = new Date();
         var distance = end - now;
         if (distance < 0) {
-
             clearInterval(timer);
             var winnner = $('#currentWinner').val();
             document.getElementById(id).innerHTML = "Winner is: " + winnner;
@@ -70,30 +414,41 @@ function CountDownTimer(dt, id) {
         var hours = Math.floor((distance % _day) / _hour);
         var minutes = Math.floor((distance % _hour) / _minute);
         var seconds = Math.floor((distance % _minute) / _second);
-
         document.getElementById(id).innerHTML = days + 'days ';
         document.getElementById(id).innerHTML += hours + 'hrs ';
         document.getElementById(id).innerHTML += minutes + 'mins ';
         document.getElementById(id).innerHTML += seconds + 'secs';
     }
-
-    timer = setInterval(showRemaining, 1000);
+    timer =setInterval(showRemaining, 1000);
 }
-
+*/
 
 let hiveprice;
 
 var pricecheck = async() => {
+  if(!hiveprice) oldhiveusdprice = 0;
   try {
     fetch('https://api.coingecko.com/api/v3/simple/price?ids=hive&vs_currencies=usd&include_market_cap=false')
     .then(res => res.json()).then(json => {
       response = json["hive"];
       response = response["usd"];
       hiveprice = response;
-      console.log(`PRICE: 1 HIVE / $${hiveprice} USD`);
+      if(oldhiveusdprice > hiveprice) {
+        $('#pricecheck').html(`1 HIVE = $${hiveprice} <code><span id="pricetype">USD</span></code>`);
+        flashlose($('#pricecheck'));
+      } else if (oldhiveusdprice < hiveprice ){
+        $('#pricecheck').html(`1 HIVE = $${hiveprice} <code><span id="pricetype">USD</span></code>`);
+        flashwin($('#pricecheck'));
+      } else if (oldhiveusdprice ==  hiveprice){
+        $('#pricecheck').html(`1 HIVE = $${hiveprice} <code><span id="pricetype">USD</span></code>`);
+      } else {
+        $('#pricecheck').html(`1 HIVE = $${hiveprice} <code><span id="pricetype">USD</span></code>`);
+      }
+      if(hiveprice) oldhiveusdprice = hiveprice;
       return hiveprice;
     }).catch(function (error) {
-      log("Error: " + error);
+      console.log(error)
+      showErr("Error: " + error);
     });
   } catch(e) {
     console.log(`pricefetch error: ${e}`)
@@ -121,34 +476,40 @@ function getNumber(theNumber)
 
 //END JS sound shit
 
-var showErr = function(text){
-  alertify.closeAll()
-  alertify.error('<i class="fa fa-2x fag-2x fa-exclamation-circle" style="color:red;float:left;    margin-left: 0.5vw;"></i>' + text).dismissOthers();
-}
-var showSuccess = function(text){
-  alertify.closeAll()
-  alertify.success('<i class="fa fa-2x fag-2x fa-check-circle" style="color:green;float:left;    margin-left: 0.5vw;"></i>' + text).dismissOthers();
+
+var showPopup = function(text, type){
+  var color;
+  var title;
+  if(type == 'error') {color = 'red'; title = "An Error has Occured!";}
+  if(type == 'success') {color = 'lawngreen'; title = "Important Information!";}
+  var loadingContent = `<center><h3 style="color:${color}">${title}</h3><b style="color:${color};">${text}</b><br><br><button id="popupClose" class="push_button4">Close</button></center>`;
+      var loadingContent = `${title}\n${text}`;
+      showErr(loadingContent);
+      //$("#jumbotron").html(loadingContent);
+      //$("#jumbotron").css({'height':'fit-content','width':'auto'});
+      //$("#jumbotron").center();
+      //$("#jumbotron").fadeIn('slow');
 }
 
 var flashsec = function(elements) {
   $(elements).css({'color':'#cc0000 !important'});
   $(elements).animate({'color':'#000000 !important'},900);
   $(elements).css({'color':'#000000 !important'});
-  return;
+
 };
 
 var flashwin = function(elements) {
   $(elements).css({'color':'#00ff00 !important'});
   $(elements).animate({'color':'#FFFFFF !important'},900);
   $(elements).css({'color':'#FFFFFF !important'});
-  return;
+
 };
 
 var flashlose = function(elements) {
   $(elements).css({'color':'#cc0000 !important'});
   $(elements).animate({'color':'#FFFFFF !important'},900);
   $(elements).css({'color':'#FFFFFF !important'});
-  return;
+
 };
 
 
@@ -175,17 +536,18 @@ var round = function(n, decimalPlaces){
     return (Math.round(n*m)/m).toFixed(decimalPlaces);
 };
 
-function getUserData(){
+var getUserData = () => {
   socket.emit('getuserdata', {data: true}, function(err, data){
     if(err) {
       console.log(err);
-      //showErr(`Something Went Wrong! Reloading!`);
-      //logout();
     }
     if(data) {
       data = data.userdata
-      $("#userhivebalance").val((data.hivebalance  / 1000).toFixed(3) + " HIVE");
-      $("#userhbdbalance").val((data.hbdbalance  / 1000).toFixed(3) + " HBD");
+      usersDataFetch = data;
+      $("#userhivebalance").html((data.hivebalance  / 1000).toFixed(3) + " <i class='fab fa-fw fa-hive hivered sexyblackoutline' style></i>");
+      //$("#userhbdbalance").html((data.hbdbalance  / 1000).toFixed(3) + " HBD");
+      console.log(usersData);
+      console.log(usersData);
       showSuccess(`Fetched Account Data!`);
     }
   })
@@ -195,6 +557,11 @@ function createLoanPreview() {
   var newAmount = parseInt($('#newLendAmount').val());
   var newDays = parseInt($('#newLendDays').val());
   var newFee =  parseInt($('#newLendFee').val());
+  if ((newDays % 7) !== true){
+    $('#newLendDays').css({'color':'red'});
+  } else {
+    $('#newLendDays').css({'color':'white'});
+  }
   if(newAmount < 1){
   //  $('#newLendAmount').val(1);
   }
@@ -207,111 +574,262 @@ function createLoanPreview() {
   if(newFee > 10){
     //$('#newLendFee').val(30);
   }
-  newFee = (newFee / 100);
+  var feerank;
+  switch(usersDataFetch.rank){
+    case 'user':
+    feerank = 1;
+    break;
+    case 'founder':
+    feerank = 0.5;
+    break;
+    case 'backer':
+    feerank = 1;
+    break;
+    case 'benefactor':
+    feerank = 0;
+    break;
+    case 'owner':
+    feerank = 0;
+    break;
+  }
 
+  newFee = (newFee / 100);
+  var feedown = ((newAmount / feerank) / 100);
+  console.log(`feedown: ${feedown}`);
   var preview = (newAmount * newFee);
+  var deployfee = ((newAmount * feedown) / 100);
+  console.log(`deployfee: ${deployfee}`);
+  var cancelfee = ((newAmount * feedown) / 100);
+  console.log(`cancelfee: ${cancelfee}`);
   var commission = (preview / 10);
   var dailypreview = (preview / newDays);
-  var weeklyrepay = (dailypreview * 7)
- ;
+  var daysrepays = (newDays / 7);
+  var weeklyrepay = (dailypreview * 7);
+  preview = ((newAmount * newFee) + newAmount);
   var previewparse = parseFloat(preview);
   previewparse = previewparse.toString();
    console.log(previewparse)
   if(previewparse != 'NaN' ) {
-    $('#createLoanPreview').html(`This Lending Contract will Earn ${preview.toFixed(3)} HIVE <i class="fas fa-fw fa-info-circle" title="( minus a ${commission.toFixed(3)} HIVE site commission fee (10%) )"></i> over ${newDays} Days. ${dailypreview.toFixed(3)} HIVE Profit per Day, Recieving ${weeklyrepay.toFixed(3)} HIVE Weekly Repayments.`);
+    $('#createLoanPreview').html(`<center>This Lending Contract will Return ${preview.toFixed(3)} <i class='fab fa-fw fa-hive hivered' style></i> <i class="fas fa-fw fa-info-circle" title="( minus a ${commission.toFixed(3)} HIVE site commission fee (10%) )"></i> over ${newDays} Days.<br>Yielding Roughly ~ ${dailypreview.toFixed(3)} <i class='fab fa-fw fa-hive hivered' style></i> Profit per Day.</center>`);
   } else {
-    $('#createLoanPreview').html(`Please enter valid amounts in the fields above to get a preview of the loan contract`);
+    $('#createLoanPreview').html(`<center>Please enter valid amounts in the fields above to get a preview of the loan contract</center>`);
   }
 }
 
 function cancelContract(contractID) {
   socket.emit('cancelloan', {loanId: contractID, token: token}, function(err, data){
       if(err) {
+        showErr(err);
+        //showPopup(err, 'error');
+        token = data.token;
         console.log(err)
       }
       if(data) {
-        showSuccess(`Destroyed Contract #${contractID}`);
+        console.log(data)
+        token = data.token;
+        showSuccess(`Cancel Contract #${contractID}`);
       }
   })
+}
+
+
+function simpleJSONstringify(obj) {
+    var prop, str, val,
+        isArray = obj instanceof Array;
+
+    if (typeof obj !== "object") return false;
+
+    str = isArray ? "[" : "{";
+
+    function quote(str) {
+        if (typeof str !== "string") str = str.toString();
+        return str.match(/^\".*\"$/) ? str : '"' + str.replace(/"/g, '\\"') + '"'
+    }
+
+    for (prop in obj) {
+        if (!isArray) {
+            // quote property
+            str += quote(prop) + ": ";
+        }
+
+        // quote value
+        val = obj[prop];
+        str += typeof val === "object" ? simpleJSONstringify(val) : quote(val);
+        str += ", ";
+    }
+
+    // Remove last colon, close bracket
+    str = str.substr(0, str.length - 2)  + ( isArray ? "]" : "}" );
+
+    return str;
 }
 
 function acceptContract(contractID) {
+  showSuccess(`Grabbing Contract #${contractID}`);
   socket.emit('acceptloan', {loanId: contractID, token: token}, function(err, data){
-      showSuccess(`Claim Contract #${contractID}`);
+
       if(err) {
+        showPopup(err, 'error');
+        token = data.token;
         console.log(err)
+        return showErr(err);
       }
       if(data) {
+        console.log(`acceptContract(contractID):`);
         console.log(data);
-        showSuccess(`Accepted Contract #${contractID}`);
-        alert(`ERROR: Cannot Complete Lending Contract Request!\nThis site is under construction and not yet fully operational!\n\nWith your current Hive Power you could borrow up to ${data.limit} HIVE!\n\nLooking forward to launch, hope to see you there!`);
+        token = data.token;
+        showAcctSurrenderPanel(data.username, data.loanData.loanId, data.limit, data.loanData, data.pgppublic);
+        return showSuccess(`Get Contract #${contractID}`);
+        //showErr(`ERROR: Cannot Complete Lending Contract Request!\nThis site is under construction and not yet fully operational!\n\nWith your current Hive Power you could borrow up to ${data.limit} HIVE!\n\nLooking forward to launch, hope to see you there!`);
       }
   })
 }
 
-function infoContract(contractID) {
-  socket.emit('infoloan', {loanId: contractID, token: token}, function(err, data){
-      if(err) {
-        console.log(err)
+function infoContract(data) {
+    data = JSON.parse(data);
+    console.log(data);
+    var newinterest = (data.interest / 100);
+    data.totalpayments = (data.days / 7);
+    var totalrepay =  data.amount + (data.amount * newinterest);
+    var paymentSum = totalrepay / data.totalpayments;
+    if(data.borrower == null){
+      data.borrower = 'none';
+    }
+    if(data.active == 0){
+      if(data.completed === 0){
+        data.active = `<center><button class="button" style="float:left;font-size:small;" id="acceptButton" onclick="acceptContract('${data.loanId}');">Accept <i class="fas fa-fw fa-coins" style="color:gold;"></i></button></center>`;
+      } else {
+        data.active = 'Completed';
       }
-      if(data) {
-        showSuccess(`Fetched Contract #${contractID.slice(0, 10)}... Data!`);
-      }
-  })
+    } else {
+      data.active = 'Active';
+    }
+    if(data.completed === 0){
+      data.completed = '❌';
+    } else {
+      data.completed = '✔️';
+    }
+
+    var date = new Date(data.createdAt);
+    date = date.toString();
+    date = date.slice(0, (date.length - 20));
+
+    var hyperdatatable = `<table class="robotable" style="background: #444444; border-radius: 10px; border: inset 2px grey; width: 100% !important; height: 10% !important;"><tbody style="width:100%;">` +
+    `<tr><td><code>Loan ID</code><br>${data.loanId}</td><td><code>Lender</code><br>@${data.username}</td><td><code>Amount</code><br>${(data.amount / 1000).toFixed(3)} <i class='fab fa-fw fa-hive hivered' style></i></td>` +
+    `<td><code>Interest Rate</code><br>${data.interest}%</td><td><code>Repaid:</code><br>${(data.collected / 1000).toFixed(3)} <i class='fab fa-fw fa-hive hivered' style></i></td><td><code>Total Cost</code><br>${(totalrepay / 1000).toFixed(3)} <i class='fab fa-fw fa-hive hivered' style></i></td>` +
+    `<td><code>Duration</code><br>${data.days} days</td><td><code>Borrower</code><br>${data.borrower}</td><td><code>Payments</code><br>${data.currentpayments} / ${data.totalpayments} <i class="far fa-fw fa-question-circle" title="Payment Amounts of ${(paymentSum / 1000).toFixed(3)} HIVE Weekly"></i></td><td>${data.active}</td>` +
+    `</tr></tbody></table>`; //<td><code>Completed</code><br>${data.completed}</td><td><code>Created</code><br>${date}</td>
+      $('#loadloaninfo').html(`${hyperdatatable}`);
 }
 
-function createNewLendingContract(amount, days, fee, utoken) {
-  if(utoken == undefined){
-    utoken = token;
-  }
-  console.log(`createNewLendingContract(${amount}, ${days}, ${fee}, ${utoken})`);
+function createNewLendingContract(amount, days, fee) {
+  console.log(`createNewLendingContract(${amount}, ${days}, ${fee})`);
   $('#createLoanWarning').css({'color':'lawngreen'});
   $('#createLoanWarning').val(`Attempting to Create Lending Contract...`);
   socket.emit('createloan', {
     amount: amount,
     days: days,
     interest: fee,
-    token: utoken
+    token: token
   }, function(err, data){
     if(err){
-      token = err.token;
+      token = data.token;
       console.log(err);
       $('#createLoanWarning').css({'color':'red'});
       $('#createLoanWarning').val(`Error Creating Loan: ${err}`);
       showErr(`Error: ${err}`);
     }
-
+    if(data){
       token = data.token;
-      showSuccess(`Loan Contract Succesfully Created!`);
-      $('#createLoanWarning').css({'color':'green'});
-      $('#createLoanWarning').val(`Lending Contract has been Deployed!`);
-      showWallet();
       console.log(data);
-
+      showSuccess(`Attempting to Deploy Lending Contract...`);
+      $('#createLoanWarning').css({'color':'green'});
+      $('#createLoanWarning').val(`Deploying Lending Contract`);
+    }
   });
 }
+
+function finalizeLoan(contractID, pgpmessage){
+  socket.emit('confirmloan', {loanId: contractID, pgp: pgpmessage, token: token}, function(err, data){
+      if(err) {
+        token = data.token;
+        console.log(err)
+        showErr(`${err}`);
+      }
+      if(data) {
+        console.log(data);
+        $('#afterSurrenderButtonClick').removeClass('hidden');
+        $('#afterSurrenderButtonClick').html(data);
+        showSuccess(`Contract #${contractID.slice(0, 10)} Accepted!`);
+      }
+  })
+}
+
+
+
+async function encrypt(contractID, pgp){
+console.log(`function encrypt(${contractID}, ${pgp})`);
+  $("#surrenderKeysTable").hide();
+  $("#afterSurrenderButtonClick").removeClass('hidden');
+  $("#afterSurrenderButtonClick").html(`Awaiting Account Key Manager Response...`)
+  const { data: encrypted } = await openpgp.encrypt({
+      message: openpgp.message.fromText(`[{"${uUsername}":{"passdata":"${$('#masterAcctPass').val()}"}}]`),                 // input as Message object
+      publicKeys: (await openpgp.key.readArmored(pgp)).keys});
+  return finalizeLoan(`${contractID}`, `${encrypted}`);
+}
+
+async function payContract(contractID) {
+  socket.emit('payLoanIdDirect', {
+      loanId: contractID,
+      token: token
+  }, await function(err, data) {
+    if(err){
+       console.log(err);
+       showErr(err);
+    }
+    if(data){
+      console.log(data);
+      showRepayWindow(data.loandata);
+    }
+  })
+}
+
+async function payloan(user, contractID, sendamount) {
+  socket.emit('confirmpayLoanIdDirect', {
+    username: user,
+    loanId: contractID,
+    amount: sendamount,
+    token: token}, await function(err, data) {
+      if(err){
+        showErr(err);
+        console.log(err);
+      }
+      if(data){
+        showSuccess(data);
+        console.log(data);
+      }
+    });
+}//END payloan
 
 /** CHAT **/
 
 function writeBufferToChatBox(message){
-
     if( $.inArray(message.user, banlist) != -1){
-       alert("You're Currently Banned From Chat... Please Contact KLYE to Appeal Your Ban!");
+       showErr("You're Currently Banned From Chat... Please Contact KLYE to Appeal Your Ban!");
     } else {
       message.forEach(function(msg){
         formatChatMessage(msg, true);
         scrollToTop($("#trollbox"));
       });
-    };
-}; // END writeBufferToChatBox
+    }
+} // END writeBufferToChatBox
 
 function writeToChatBox(message){
     formatChatMessage(message, false);
     scrollToTop($("#trollbox"));
-}
+}//END writeToChatBox
 
 var formatChatMessage = function(message, prepend){
-
     var date = new Date(message.createdAt);
     var hours = date.getHours();
     var minutes = (date.getMinutes()<10?'0':'') + date.getMinutes()
@@ -321,7 +839,7 @@ var formatChatMessage = function(message, prepend){
     if (message.username == 'klye') {
         message.username = 'klye';
         message.flair = '<b title="Owner">🧙</b>';
-        $(`.chatUserName.${message.rng}`).css({"color":"lightgreen"});
+        $(`.chatUserName.${message.rng}`).css({"color":"lightgreen !important"});
     } else {
       if(message.rank == 'founder'){
         message.flair = '<b title="Founder">⚡</b>';
@@ -337,16 +855,37 @@ var formatChatMessage = function(message, prepend){
     }
 
     if (prepend == true) {
-        $("#trollbox").prepend(`<div class="chatList" id="${message.rng}"><span class="chatTime"><a href="#" title="${date}"><i class="far fa-clock" style="color:grey; text-decoration: none !important;"> </i></a></span> <span class="modspan ${message.rng}"></span> <span class="vipspan ${message.rng}"></span><span class="uid sextext" title="User Identification Number">(${message.userId})</span><span class="chatFlair">${message.flair}</span><span class="chatUser" onClick='userMenu(this, \"${message.username}\", \"${message.rng}\");'><a href="#" class="chatUserName ${message.rng}" title="Double Click to Open Trollbox Menu" onClick='userMenu(this, \"${message.username}\", \"${message.id}\");'>@<b>${message.username}</b></a></span><span class="userLvL ${message.rng}" title="Account Level"></span> <span class="pchat" style="color: white"></span></div>`);
+        $("#trollbox").prepend(`<div class="chatList" id="${message.rng}"><span class="chatTime"><a href="#" title="${date}"><i class="far fa-clock" style="color:grey; text-decoration: none !important;"> </i></a></span> <span class="modspan ${message.rng}"></span> <span class="vipspan ${message.rng}"></span><span class="uid sextext" title="User Identification Number">(${message.userId})</span><span class="chatFlair">${message.flair}</span><span class="chatUser iw-mTrigger" onClick='userMenu(this, \"${message.username}\", \"${message.rng}\");'><a href="#" class="chatUserName ${message.rng} iw-mTrigger" title="Double Click to Open Trollbox Menu" onClick='userMenu(this, \"${message.username}\", \"${message.id}\");'>@<b>${message.username}</b></a></span><span class="userLvL ${message.rng}" title="Account Level"></span> <span class="pchat" style="color: white"></span></div>`);
         $(".pchat").eq(0).text(message.msg);
     } else if (prepend == false){
-        $("#trollbox").append(`<div class="chatList" id="${message.rng}"><span class="chatTime"><a href="#" title="${date}"><i class="far fa-clock" style="color:grey; text-decoration: none !important;"> </i></a></span> <span class="modspan ${message.rng}"></span> <span class="vipspan ${message.rng}"></span><span class="uid sextext" title="User Identification Number">(${message.userId})</span><span class="chatFlair">${message.flair}</span><span class="chatUser" onClick='userMenu(this, \"${message.username}\", \"${message.rng}\");'><a href="#" class="chatUserName ${message.rng}" title="Double Click to Open Trollbox Menu" onClick='userMenu(this, \"${message.username}\", \"${message.id}\");'>@<b>${message.username}</b></a></span><span class="userLvL ${message.rng}" title="Account Level"></span> <span class="pchat" style="color: white"></span></div>`);
+        $("#trollbox").append(`<div class="chatList" id="${message.rng}"><span class="chatTime"><a href="#" title="${date}"><i class="far fa-clock" style="color:grey; text-decoration: none !important;"> </i></a></span> <span class="modspan ${message.rng}"></span> <span class="vipspan ${message.rng}"></span><span class="uid sextext" title="User Identification Number">(${message.userId})</span><span class="chatFlair">${message.flair}</span><span class="chatUser iw-mTrigger" onClick='userMenu(this, \"${message.username}\", \"${message.rng}\");'><a href="#" class="chatUserName ${message.rng} iw-mTrigger" title="Double Click to Open Trollbox Menu" onClick='userMenu(this, \"${message.username}\", \"${message.id}\");'>@<b>${message.username}</b></a></span><span class="userLvL ${message.rng}" title="Account Level"></span> <span class="pchat" style="color: white"></span></div>`);
         $(".pchat").eq(-1).text(message.msg);
     }
     scrollToTop($("#trollbox"));
 }
 
 var alertChatMessage = function(message) {
+    var date = message.date
+    $("#trollbox").append('<div class="chatList"><span class="chatTime"><a href="#" title="' + date + '"><i class="far fa-clock" style="color:grey; text-decoration: none !important;"></i></a></span> <span class="chatAlert sexyoutline" style="color:lightblue;" title="System"><i class="fas fa-fw fa-robot"></i></span> <span class="pchat" style="color: white"></span></div>'); //<b>System</b>
+    $(".pchat").eq(-1).html(message.message);
+    scrollToTop($("#trollbox"));
+};
+
+var contractChatMessage = function(message) {
+    var date = message.date
+    $("#trollbox").append('<div class="chatList"><span class="chatTime"><a href="#" title="' + date + '"><i class="far fa-clock" style="color:grey; text-decoration: none !important;"></i></a></span> <span class="chatAlert sexyoutline" style="color:grey;" title="System"><i class="fas fa-fw fa-robot"></i></span> <span class="pchat" style="color: white"></span></div>'); //<b>System</b>
+    $(".pchat").eq(-1).html(message.message);
+    scrollToTop($("#trollbox"));
+};
+
+var enterChatMessage = function(message) {
+    var date = message.date
+    $("#trollbox").append('<div class="chatList"><span class="chatTime"><a href="#" title="' + date + '"><i class="far fa-clock" style="color:grey; text-decoration: none !important;"></i></a></span> <span class="chatAlert sexyoutline" style="color:grey;" title="System"><i class="fas fa-fw fa-robot"></i></span> <span class="pchat" style="color: white"></span></div>'); //<b>System</b>
+    $(".pchat").eq(-1).html(message.message);
+    scrollToTop($("#trollbox"));
+};
+
+var leaveChatMessage = function(message) {
     var date = message.date
     $("#trollbox").append('<div class="chatList"><span class="chatTime"><a href="#" title="' + date + '"><i class="far fa-clock" style="color:grey; text-decoration: none !important;"></i></a></span> <span class="chatAlert sexyoutline" style="color:grey;" title="System"><i class="fas fa-fw fa-robot"></i></span><span class="pchat" style="color: white"></span></div>'); //<b>System</b>
     $(".pchat").eq(-1).html(message.message);
@@ -366,26 +905,41 @@ var limitTrollBox =function(){
     }
 };
 
+async function splitOffVests(a){
+  if(a){
+    return parseFloat(a.split(' ')[0]);
+  }
+}
 
-function copyStringToClipboard(str) {
-    // Create new element
-    var el = document.createElement('textarea');
-    // Set value (string to be copied)
-    el.value = str;
-    // Set non-editable to avoid focus and move outside of view
-    el.setAttribute('readonly', '');
-    el.style = {
-        position: 'absolute',
-        left: '-9999px'
-    };
-    document.body.appendChild(el);
-    // Select text inside element
-    el.select();
-    // Copy text to clipboard
-    document.execCommand('copy');
-    showSuccess("Copied to Clipboard!");
-    // Remove temporary element
-    document.body.removeChild(el);
+var getHivePower = async(user) => {
+  if(!user) return "No User Specified";
+    console.log(`getHivePower Called!`)
+    var resultData = await hive.api.callAsync('condenser_api.get_accounts', [[`${user}`]]).then((res) => {return JSON.parse(JSON.stringify(res))}).catch((e) => console.log(e));
+    var chainProps = await hive.api.callAsync('condenser_api.get_dynamic_global_properties', []).then((res) => {return JSON.parse(JSON.stringify(res))}).catch((e) => console.log(e));
+    var hivePower = await splitOffVests(resultData[0].vesting_shares);
+    var total_vesting_shares = await splitOffVests(chainProps.total_vesting_shares);
+    var total_vesting_fund = await splitOffVests(chainProps.total_vesting_fund_hive);
+    var hiveVested = parseFloat(((total_vesting_fund *  hivePower ) / total_vesting_shares).toFixed(3));
+    loanMax = parseFloat(hiveVested * 0.7);
+    console.log(`${user} - ${hiveVested} HP > ${loanMax} HIVE Credit`);
+    var hpdata = JSON.stringify({hp: hiveVested, credit: loanMax});
+    return hpdata;
+}
+
+var getUserAccount = async(user) => {
+  if(!user) return "No User Specified";
+    console.log(`getUserAccount Called!`)
+    var resultData = await hive.api.callAsync('condenser_api.get_accounts', [[`${user}`]]).then((res) => {return JSON.parse(JSON.stringify(res))}).catch((e) => console.log(e));
+    return resultData;
+}
+
+var getUserSiteBalance = async() => {
+  if(!user) return "No User Specified";
+    console.log(`getUserSiteBalance Called!`)
+    await socket.emit('getuserdata', {username: uUsername}, function(err, data){
+      if(err) showErr(err);
+        return data;
+    });
 }
 
 function isNumberKey(evt) {
@@ -425,9 +979,9 @@ $('input#newLendFee.casperInput').on('onkeyup', function () {
 });
 */
 /*EDIT BELOW TO ADD NEW COIN*/
-function CreateTableFromJSON(data, name, elementid) {
+function CreateTableFromJSON(data, name, elementid, tablename, tableheadname) {
     if (data == undefined) {
-        return showErr('Something fucked up!');
+        return showErr("Something fucked up!");
     }
     //console.log(data, name);
     var loanIDstore = [];
@@ -437,144 +991,409 @@ function CreateTableFromJSON(data, name, elementid) {
     if (tableLength >= tableLimit) {
         data = data.slice(tableAmount, tableLength);
     }
-    //data.pop();
 
     var col = [];
+    var dataKeys = [];
     for (var i = 0; i < data.length; i++) {
         for (var key in data[i]) {
             if (col.indexOf(key) === -1) {
                 col.push(key);
+                dataKeys.push(key);
             }
         }
     }
+
     // CREATE DYNAMIC TABLE.
     var table = document.createElement("table");
-    table.setAttribute("id", "newHistoryTable");
-    table.classList.add("lendingtable");
+    table.setAttribute("id", tablename);
+    table.classList.add("robotable");
     table.classList.add("table");
     var header = table.createTHead();
-    header.setAttribute("id", "historyhead");
+    header.setAttribute("id", tableheadname);
+
     // CREATE HTML TABLE HEADER ROW USING THE EXTRACTED HEADERS ABOVE.
     var tr = header.insertRow(-1); // TABLE ROW.
     for (var i = 0; i < col.length; i++) {
         if (col[i] == undefined) {
-            console.log(`Undefined entry!`)
+            console.log("Undefined entry!");
         } else {
             var th = document.createElement("th");
-                //th.classList.add("tg-ul38");
-            //th.classList.add(name + "-" +col[i]);      // TABLE HEADER.
+            th.classList.add(tableheadname + "-" + col[i]);      // TABLE HEADER.
             th.innerHTML = col[i];
             tr.appendChild(th);
-        }
+            th.classList.add(col[i]);
+            th.setAttribute("id", col[i]);
 
+            switch(col[i]){
+              case "loanId":
+              $(th).html("Loan ID");
+              break;
+              case "active":
+              $(th).html("Active");
+              break;
+              case "currentpayments":
+              $(th).html("Current Payments");
+              break;
+              case "totalpayments":
+              $(th).html("Payments");
+              break;
+              case "id":
+              $(th).html("#");
+              break;
+              case "interest":
+              $(th).html("Interest");
+              break;
+              case "collected":
+              $(th).html("Collected");
+              break;
+              case "borrower":
+              $(th).html("Borrower");
+              break;
+              case "block":
+              $(th).html("Block");
+              break;
+              case "username":
+              $(th).html("Lender");
+              break;
+              case "days":
+              $(th).html("Duration");
+              break;
+              case "cancelled":
+              $(th).html("Cancelled");
+              break;
+              case "completed":
+              $(th).html("Completed");
+              break;
+              case "state":
+              $(th).html("State");
+              break;
+              case "amount":
+              $(th).html("Amount");
+              break;
+              case "txid":
+              $(th).html("TXID");
+              break;
+              case "deployfee":
+              $(th).html("Deploy Fee");
+              break;
+              case "cancelfee":
+              $(th).html("Cancel Fee");
+              break;
+              case "startblock":
+              $(th).html("Genesis Block");
+              break;
+              case "endblock":
+              $(th).html("Apoptosis Block");
+              break;
+              case "endtxid":
+              $(th).html("Completion TXID");
+              break;
+              case "payblocks":
+              $(th).html("Payouts");
+              break;
+              case "createdAt":
+              $(th).html("Created");
+              break;
+            }
+        }
     }
 
+    var alltehdata;
     // ADD JSON DATA TO THE TABLE AS ROWS.
     for (var i = 0; i < data.length; i++) {
+
         if (data == undefined) {
             console.log(`Undefined History Data`);
         } else {
-            tr = table.insertRow(-1);
-            for (var j = 0; j < col.length; j++) {
 
+            var entrydata = data[i];
+            tr = table.insertRow(-1);
+            tr.setAttribute("id", `row-${[i]}`);
+            var wew = [];
+            wew.push(JSON.stringify(data[i]));
+            tr.setAttribute("onclick", "infoContract(" + JSON.stringify(wew) + "); $(\".iw-contextMenu\").contextMenu(\"destroy\"); $(\".iw-cm-menu\").contextMenu(\"destroy\"); contractMenu($(this), \"" + wew[0][i].loanId + "\", " + JSON.stringify(wew) + ");");  /*`#row-${[i]}`*/                         //acceptContract('${thisID}');  //$(this).css({'background':'rgba(255,255,255,0.2)','color':'lightgreen'}).delay(50).animate({'background':'rgba(255,255,255,0.1)','color':'white'}, 150);";
+            tr.setAttribute("onmouseover", "$(this).css({\"background\":\"rgba(255,255,255,0.05)\"});");
+            tr.setAttribute("onmouseout", "$(this).css({\"background\":\"rgba(255,255,255,0)\"});");
+
+            var thisID;
+            for (var j = 0; j < col.length; j++) {
                 if (data[i][col[j]] == undefined) {
                     //data[i][col[j]] = '';
+                } else {
+                  alltehdata = data[i];
                 }
 
-                  if (name == 'backers') {
-                        if (col[j] == 'amount') {
-                            if (data[i][col[j]] == undefined) {
-                                data[i][col[j]] = "Non Integer";
-                            } else {
-                                data[i][col[j]] = (data[i][col[j]] / 1000).toFixed(3) + " HIVE";
-                            }
-                        }
-                        if (col[j] == 'username') {
-                                if((i + 1) == 1) {
-                                  $('#currentWinner').html(`👑${data[i][col[j]]}`)
-                                    data[i][col[j]] = `<span style="float:left;">#${i + 1}</span> 👑<a href="https://hiveblocks.com/@${data[i][col[j]]}" class="histuserlink" style="color:white !important;" target="_blank" title="Click to View This Account on HiveBlocks.com in a New Window">@${data[i][col[j]]}</a>`;
-                                } else {
-                                    data[i][col[j]] = `<span style="float:left;">#${i + 1}</span> <a href="https://hiveblocks.com/@${data[i][col[j]]}" class="histuserlink" style="color:white !important;" target="_blank" title="Click to View This Account on HiveBlocks.com in a New Window">@${data[i][col[j]]}</a>`;
-                                }
-
-                        }
-
-                        if (col[j] == 'block') {
-                                data[i][col[j]] = `<a href="https://hiveblocks.com/b/${data[i][col[j]]}" class="histuserlink" style="color:white !important;" target="_blank" title="Click to View This Block on HiveBlocks.com in a New Window">#${data[i][col[j]]}</a>`;
-                        }
+                switch(name){
+                  case "backers":
+                    switch(col[j]){
+                      case "amount":
+                      if (data[i][col[j]] == undefined) {
+                          data[i][col[j]] = "Non Integer";
+                      } else {
+                          data[i][col[j]] = (data[i][col[j]] / 1000).toFixed(3) +  " <i class=\"fab fa-fw fa-hive hivered\"></i>";
                       }
-
-                if (name == 'loans') {
-
-                  if (col[j] == 'loanId') {
-                      //loanIDstore.push(data[i][col[j]]);
-                      //console.log(loanIDstore);
-                      let thisID = data[i][col[j]];
-                      data[i][col[j]] = `<button class="cancelButton push_button4" style="float:left;" id="cancelButton${data[i][col[j]]}" onclick="cancelContract('${data[i][col[j]]}');">Delete <i class="far fa-fw fa-times-circle" style="color:red;"></i></button> <span id="${data[i][col[j]]}">${data[i][col[j]]}</span>`;
-                  }
-                    if (col[j] == 'username') {
-                        data[i][col[j]] = `<a href="#" class="histuserlink" title="Click to Open User Menu" onClick="userMenu(this, \'${data[i][col[j]]}\');">@${data[i][col[j]]}</a>`;
+                      break;
+                      case "username":
+                      if((i + 1) == 1) {
+                        $("#currentWinner").html("👑 " + data[i][col[j]])
+                          data[i][col[j]] = `<span style="float:left;">#${i + 1}</span> 👑<a href="https://hiveblocks.com/@${data[i][col[j]]}" class="histuserlink" style="color:white !important;" target="_blank" title="Click to View This Account on HiveBlocks.com in a New Window">@${data[i][col[j]]}</a>`;
+                      } else {
+                          data[i][col[j]] = `<span style="float:left;">#${i + 1}</span> <a href="https://hiveblocks.com/@${data[i][col[j]]}" class="histuserlink" style="color:white !important;" target="_blank" title="Click to View This Account on HiveBlocks.com in a New Window">@${data[i][col[j]]}</a>`;
+                      }
+                      break;
+                      case "block":
+                        data[i][col[j]]  = data[i][col[j]];
+                      break;
                     }
-                    if (col[j] == 'amount') {
+                  break;
+                  //END case 'backers'
+                  case "loans":
+                    switch(col[j]) {
+                      case "username":
+                      if(data[i][col[j]] == null) {
+                        data[i][col[j]] = '<code>none</code>';
+                      } else {
+                        data[i][col[j]] = `<a href="#" class="histuserlink" title="Click to Open User Menu" onClick="userMenu($(this), \"${data[i][col[j]]}\", \"0\");">@${data[i][col[j]]}</a>`;
+                      }
+                      break;
+                      case "amount":
+                        data[i][col[j]] = (data[i][col[j]] / 1000).toFixed(3) +  " <i class=\"fab fa-fw fa-hive hivered\"></i>";
+                      break;
+                      case "deployfee":
+                        data[i][col[j]] = (data[i][col[j]] / 1000).toFixed(3) + " <i class=\"fab fa-fw fa-hive hivered\"></i>";
+                      break;
+                      case "cancelfee":
+                        data[i][col[j]] = (data[i][col[j]] / 1000).toFixed(3) +  " <i class=\"fab fa-fw fa-hive hivered\"></i>";
+                      break;
+                      case "interest":
+                        data[i][col[j]] = data[i][col[j]] + "%";
+                      break;
+                      case "borrower":
+                      if(data[i][col[j]] == null) {
+                        data[i][col[j]] = '<code>none</code>';
+                      } else {
+                        data[i][col[j]] = `<a href="#" class="histuserlink" title="Click to Open User Menu" onClick="userMenu($(this), \"${data[i][col[j]]}\", \"0\");">@${data[i][col[j]]}</a>`;
+                      }
+                      break;
+                      case "collected":
+                        data[i][col[j]] = (data[i][col[j]] / 1000).toFixed(3) + " <i class=\"fab fa-fw fa-hive hivered\"></i>";
+                        if (data[i][col[j]] == undefined) data[i][col[j]] = "<code>none</code>";
+                      break;
+                      case "currentpayments":
+                        data[i][col[j]] = `${data[i][col[j]]}`;//<i class="fab fa-fw fa-hive hivered"></i>
+                        if (data[i][col[j]] == undefined) data[i][col[j]] = "<code>none</code>";
+                      break;
+                      case "totalpayments":
+                        data[i][col[j]] = `${data[i][col[j]]}`;//<i class="fab fa-fw fa-hive hivered"></i>
+                        if (data[i][col[j]] == undefined) data[i][col[j]] = "<code>none</code>";
+                      break;
+                      case "payblocks":
                         if (data[i][col[j]] == undefined) {
-                            data[i][col[j]] = "Non Integer";
+                          data[i][col[j]] = "<code>none</code>";
                         } else {
-                            data[i][col[j]] = (data[i][col[j]] / 1000).toFixed(3) + " HIVE";
+                          data[i][col[j]] = data[i][col[j]];
                         }
+                      break;
+                      case "active":
+                        if(data[i][col[j]] === 0) data[i][col[j]] = "❌";
+                        if(data[i][col[j]] === 1) data[i][col[j]] = "✔️";
+                      break;
+                      case "completed":
+                        if(data[i][col[j]] === 0) data[i][col[j]] = "❌";
+                        if(data[i][col[j]] === 1) data[i][col[j]] = "✔️";
+                      break;
+                      case "cancelled":
+                        if(data[i][col[j]] === 0) data[i][col[j]] = "❌";
+                        if(data[i][col[j]] === 1) data[i][col[j]] = "✔️";
+                      break;
                     }
-                    if (col[j] == 'interest') {
+                    break;
+                    //END case 'loans'
+                    case "loadloans":
+                      switch(col[j]) {
+                        case "username":
+                          data[i][col[j]] = `<a href="#" class="histuserlink" title="Click to Open User Menu" onClick="userMenu($(this), \"${data[i][col[j]]}\", \"0\");">@${data[i][col[j]]}</a>`;
+                        break;
+                        case "amount":
+                          data[i][col[j]] = (data[i][col[j]] / 1000).toFixed(3) + " <i class=\"fab fa-fw fa-hive hivered\"></i>";
+                        break;
+                        case "deployfee":
+                          data[i][col[j]] = (data[i][col[j]] / 1000).toFixed(3) + " <i class=\"fab fa-fw fa-hive hivered\"></i>";
+                        break;
+                        case "cancelfee":
+                          data[i][col[j]] = (data[i][col[j]] / 1000).toFixed(3) + " <i class=\"fab fa-fw fa-hive hivered\"></i>";
+                        break;
+                        case "interest":
                           data[i][col[j]] = data[i][col[j]] + "%";
-                    }
-                    if (col[j] == 'borrower') {
-                        if (data[i][col[j]] == undefined) {
-                            data[i][col[j]] = "None Yet";
+                        break;
+                        case "collected":
+                          data[i][col[j]] = (data[i][col[j]] / 1000).toFixed(3) + " <i class=\"fab fa-fw fa-hive hivered\"></i>";
+                          if (data[i][col[j]] == undefined) data[i][col[j]] = "<code>none</code>";
+                        break;
+                        case "currentpayments":
+                          data[i][col[j]] = `${data[i][col[j]]}`;//<i class="fab fa-fw fa-hive hivered"></i>
+                          if (data[i][col[j]] == undefined) data[i][col[j]] = "<code>none</code>";
+                        break;
+                        case "totalpayments":
+                          data[i][col[j]] = `${data[i][col[j]]}`;//<i class="fab fa-fw fa-hive hivered"></i>
+                          if (data[i][col[j]] == undefined) data[i][col[j]] = "<code>none</code>";
+                        break;
+                        case "completed":
+                          if(data[i][col[j]] === 0) data[i][col[j]] = "❌";
+                          if(data[i][col[j]] === 1) data[i][col[j]] = "✔️";
+                        break;
+                        case "cancelled":
+                          if(data[i][col[j]] === 0) data[i][col[j]] = "❌";
+                          if(data[i][col[j]] === 1) data[i][col[j]] = "✔️";
+                        break;
+                        }
+                    break;
+                    //END case 'loadloans'
+                    case "ourloans":
+                    switch(col[j]) {
+                      case "username":
+                        data[i][col[j]] = `<a href="#" class="histuserlink" title="Click to Open User Menu" onClick="userMenu($(this), \"${data[i][col[j]]}\", \"0\");">@${data[i][col[j]]}</a>`;
+                      break;
+                      case "amount":
+                        data[i][col[j]] = (data[i][col[j]] / 1000).toFixed(3) + " <i class=\"fab fa-fw fa-hive hivered\"></i>";
+                      break;
+                      case "deployfee":
+                        data[i][col[j]] = (data[i][col[j]] / 1000).toFixed(3) +" <i class=\"fab fa-fw fa-hive hivered\"></i>";
+                      break;
+                      case "cancelfee":
+                        data[i][col[j]] = (data[i][col[j]] / 1000).toFixed(3) + " <i class=\"fab fa-fw fa-hive hivered\"></i>";
+                      break;
+                      case "interest":
+                        data[i][col[j]] = data[i][col[j]] + "%";
+                      break;
+                      case "collected":
+                        data[i][col[j]] = (data[i][col[j]] / 1000).toFixed(3) + " <i class=\"fab fa-fw fa-hive hivered\"></i>";
+                        if (data[i][col[j]] == undefined) data[i][col[j]] = "<code>none</code>";
+                      break;
+                      case "currentpayments":
+                        data[i][col[j]] = `${data[i][col[j]]}`;//<i class="fab fa-fw fa-hive hivered"></i>
+                        if (data[i][col[j]] == undefined) data[i][col[j]] = "<code>none</code>";
+                      break;
+                      case "totalpayments":
+                        data[i][col[j]] = `${data[i][col[j]]}`;//<i class="fab fa-fw fa-hive hivered"></i>
+                        if (data[i][col[j]] == undefined) data[i][col[j]] = "<code>none</code>";
+                      break;
+                      case "completed":
+                        if(data[i][col[j]] === 0) data[i][col[j]] = "❌";
+                        if(data[i][col[j]] === 1) data[i][col[j]] = "✔️";
+                      break;
+                      }
+                    break;
+                    //END case 'ourloans'
+                  }
+
+
+
+
+                if (name == "loans") {
+                    if (col[j] == "loanId") {
+                        if(data[i]["completed"] === 0){
+                          thisID = data[i][col[j]];
+                          tr.setAttribute("id", col[j]  + "-" + thisID);
+                          var txstring = data[i][col[j]].toString();
+                          var newtx = txstring.substring(0, 10) + "..";
+                          data[i][col[j]] = `<button class="button" style="height:20px;width:20px;padding:0px;margin:0px;font-size:small;" title="Click Here to Cancel Contract" id="cancelButton${data[i][col[j]]}" onclick="cancelContract('${data[i][col[j]]}');"><i class="far fa-fw fa-times-circle" style="color:red;"></i></button> <code id="${data[i][col[j]]}">${newtx}</code>`;
                         } else {
-                            data[i][col[j]] = `<a href="https://hiveblocks.com/@${data[i][col[j]]}" class="histuserlink" target="_blank" title="Click to View This Account on HiveBlocks.com in a New Window">@${data[i][col[j]]} <i class="fas fa-external-link-alt"></i></a>`;
+                          thisID = data[i][col[j]];
+                          tr.setAttribute("id", col[j]  + "-" + thisID);
+                          var txstring = data[i][col[j]].toString();
+                          var newtx = txstring.substring(0, 10) + "..";
+                          data[i][col[j]] = "<code>" + newtx + "</code>";
+                        }
+                      }
+                    if (col[j] == "createdAt") {
+                        if (data[i][col[j]] == undefined) {
+                            data[i][col[j]] = "<code>none</code>";
+                        } else {
+                            var datestring = data[i][col[j]].toString();
+                            var newdate = datestring.substring(0, datestring.length - 5);
+                            var splitdate = newdate.split("T");
+
+                            data[i][col[j]] = splitdate[1] + " " + splitdate[0];
                         }
                     }
-                    if (col[j] == 'collected') {
+                    if (col[j] == "updatedAt") {
                         if (data[i][col[j]] == undefined) {
-                            data[i][col[j]] = "None Yet";
+                            data[i][col[j]] = "<code>none</code>";
                         } else {
-                            data[i][col[j]] = `${data[i][col[j]]} HIVE`;
+                            var datestring = data[i][col[j]].toString();
+                            var newdate = datestring.substring(0, datestring.length - 5);
+                            var splitdate = newdate.split("T");
+
+                            data[i][col[j]] = splitdate[1] + " " + splitdate[0];
                         }
                     }
-                    if (col[j] == 'currentpayments') {
-                        if (data[i][col[j]] == undefined) {
-                            data[i][col[j]] = "None Yet";
+                }//END   if (name == 'loans')
+
+                if (name == "loadloans") {
+                    if (col[j] == "loanId") {
+                        thisID = data[i][col[j]];
+                        tr.setAttribute("id", col[j]  + "-" + thisID);
+                        var trid = col[j]  + "-" + thisID;
+                        if(data[i]["completed"] === 1){
+                          var txstring = data[i][col[j]].toString();
+                          var newtx = txstring.substring(0, 10) + "..";
+                          data[i][col[j]] = "<code>" + newtx + "</code>";
                         } else {
-                            data[i][col[j]] = `${data[i][col[j]]} HIVE`;
+                            var txstring = data[i][col[j]].toString();
+                            var newtx = txstring.substring(0, 10) + "..";
+                            data[i][col[j]] = "<code>" + newtx + "</code>";
                         }
                     }
-                    if (col[j] == 'totalpayments') {
-                        if (data[i][col[j]] == undefined) {
-                            data[i][col[j]] = "None Yet";
+                    if (col[j] == "active") {
+                      if(data[i][col[j]] == 0){//if active == false
+                        if(data[i]["completed"] === 1){
+                          data[i][col[j]] =  `<b style="color:white !important;">Completed</b>`;
                         } else {
-                            data[i][col[j]] = `${data[i][col[j]]} HIVE`;
+                          data[i][col[j]] = `<b style="color:lawngreen !important;">Available</b>`;
                         }
+                      }
+                      if(data[i][col[j]] == 1){
+                        if(data[i]["completed"] === 1){
+                          data[i][col[j]] = `<b style="color:white !important;">Finished</b>`;
+                        } else {
+                          data[i][col[j]] = `<b style="color:lightblue !important;">In Progress</b>`;
+                        }
+                        //$(`#acceptButton-${thisID}`).hide();
+
+                        //data[i][col[j]] = 1;
+                      }
                     }
-                    if (col[j] == 'active') {
-                      if(data[i][col[j]] === 0){
-                        data[i][col[j]] = `❌`;
-                      }
-                      if(data[i][col[j]] === 1){
-                        data[i][col[j]] = true;
-                        $(`#cancelButton${data[i][col[j]]}`).hide();
-                      }
-                    }
-                    if (col[j] == 'completed') {
-                      if(data[i][col[j]] === 0){
-                        data[i][col[j]] = '❌';
-                      }
-                      if(data[i][col[j]] === 1){
-                        data[i][col[j]] = true;
-                      }
+                    if (col[j] == "borrower") {
+                        if (data[i][col[j]] == undefined) {
+                            data[i][col[j]] = "<code>none</code>";
+                        }  else if (data[i][col[j]].toLowerCase() == uUsername.toLowerCase()) {
+                          if(data[i]["completed"] === 1){
+                            data[i][col[j]] = data[i][col[j]];//`<a href="#"  class="histuserlink" onclick="userMenu($(this), '${data[i][col[j]]}', '0');" title="Click to View User Menu">@${data[i][col[j]]}</a>`;
+                          } else {
+                            data[i][col[j]] = `<button class="button" style="float:none;z-index:999999;height:25px;padding:5px" id="payButton-${thisID}" onclick="payContract(\"${thisID}\");">PAY <i class="fas fa-fw fa-coins" style="color:gold;"></i></button>`;
+                          }
+                          //$(`#acceptButton-${thisID}`).hide();
+                        } else {
+                            data[i][col[j]] = data[i][col[j]];//`<a href="#" class="histuserlink" onclick="userMenu('$(\'+col[j] +\'-\'+ thisID\')', '${data[i][col[j]]}', '0')" title="Click to View User Menu">@${data[i][col[j]]}</a>`;
+                        }
                     }
                      //else {
                     //  }
-                    if (col[j] == 'createdAt') {
+                    if (col[j] == "createdAt") {
                         if (data[i][col[j]] == undefined) {
-                            data[i][col[j]] = "No Date on Record";
+                            data[i][col[j]] = "<code>none</code>";
+                        } else {
+                            var datestring = data[i][col[j]].toString();
+                            var newdate = datestring.substring(0, datestring.length - 5);
+                            var splitdate = newdate.split("T");
+
+                            data[i][col[j]] = `<b title="${splitdate[1] + " " + splitdate[0]}">📅</b>`;
+                        }
+                    }
+                    if (col[j] == "updatedAt") {
+                        if (data[i][col[j]] == undefined) {
+                            data[i][col[j]] = "<code>none</code>";
                         } else {
                             var datestring = data[i][col[j]].toString();
                             var newdate = datestring.substring(0, datestring.length - 5);
@@ -583,106 +1402,102 @@ function CreateTableFromJSON(data, name, elementid) {
                             data[i][col[j]] = splitdate[1] + " " + splitdate[0];
                         }
                     }
-                    if (col[j] == 'updatedAt') {
-                        if (data[i][col[j]] == undefined) {
-                            data[i][col[j]] = "No Date on Record";
-                        } else {
-                            var datestring = data[i][col[j]].toString();
-                            var newdate = datestring.substring(0, datestring.length - 5);
-                            var splitdate = newdate.split("T");
 
-                            data[i][col[j]] = splitdate[1] + " " + splitdate[0];
-                        }
-                    }
+
                 }
-
-
-                if (name == 'loadloans') {
-
-                  if (col[j] == 'loanId') {
-                      let thisID = data[i][col[j]];
-                      data[i][col[j]] = `<button class="acceptButton push_button4" style="float:left;" id="acceptButton${data[i][col[j]]}" onclick="acceptContract('${data[i][col[j]]}');">Accept <i class="fas fa-fw fa-coins" style="color:gold;"></i></button> <span id="${data[i][col[j]]}">${data[i][col[j]]}</span> <button class="infoButton push_button4" style="float:right;" id="infoContract${data[i][col[j]]}" onclick="infoContract('${data[i][col[j]]}');">Info <i class="far fa-question-circle" title="More information on this contract" style="color:lightblue;"></i></button>`;
+                if (col[j] == "block") {
+                  if (data[i][col[j]] == undefined) {
+                      data[i][col[j]] = "<code>none</code>";
+                  }  else {
+                    data[i][col[j]] = `<a href="https://hiveblocks.com/b/${data[i][col[j]]}" class="histuserlink" style="color:white !important;" target="_blank" title="Click to View This Block on HiveBlocks.com in a New Window">${data[i][col[j]]}</a>`;
                   }
-                    if (col[j] == 'username') {
-                        data[i][col[j]] = `hidden`;
-                    }
-                    if (col[j] == 'amount') {
-                            data[i][col[j]] = (data[i][col[j]] / 1000).toFixed(3) + " HIVE";
-                    }
-                    if (col[j] == 'interest') {
-                          data[i][col[j]] = data[i][col[j]] + "%";
-                    }
-                    if (col[j] == 'borrower') {
-                        if (data[i][col[j]] == undefined) {
-                            data[i][col[j]] = "None Yet";
-                        } else {
-                            data[i][col[j]] = `<a href="https://hiveblocks.com/@${data[i][col[j]]}" class="histuserlink" target="_blank" title="Click to View This Account on HiveBlocks.com in a New Window">@${data[i][col[j]]} <i class="fas fa-external-link-alt"></i></a>`;
-                        }
-                    }
-                    if (col[j] == 'collected') {
-                        if (data[i][col[j]] == undefined) {
-                            data[i][col[j]] = "None Yet";
-                        } else {
-                            data[i][col[j]] = `${data[i][col[j]]} HIVE`;
-                        }
-                    }
-                    if (col[j] == 'currentpayments') {
-                        if (data[i][col[j]] == undefined) {
-                            data[i][col[j]] = "None Yet";
-                        } else {
-                            data[i][col[j]] = `${data[i][col[j]]} HIVE`;
-                        }
-                    }
-                    if (col[j] == 'totalpayments') {
-                        if (data[i][col[j]] == undefined) {
-                            data[i][col[j]] = "None Yet";
-                        } else {
-                            data[i][col[j]] = `${data[i][col[j]]} HIVE`;
-                        }
-                    }
-                    if (col[j] == 'active') {
-                      if(data[i][col[j]] === 0){
-                        data[i][col[j]] = `<b style="color:lawngreen !important;">Available</b>`;
-                      }
-                      if(data[i][col[j]] === 1){
-                        data[i][col[j]] = true;
-                        $(`#acceptButton${data[i][col[j]]}`).hide();
-                      }
-                    }
-                    if (col[j] == 'completed') {
-                      if(data[i][col[j]] === 0){
-                        data[i][col[j]] = '❌';
-                      }
-                      if(data[i][col[j]] === 1){
-                        data[i][col[j]] = true;
-                      }
-                    }
-                     //else {
-                    //  }
-                    if (col[j] == 'createdAt') {
-                        if (data[i][col[j]] == undefined) {
-                            data[i][col[j]] = "No Date on Record";
-                        } else {
-                            var datestring = data[i][col[j]].toString();
-                            var newdate = datestring.substring(0, datestring.length - 5);
-                            var splitdate = newdate.split("T");
-
-                            data[i][col[j]] = splitdate[1] + " " + splitdate[0];
-                        }
-                    }
-                    if (col[j] == 'updatedAt') {
-                        if (data[i][col[j]] == undefined) {
-                            data[i][col[j]] = "No Date on Record";
-                        } else {
-                            var datestring = data[i][col[j]].toString();
-                            var newdate = datestring.substring(0, datestring.length - 5);
-                            var splitdate = newdate.split("T");
-
-                            data[i][col[j]] = splitdate[1] + " " + splitdate[0];
-                        }
-                    }
                 }
+                if (col[j] == "start") {
+                  if (data[i][col[j]] == undefined) {
+                      data[i][col[j]] = "<code>none</code>";
+                  }  else {
+                    data[i][col[j]] = `<a href="https://hiveblocks.com/b/${data[i][col[j]]}" class="histuserlink" style="color:white !important;" target="_blank" title="Click to View This Block on HiveBlocks.com in a New Window">${data[i][col[j]]}</a>`;
+                  }
+                }
+                if (col[j] == "endblock") {
+                  if (data[i][col[j]] == undefined) {
+                      data[i][col[j]] = "<code>none</code>";
+                  } else {
+                  data[i][col[j]] = `<a href="https://hiveblocks.com/b/${data[i][col[j]]}" class="histuserlink" style="color:white !important;" target="_blank" title="Click to View This Block on HiveBlocks.com in a New Window">${data[i][col[j]]}</a>`;
+                }
+              }
+              if (col[j] == "startblock") {
+                if (data[i][col[j]] == undefined) {
+                    data[i][col[j]] = "<code>none</code>";
+                } else {
+                data[i][col[j]] = `<a href="https://hiveblocks.com/b/${data[i][col[j]]}" class="histuserlink" style="color:white !important;" target="_blank" title="Click to View This Block on HiveBlocks.com in a New Window">${data[i][col[j]]}</a>`;
+              }
+                /*
+                  if (data[i][col[j]] == undefined) {
+                    data[i][col[j]] = '<code>none</code>';
+                  } else {
+                    data[i][col[j]] = `<a href='https://hiveblocks.com/b/${data[i][col[j]]}' class='histuserlink' style='color:white !important;' target='_blank' title='Click to View This Block on HiveBlocks.com in a New Window'>${data[i][col[j]]}</a>`
+                  }
+                  */
+              }
+              if (col[j] == "txid") {
+                  //data[i][col[j]] = data[i][col[j]];
+                  if (data[i][col[j]] == undefined) {
+                      data[i][col[j]] = "<code>none</code>";
+                  } else {
+                      var txstring = data[i][col[j]].toString();
+                      var newtx = txstring.substring(0, 10) + "..";
+                      data[i][col[j]] = "<a href=\"https://hiveblocks.com/tx/" + txstring + "\" class=\"histuserlink\" style=\"color:white !important;\" target=\"_blank\" title=\"Click to View This TX on HiveBlocks.com in a New Window\">" + newtx + "</a>";
 
+                  }
+
+              }
+              if (col[j] == "endtxid") {
+                  if (data[i][col[j]] == undefined) {
+                      data[i][col[j]] = "<code>none</code>";
+                  } else  {
+                      var txstring = data[i][col[j]].toString();
+                      var newtx = txstring.substring(0, 10) + "..";
+                      data[i][col[j]] = "<a href=\"https://hiveblocks.com/tx/" + txstring + "\" class=\"histuserlink\" style=\"color:white !important;\" target=\"_blank\" title=\"Click to View This TX on HiveBlocks.com in a New Window\">" + newtx + "</a>";
+                  }
+              }
+
+              if (col[j] == "state") {
+                  if (data[i][col[j]] == undefined) {
+                      data[i][col[j]] = "<code>none</code>";
+                  } else {
+                    switch(data[i][col[j]]){
+                      case "finished":
+                      data[i][col[j]] = `<i class="fas fa-fw fa-file-invoice-dollar" style="color:lawngreen;" title="Completed"></i>`;
+                      break;
+                      case "deployed":
+                      data[i][col[j]] = `<i class="fas fa-fw fa-file-medical" style="color:lightblue;" title="Deployed"></i>`;
+                      break;
+                      case "cancelled":
+                      data[i][col[j]] = `<i class="fas fa-fw fa-file-excel" style="color:red;" title="Cancelled"></i>`;
+                      break;
+                      case "accepted":
+                      data[i][col[j]] = `<i class="fas fa-fw fa-file-code" style="color:lightgreen;" title="Active"></i>`;
+                      break;
+                    }
+
+                    ///  var txstring = data[i][col[j]].toString();
+                      //var newtx = txstring.substring(0, 6) + "..";
+//                      data[i][col[j]] = `<a href="https://hiveblocks.com/tx/${txstring}" class="histuserlink" style="color:white !important;" target="_blank" title="Click to View This TX on HiveBlocks.com in a New Window">${newtx}</a>`
+
+                  }
+              }
+
+
+    /*
+                if (col[j] == 'completed') {
+                  if(data[i][col[j]] === 0){
+                    data[i][col[j]] = '❌';
+                  }
+                  if(data[i][col[j]] === 1){
+                    data[i][col[j]] = '✔️';
+                  }
+                }
 
                 if (col[j] == 'account') {
                     if (data[i][col[j]] == undefined) {
@@ -693,17 +1508,19 @@ function CreateTableFromJSON(data, name, elementid) {
                 }
 
                 if (col[j] == 'date') {
-                    if (data[i][col[j]] == undefined) {
-                        data[i][col[j]] = "No Date on Record";
-                    } else {
-                        var datestring = data[i][col[j]].toString();
-                        var newdate = datestring.substring(0, datestring.length - 4);
-                        data[i][col[j]] = newdate;
-                    }
+                  if (data[i][col[j]] == undefined) {
+                      data[i][col[j]] = "No Date on Record";
+                  } else {
+                      var datestring = data[i][col[j]].toString();
+                      var newdate = datestring.substring(0, datestring.length - 4);
+                      data[i][col[j]] = newdate;
+                  }
                 }
+                */
                 var tabCell = tr.insertCell(-1);
-                tabCell.innerHTML = data[i][col[j]];
-                //}
+
+
+                tabCell.innerHTML = data[i][col[j]];//"<button style=\"background:none;border:none;color:white;\">" + data[i][col[j]] + "</button>";
             }
         }
     }
@@ -713,9 +1530,9 @@ function CreateTableFromJSON(data, name, elementid) {
     divContainer.innerHTML = "";
     divContainer.appendChild(table);
 
-    var tableOffset = $("#newHistoryTable").offset().top;
-    var $header = $("#newHistoryTable > #historyhead").clone();
-    //var $fixedHeader = $("#header-fixed").append($header);
+    var tableOffset = $(`#${tablename}`).offset().top;
+    var $header = $(`#${tablename} > #${tableheadname}`).clone();
+    var $fixedHeader = $(`#${tableheadname}-fix`).append($header);
 
     $(window).bind("scroll", function() {
         var offset = $(this).scrollTop();
@@ -735,12 +1552,7 @@ var getFounders = async() => {
     if(err){
       console.log(err)
     }
-
     data = JSON.parse(JSON.stringify(data.founders));
-    //data = JSON.stringify(data);
-    //data = data.slice(2, data.length - 1);
-    //var namelist = data.split(`","`);
-    //var flist = data.founders;
     for(var c = 0; c < data.length; c++){
       founderlist += `<a href="https://peakd.com/@${data[c]}" style="text-decoration:none !important; color:white;">@${data[c]}</a>, `;
       if (c == data.length - 2) {
@@ -748,12 +1560,112 @@ var getFounders = async() => {
       }
     }
     foundercount = data.length;
-    //data.forEach((item, i) => {
-    //  founderlist += `@${item}, `;
-    //});
-
-    //console.log(founderlist);
-
   })
     return founderlist;
 }
+
+var hiveloanslogo = `<span style="color:white;">
+██╗░░██╗██╗██╗░░░██╗███████╗░░░██╗░░░░░░█████╗░░█████╗░███╗░░██╗░██████╗
+██║░░██║██║██║░░░██║██╔════╝░░░██║░░░░░██╔══██╗██╔══██╗████╗░██║██╔════╝
+███████║██║╚██╗░██╔╝█████╗░░░░░██║░░░░░██║░░██║███████║██╔██╗██║╚█████╗░
+██╔══██║██║░╚████╔╝░██╔══╝░░░░░██║░░░░░██║░░██║██╔══██║██║╚████║░╚═══██╗
+██║░░██║██║░░╚██╔╝░░███████╗██╗███████╗╚█████╔╝██║░░██║██║░╚███║██████╔╝
+╚═╝░░╚═╝╚═╝░░░╚═╝░░░╚══════╝╚═╝╚══════╝░╚════╝░╚═╝░░╚═╝╚═╝░░╚══╝╚═════╝░\n<br>\n<br>
+v0.0.8 Alpha - By @KLYE`;
+
+var versionwarning = `
+========================================================================\n<br>
+   ***WARNING*** This is an UNFINISHED EARLY ALPHA BUILD and WILL Contain BUGS\n<br>
+   There almost certainy is missing things, issues, bugs and whatever else\n<br>
+   By continuing past this point the site holds zero liability beyond this point\n<br>
+========================================================================
+</span>`;
+
+console.log(hiveloanslogo);
+
+//JS generated sound shit
+var context = new AudioContext();
+var o = null;
+var g = null;
+
+function soundgen(frequency, type){
+  o = context.createOscillator()
+  g = context.createGain()
+  o.type = type
+  o.connect(g)
+  o.frequency.value = frequency
+  g.connect(context.destination)
+  o.start(0)
+
+  g.gain.exponentialRampToValueAtTime(
+    0.000001, context.currentTime + 0.25
+  )
+}//END JS sound shit
+
+
+/*
+<div class="priceChartContainer"><canvas id="myChart"></canvas></div>
+
+var myChart;
+var renderChart = (data, labels, element) => {
+
+  var ctx = document.getElementById("myChart").getContext('2d');
+  if(data == undefined) return;
+  //labels = JSON.parse(JSON.stringify(labels));
+    myChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          lineTension: 0,
+            labels: labels,
+            datasets: [{
+                label: 'Hive Price USD',
+                data: data,
+                backgroundColor:"white",
+                fill: true,
+                pointRadius: 0,
+              }],
+        },
+        options: {
+          legend: {
+            display: false
+          },
+          tooltips: {
+            callbacks: {
+              label: function(tooltipItem) {
+                  return "1 HIVE = $" + tooltipItem.yLabel.toFixed(4) + " USD";
+                }
+              }
+            },
+          scales: {
+            yAxes: [{
+              label: function(label){
+                return;
+              },
+              legend: {
+                display: false
+              },
+              gridLines: {
+                display: false
+              },
+              ticks: {
+                //beginAtZero: true,
+              },
+
+            }],
+            xAxes: [{
+              label: function(label){
+                return;
+              },
+              gridLines: {
+                display: false
+              },
+              ticks: {
+                //beginAtZero: true,
+                display: false
+              }
+            }],
+          }
+        }
+    });
+  }
+  */

@@ -10,6 +10,11 @@ var options = {
   prefix : '',
   suffix : ''
 };
+var debug = false;
+
+var skcLinkData;
+
+let usersDataFetch;
 var founderlist = '';
 var foundercount = 0;
 var backerlist = [];
@@ -21,8 +26,14 @@ var uHIVEbalance = 0;
 var uHBDbalance = 0;
 var uAddress = '';
 var uUsername = '';
-
+var manualPay = 0;
+var oldhiveusdprice;
+var oldhivebtcprice;
 var sound = false;
+var userDelegations = [];
+
+var total_vesting_shares;
+var total_vesting_fund;
 
 var memo_key;
 var owner_key;

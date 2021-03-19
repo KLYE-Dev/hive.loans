@@ -9,7 +9,7 @@ function getPrivateKeys(username, password, roles = ['owner', 'active', 'posting
   });
 
   return privKeys;
-};
+}
 
 // Creates a suggested password
 function suggestPassword() {

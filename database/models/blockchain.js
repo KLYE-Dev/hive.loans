@@ -12,7 +12,7 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       // define association here
     }
-  };
+  }
   Blockchain.init({
     siteblock: DataTypes.INTEGER,
     headblock: DataTypes.INTEGER

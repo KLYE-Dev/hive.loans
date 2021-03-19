@@ -1,17 +1,17 @@
 //========================================================================================
 // Page contents and whatnot
 //========================================================================================
-
-let moverAddon = `<span id="jumboMove" title="Click and Drag to Move Window"><i class="fas fa-arrows-alt"></i></span>`;
-
-async function loadingjumbo() {
-  var loadingContent = `<i class="fas fa-spin fa-3x fa-sync"></i>`;
-  $("#jumbotron").promise().done(function(){
-      $("#jumbotron").html(loadingContent);
+var loanMax;
+let moverAddon = `<span id="jumboMove" title="Click and Drag to Move Window" onclick="$("#jumbotron").draggable();"><i class="fas fa-arrows-alt"></i></span><center><span id="jumboTitle" class="jumboTitle" style="max-width: 75%;"></span></center></span><span id="jumboClose" title="Click to Close this Panel" onclick="$('#jumbotron').fadeOut();" onmouseover="$(this).css({'color':'red'})" onmouseout="$(this).css({'color':'white'})"><i class="fas fa-times"></i></span>`;
+ function loadingjumbo() {
+  var loadingContent = `<center><i id="loadingring" style="color:limegreen;" class="fa fa fa-cog fa-pulse fa-3x fa-fw"></i><br><b>Loading</b></center>`;
+      $("#jumboWrapper").html("<br>" + loadingContent);
       $("#jumbotron").css({'height':'auto','width':'auto'});
+
+      $("#jumbotron").fadeIn('slow');
+      $("#jumboTitle").html(``);
+      $("#jumboHead").hide();
       $("#jumbotron").center();
-      $("#jumbotron").fadeIn();
-  });
 }
 
 if (window.hive_keychain) {
@@ -36,7 +36,7 @@ $("#tipdialog").on('click', function() {
             '<b><input type="number" class="form-control" placeholder="0.000" id="tipamount" aria-describedby="basic-addon1"></b>' +
             '<span class="input-group-addon addon-sexy currencychanger" style="padding:5px;"><img src="img/rhom.svg" class="modalLogo"></span></span>' +
             `<sub>( Balance: <span id="tipbalance">0.0000000</span> <span id="tipBalspan"></span> )</sub>`,
-        title: `<center><span id="sexymodaltitle">Rhom-Roller.com</span><br>Tip Another User Instantly</center>`,
+        title: `<center><span id="sexymodaltitle">Hive.Loans</span><br>Tip Another User Instantly</center>`,
         buttons: {
             main: {
                 label: "Send",
@@ -78,7 +78,7 @@ $("#numClient").on('click', function(e) {
           });
           bootbox.dialog({
               message:`<center>${ulist}</center><br>`,
-              title: `<center><span id="sexymodaltitle">Rhom-Roller.com</span><br>Users Currently Online: ${usercount}</center>`,
+              title: `<center><span id="sexymodaltitle">Hive.Loans</span><br>Users Currently Online: ${usercount}</center>`,
               buttons: {
                   main: {
                       label: "Close",
@@ -122,11 +122,11 @@ function keychainSend(from, to, amount, memo, coin){
   hive_keychain.requestTransfer(from, to, amount, memo, coin.toUpperCase(), function(response) {
       console.log(response);
       if (response.success == true) {
-          showSuccess('Deposit Success!');
+          showSuccess('Deposit Transfer Success! It Will Arrive Soon');
           $('#depositView').click();
           bootbox.hideAll();
       } else {
-        showErr(`Deposit Failed!`);
+        showErr(`Deposit Failed to Send!`);
         console.log(response.error);
       }
   }, true);
@@ -139,7 +139,7 @@ function wdnow(coin, fee, security) {
 
       showSuccess('Processing Withdraw - Please Wait!');
 
-      $('#sending').html('<i style="color:grey" class="fa fa-spinner fa-pulse fa-2x fa-fw"></i>');
+      $('#sending').html('<i style="color:grey" class="fa fa-pulsener fa-pulse fa-2x fa-fw"></i>');
 
       if($('#withdrawAmount').val() < 1){
                 return showErr(`Must Withdraw Atleast 1 ${coin}`);
@@ -162,11 +162,11 @@ function wdnow(coin, fee, security) {
               console.log(cb);
               token = cb.token;
               showSuccess('Withdrawal Success!');
-              showWallet();
+              showWallet(uUsername);
               bootbox.hideAll();
           }
       })
-  };
+  }
 
 function calctotal(fee, coin){
   var thetotal;
@@ -222,7 +222,7 @@ var withdrawButtonWallet = async(user, coin) => {
 
 
             let sendingContent = `<center><h4 style="margin: none !important;">Withdraw ${coin} from ${user}'s Hive.Loans Account</h4>` +
-           `<h3 style="margin: none !important;"><table style="width:100%;align-content:center;font-size: larger;"><tbody><tr><td style="width:40%;"><a href="https://hiveblocks.com/@hive.loans" target="_blank" style="text-decoration:none !important;">hive.loans</a></td><td><i class="fas fa-long-arrow-alt-right"></i></td><td style="width:40%;"><a href="https://hiveblocks.com/@${user}" style="text-decoration: none !important;" target="_blank">${user}</a></td></tr></tbody></table></h3>`+
+           `<h3 style="margin: none !important;"><table style="width:100%;align-content:center;font-size: larger !important;"><tbody><tr><td style="width:40%;"><a href="https://hiveblocks.com/@hive.loans" target="_blank" style="text-decoration:none !important;">hive.loans</a></td><td><i class="fas fa-long-arrow-alt-right"></i></td><td style="width:40%;"><a href="https://hiveblocks.com/@${user}" style="text-decoration: none !important;" target="_blank">${user}</a></td></tr></tbody></table></h3>`+
          //  `<h3 style="margin: none !important;"><a href="https://hiveblocks.com/@${user}" style="text-decoration: none !important;" target="_blank">${user}</a> <i class="fas fa-long-arrow-alt-right"></i> <a href="https://hiveblocks.com/@hive.loans" target="_blank" style="text-decoration:none !important;">hive.loans</a></h3><br>`+
            `<b id="acctflash1">Specify Amount of ${coin} to Withdraw:</b><br><input type="number" min="0" step="0.001" decimal="3" id="withdrawInteger" style="background: white;color: black;text-align: center;width: 18vw;height: 3vh;font-size: large; border-radius:10px;" placeholder="0.000" onkeyup="calctotal($('#rawfee').val(), '${coin}')" ><br>` +
            `<sub>( Account Balance: <span id="tipbalance" placeholder="0.000" onClick="$('#withdrawInteger').val($('#tipbalance').val());calctotal(${data.fee}, '${coin}')"></span> ${coin} <span id="tipBalspan"></span> )</sub><br><br>`+
@@ -230,12 +230,13 @@ var withdrawButtonWallet = async(user, coin) => {
            `<span id="wdtotal"></span><br><br>` +
            `<b id="acctflash1">Account to Withdraw to:</b><br><input type="text" readonly id="withdrawAcct" style="background: white;color: black;text-align: center;width: 18vw;height: 3vh;font-size: large; border-radius:10px;" value="${user}" onkeyup="console.log($(this).val())" ><br><sub>( <span id="underAcctText"></span> )</sub><br><br>` +
            `<b id="acctflash1">Transfer Memo:</b><br><input type="text" id="withdrawMemo" style="background: white;color: black;text-align: center;width: 18vw;height: 3vh;font-size: large; border-radius:10px;" placeholder="( optional )"><br><br>` +
-           `<button type="button" style="font-size: normal; padding: 10px; line-height: 1vh; background: #000; color: white; width: 55% !important;border-radius:5px;" onclick="if($(this).prop('disabled')){console.log('Invalid Withdraw Request!')} else {wdnow('${coin}', ${data.fee}, '${data.security}')};" class="btn push_button2" id="withdrawit" title="Click here withdraw from Hive.Loans"><span id="wdbuttontex">Enter Amount</span></button><br><br>` +
+           `<button type="button" style="font-size: normal; padding: 10px; line-height: 1vh; background: #000; color: white; width: 55% !important;border-radius:5px;" onclick="if($(this).prop('disabled')){console.log('Invalid Withdraw Request!')} else {wdnow('${coin}', ${data.fee}, '${data.security}')}" class="button" id="withdrawit" title="Click here withdraw from Hive.Loans"><span id="wdbuttontex">Enter Amount</span></button><br><br>` +
            `<sub><i class="fa fa-exclamation-triangle" style="color:gold;" aria-hidden="true"></i> Withdrawal Address <b><u>MUST</u></b> be Correct, We Cannot Refund ${coin} Sent to a Wrong Account!</sub></center>`;
             $("#jumbotron").fadeOut('fast');
             $("#jumbotron").promise().done(function(){
-                $("#jumbotron").html(moverAddon + sendingContent);
-
+$("#jumboHead").show();
+                $("#jumboWrapper").html( sendingContent);
+                $('#withdrawAcct').val(uUsername);
                 $("#tipbalance").val(data.balance);
                 $("#tipbalance").html(data.balance);
                 $("#rawfee").val(data.fee);
@@ -299,18 +300,20 @@ var withdrawButtonWallet = async(user, coin) => {
    coin = coin.toUpperCase();
 
    let moverAddon = `<div style="font-size:1.5em;width:100%;font-weight:500;"><span id="jumboMove" title="Click and Drag to Move Window"><i class="fas fa-arrows-alt"></i></span><span id="refreshJumboStats" style-"float:right" title="Click to Refresh" onClick="getJumboStats();"></div>`;
+
    function showSend() {
      let sendingContent = `<center><h4 style="margin: none !important;">Deposit ${coin} into ${user}'s Hive.Loans Account</h4>` +
-    `<h3 style="margin: none !important;"><table style="width:100%;align-content:center;"><tbody><tr><td style="width:40%;"><a href="https://hiveblocks.com/@${user}" style="text-decoration: none !important;" target="_blank">${user}</a></td><td><i class="fas fa-long-arrow-alt-right"></i></td><td style="width:40%;"><a href="https://hiveblocks.com/@hive.loans" target="_blank" style="text-decoration:none !important;">hive.loans</a></td></tr></tbody></table></h3>`+
+    `<h3 style="margin: none !important;"><table style="width:100%;align-content:center;font-size:larger;"><tbody><tr><td style="width:40%;"><a href="https://hiveblocks.com/@${user}" style="text-decoration: none !important;" target="_blank">${user}</a></td><td><i class="fas fa-long-arrow-alt-right"></i></td><td style="width:40%;"><a href="https://hiveblocks.com/@hive.loans" target="_blank" style="text-decoration:none !important;">hive.loans</a></td></tr></tbody></table></h3>`+
   //  `<h3 style="margin: none !important;"><a href="https://hiveblocks.com/@${user}" style="text-decoration: none !important;" target="_blank">${user}</a> <i class="fas fa-long-arrow-alt-right"></i> <a href="https://hiveblocks.com/@hive.loans" target="_blank" style="text-decoration:none !important;">hive.loans</a></h3><br>`+
     `<b id="acctflash1">Specify Amount of ${coin} to Deposit:</b><br><input type="number" min="0" step="0.001" decimal="3" id="depositInteger" style="background: white;color: black;text-align: center;width: 18vw;height: 3vh;font-size: large; border-radius:10px;" placeholder="0.000" onkeyup="console.log($(this).val())" ><br>` +
     `<sub>( External Account Balance: <span id="tipbalance" placeholder="0.000" onClick="$('#depositInteger').val($('#tipbalance').val())"></span> ${coin} <span id="tipBalspan"></span> )</sub>`+
-    `<br><center><table><tbody><tr><td style="float: right; width: 45%;">Deposit using Keychain: <button type="button" style="font-size: normal; padding: 10px; line-height: 1vh; background: #000; color: white; width: 55% !important;border-radius:5px;" class="btn push_button2" id="skclogologin" onClick="depositAmount = parseFloat($('#depositInteger').val()).toFixed(3); keychainSend('${user}', 'hive.loans', depositAmount, '${uAddress}', '${coin}')" title="Click here Deposit with Hive KeyChain"><img src="/img/keychaintext.png" class="keychainlogo" style="width:80%"></button></td><td style="float: left; width: 45%;">Deposit using HiveSigner<button type="button" style="font-size: normal; padding: 10px; line-height: 1vh; background: #000; color: white; width: 55% !important;border-radius:5px;" class="btn push_button2" id="hivesignerdeposit" onClick="deposit($('#depositInteger').val(), '${coin}', '${uAddress}')" title="Click here to Deposit with HiveSigner"><img src="/img/hivesigner.svg" class="hivesignerlogo" style="width:85%"></button></td></tr></tbody></table></center>`+
+    `<br><center><table><tbody><tr><td style="float: right; width: 45%;">Deposit using Keychain:<br><button type="button" class="button" style="font-size: normal; padding: 10px; line-height: 1vh; background: #000; color: white; width: 55% !important;border-radius:5px;" class="button" id="skclogologin" onClick="depositAmount = parseFloat($('#depositInteger').val()).toFixed(3); keychainSend('${user}', 'hive.loans', depositAmount, '${uAddress}', '${coin}')" title="Click here Deposit with Hive KeyChain"><img src="/img/keychaintext.png" class="keychainlogo" style="width:80%"></button></td><td style="float: left; width: 45%;">Deposit using HiveSigner<br><button type="button" style="font-size: normal; padding: 10px; line-height: 1vh; background: #000; color: white; width: 55% !important;border-radius:5px;" class="button" id="hivesignerdeposit" onClick="deposit($('#depositInteger').val(), '${coin}', '${uAddress}')" title="Click here to Deposit with HiveSigner"><img src="/img/hivesigner.svg" class="hivesignerlogo" style="width:85%"></button></td></tr></tbody></table></center>`+
     `<h4 style="margin: none !important;">Manual Deposit Information<br><sub>Include the Address and Memo below in your Transfer</sub></h4>`+
     `Address:<br><input type="text" id="depositName" style="background: white;  color: black;  text-align: center;  width: 9vw;  height: 3vh;  font-size: large;border-radius: 10px;" readonly=""><br>Memo:<br><input type="text" id="depositMemo" style="background: white;  color: black;  text-align: center;  width: 14vw;  height: 3vh;  font-size: large;border-radius: 10px;"  readonly=""></center>`;
      $("#jumbotron").fadeOut('fast');
      $("#jumbotron").promise().done(function(){
-         $("#jumbotron").html(moverAddon + sendingContent);
+$("#jumboHead").show();
+         $("#jumboWrapper").html( sendingContent);
          $("#jumbotron").fadeIn();
           hive.api.getAccounts([user], function(err, result) {
            if(err){ console.log(err)}
@@ -357,47 +360,6 @@ function checkbalval() {
         $('#withdrawAmount').val($('#withdrawbalance').val());
       }, 100);
     }
-  }
-}
-
-function addressvalidater() {
-  var addressvalue = $('#withdrawAddress').val();
-  if(verbose == true) console.log(addressvalue.length);
-  $('#addresstype').css({'color':'white'});
-  if (addressvalue.length == 34) {
-    $('#addresstype').css({'color':'white'});
-    $('#withdrawAddress').css({'font-size':'x-large'});
-    $('#addresstype').val(`Standard`);
-    $('#addresstype').html(`Standard`);
-    $('.withdrawit').prop('disabled', false);
-  } else if (addressvalue.length == 102) {
-    $('#addresstype').css({'color':'white'});
-    $('#withdrawAddress').css({'font-size':'smallest'});
-    $('#addresstype').val(`Stealth`);
-    $('#addresstype').html(`Stealth`);
-    $('.withdrawit').prop('disabled', false);
-  } else {
-    $('#addresstype').css({'color':'white'});
-    $('#withdrawAddress').css({'font-size':'x-large'});
-    $('#addresstype').val(`None`);
-    $('#addresstype').html(`None`);
-    //$('#addresstype').html(`<i class="fa fa-exclamation-triangle" style="color:gold;" aria-hidden="true"></i> Invalid`);
-    $('.withdrawit').prop('disabled', true);
-  }
-  if (addressvalue != '') {
-    $('#addressIsValid').css({'color':'grey'});
-    $('#addressIsValid').html(`Checking...`);
-    $('.withdrawit').prop('disabled', true);
-  } else if(addressvalue == '') {
-    $('#addressIsValid').css({'color':'grey'});
-    $('#addressIsValid').html(`Waiting...`);
-    $('.withdrawit').prop('disabled', true);
-  }
-  if (addressvalue.length >= 34){
-    setTimeout(function(){
-      if (verbose = true) console.log(`ValidateAddy Fired!`);
-      socket.emit('validateAddy', {address: addressvalue});
-    },1000);
   }
 }
 
@@ -451,8 +413,8 @@ $("#withdrawdialog").on('click', function(e) {
             '<center>Withdrawal Address:</center>' +
             '<center><div class="input-group autoBettitleC" style="width:95%;background:#181E28;"><input type="text" class="form-control" placeholder="" aria-describedby="basic-addon1" id="withdrawAddress" onkeyup="addressvalidater();"></div><sub>Address Type: <span id="addresstype"></span><br><span id="addressIsValid"></span></sub></center><br>' +
             `<center><br><sub><i class="fa fa-exclamation-triangle" style="color:gold;" aria-hidden="true"></i> Withdrawal Address <b><u>MUST</u></b> be Correct, We Cannot Refund RHOM Sent to a Wrong Address!</sub></center>` +
-            `<button type="button" style="width: 33%;margin-top:0.5em;" class="btn push_button2 sextext" id="withdrawit" class="withdrawit" onmouseover="checkbalval();" title="Withdraw">Withdraw</button>`,
-        title: `<center><span id="sexymodaltitle">Rhom-Roller.com</span><br>Withdraw RHOM From Your Account</center>`,
+            `<button type="button" style="width: 33%;margin-top:0.5em;" class="button sextext" id="withdrawit" class="withdrawit" onmouseover="checkbalval();" title="Withdraw">Withdraw</button>`,
+        title: `<center><span id="sexymodaltitle">Hive.Loans</span><br>Withdraw RHOM From Your Account</center>`,
     });
 
     var wdCalc = () => {
@@ -482,7 +444,7 @@ $("#withdrawdialog").on('click', function(e) {
     $('#withdrawit').on('click', function(e) {
         console.log('withdrawit!');
         showSuccess('Processing Withdraw - Please Wait!');
-        $('#sending').html('<i style="color:grey" class="fa fa-spinner fa-pulse fa-2x fa-fw"></i>');
+        $('#sending').html('<i style="color:grey" class="fa fa-pulsener fa-pulse fa-2x fa-fw"></i>');
         if($('#withdrawAmount').val() < 1){
           return showErr('Must Withdraw Atleast 1 RHOM');
         }
@@ -527,13 +489,13 @@ var loginDialog = function() {
             '<br><center><div class="input-group autoBettitleLogin" style="width:69%;background:#181E28;"><span class="input-group-addon addon-sexy" style="max-width: 3.3em !important;padding: 0.3em;"><i class="fa fa-key fa-2x"></i></span><input type="password" class="form-control passwordfield" placeholder="password" autocomplete="off" aria-describedby="basic-addon1" id="password" style="text-align:center;"><span class="input-group-addon addon-sexy" style="max-width: 3.3em !important;padding: 0.5em;">Pass</span><span id="savePass"></span></div></center>' +
             '<br><center><div class="input-group autoBettitleLogin" style="width:69%;background:#181E28;"><span class="input-group-addon addon-sexy" style="max-width: 3.3em !important; padding-left: 0.3em; padding-right: 0.4em;"><i class="fa fa-th fa-2x"></i></span><input type="password" class="form-control passwordfield" placeholder="( if enabled )" autocomplete="off" aria-describedby="basic-addon1" id="2fa" style="text-align:center;background-color: #181e28 !important;border:none;outline:none;"><span class="input-group-addon addon-sexy" style="max-width: 2.5em !important; padding: 0.8em; margin-left: -0.3em;">2FA</span></div></center></form>' +
             '<br><center><div class="input-group" style="width:69%;background:none;"><span aria-describedby="basic-addon1" id="loginfuckery" style="text-align:center;background-color: rgba(255,255,255,0) !important; color: green;border:none;outline:none;"></span></div></form></center>' +
-            '<br><table class="blueTable" style="width:100%;text-align:center;"><tbody style="background-color:transparent;"><tr style="border:none !important;"><td><button type="button" class="btn  push_button2 sextext" style="" id="Register" onClick="regDialog();">Register</button></td><td><span id="loginfeedback" style="width: 20%; text-align: center;"><input type="text" style="visibility:hidden;" id="chatloadpercent" value="0.0%" readonly><i id="loadingring" style="color:limegreen;visibility:hidden;" class="fa fa-circle-notch fa-spin fa-2x fa-fw"></i></span></td><td><button type="button" class="btn  push_button2 sextext" style=";" id="Login" onClick="submitLogin();">Login</button></td></tr></tbody></table><br>' +
+            '<br><table class="blueTable" style="width:100%;text-align:center;"><tbody style="background-color:transparent;"><tr style="border:none !important;"><td><button type="button" class="btn  push_button2 sextext" style="" id="Register" onClick="regDialog();">Register</button></td><td><span id="loginfeedback" style="width: 20%; text-align: center;"><input type="text" style="visibility:hidden;" id="chatloadpercent" value="0.0%" readonly><i id="loadingring" style="color:limegreen;visibility:hidden;" class="fa fa fa-cog fa-pulse fa-2x fa-fw"></i></span></td><td><button type="button" class="btn  push_button2 sextext" style=";" id="Login" onClick="submitLogin();">Login</button></td></tr></tbody></table><br>' +
             '<br><br><center><b><i class="fa fa-exclamation-triangle" style="color:gold;" aria-hidden="true"></i> Disclaimer</b>: You must be 18+ in order to play, invest and stake here.</center><br><br>' +
             '<center><font size="1">(<i>Please ensure that crypto currency based gaming sites are legal in your country or state before play/invest.</i>)</font></center>' +
             '<center><font size="1">(<i>By logging in / registering you are verifying you are of legal age and gaming sites are legal in your country or state.</i>)</font></center><br>' +
             '<center>Need help or forgotten your account password? Please join our <i class="fab fa-discord"></i> <a style="color:#337ab7;" href="https://discord.gg/mtwvCpS" target="_blank">Discord</a><br></center>' +
             '<script>$("#password").keypress(function(event){loginKey(event);});$("#2fa").keypress(function(event){loginKey(event);});$("#username").keypress(function(event){loginKey(event);});</script>',
-        title: '<center><span id="sexymodaltitle">Rhom-Roller.com</span><br><b id="titletext">The Best Provably Fair 1% Dice & Investment Vehicle on Rhombus</b></center>',
+        title: '<center><span id="sexymodaltitle">Hive.Loans</span><br><b id="titletext">The Best Provably Fair 1% Dice & Investment Vehicle on Rhombus</b></center>',
     });
     $('#loginfuckery').html(`Welcome to Hive.Loans`).fadeIn('slow');
     loginpopup.init(function() {
@@ -546,7 +508,7 @@ var loginDialog = function() {
           });
           $('#loginfuckery').hide();
           $('#loginfuckery').html(`Welcome to Hive.Loans`).fadeIn('slow');
-  //        $('#loginfeedback').html('<input type="text" readonly id="chatloadpercent"><i style="color:grey; visibility: hidden;" class="fa fa-spinner fa-2x fa-fw"></i>');
+  //        $('#loginfeedback').html('<input type="text" readonly id="chatloadpercent"><i style="color:grey; visibility: hidden;" class="fa fa-pulsener fa-2x fa-fw"></i>');
             function checkSavedData() {
                 if (localStorage.getItem("user") != undefined) {
                     var savedusername = localStorage.getItem("user");
@@ -626,6 +588,7 @@ var loginDialog = function() {
 function skcusersocket(user) {
   console.log(`skcusersocket:`);
   console.log(user);
+  $('#loginspin').html("<i id='loadingring' style='color:limegreen;'class='fa fa fa-cog fa-pulse fa-2x fa-fw' ></i>");
     var randompick = Math.random();
     randompick = randompick.toString();
     var splitpick = randompick.split(".");
@@ -640,7 +603,7 @@ function skcusersocket(user) {
         var skc2fa = $("#skc2fainput").val();
         skcuser = user.toString();
         if (skcsignsuccess == true) {
-          showSuccess(`Keychain Intitation Success`);
+          showSuccess(`Keychain Initialization Success`);
             if (skc2fa != undefined) {
                 var data = {username: skcuser, pass: skcpassword, fa: skc2fa};
             } else {
@@ -671,7 +634,7 @@ function skcusersocket(user) {
                   console.log(`uAddress: ${uAddress}`);
                   if (data == true) {
                     showSuccess(`Account Registered!`);
-                    showSuccess(`Click Button Again to Login!`);
+                    //showSuccess(`Click Button Again to Login!`);
                     //loginDialog();
                     $('#skclogologin').click();
                     $('input#skcuserinput.form-control').val(skcuser);
@@ -691,12 +654,14 @@ function skcusersocket(user) {
                   //$("#serverSeed").val(data.ssHash);
                   //bootbox.hideAll();
                   $("#usernamestore").val(data.username);
+                  $('#usernamestore').html(data.username);
                   window.localStorage.setItem("user", user);
                   showSuccess('Login Completed');
                   if (data.token !== 0) token = data.token;
                   chatToken = data.chatToken;
                   uid = data.uid;
                   socketid = data.socketid;
+                  usersDataFetch = data;
                   $('#usernamestore').val(data.user);
                   $('#socketid').val(socketid);
                   hkcLogin = true;
@@ -716,8 +681,11 @@ function skcusersocket(user) {
                       message: "Note that this is an incomplete placeholder demo and not an accurate representation of the final release version.",
                       time: Date.now()
                   });
-                  showWallet()
-                  getAcct();
+                  showWallet(data.username)
+                  //showLoans();
+                  //getAcct();
+
+                  navbarBlitz(data);
                   $('#userhivebalance').val(uHIVEbalance / 1000);
                   $('#userhbdbalance').val(uHBDbalance / 1000);
                   $("#depositName").html('hive.loans');
@@ -726,20 +694,25 @@ function skcusersocket(user) {
                   $("#userhivebalance").val(data.hivebalance);
                   $("#userhbdbalance").val(data.hbdbalance);
                   $('#usernamestore').val(data.username);
+                  $('#usernamestore').html(data.username);
                   $('#userrank').val(data.rank);
                   $("#userstats").removeClass('hidden');
                   $("#sitestats").removeClass('hidden');
-                  $('#chatName').html(`Hive.Loans Site Messaging`);
-                  $("#chatpanel").css({'height':'80%','width':'13%','top':'5%','left':'85%'});
+                  $('#chatName').html(`Hive.Loans Live Chat`);
+                  $("#chatpanel").css({'height':'84%','width':'18vw','top':'8%','left':'81%'});
                   $("#chatpanel").removeClass('hidden');
                   $("#acct").removeClass('hidden');
                   $("#loans").removeClass("hidden");
                   $("#lend").removeClass("hidden");
+                  $("#futures").removeClass("hidden");
+                  $("#shares").removeClass("hidden");
                   $("#tools").removeClass("hidden");
+                  $("#settings").removeClass("hidden");
+                  $("#profilelogout").removeClass("hidden");
                   $("#faq").removeClass("hidden");
-                  $("#blocknumberholder").removeClass('hidden');
                   $("#wallet").removeClass("hidden");
                   $("#profile").removeClass("hidden");
+                  $("#loansmenu").removeClass("hidden");
                   $("#login").addClass('hidden');
                   $("#logout").removeClass('hidden');
                   $("#arrowin").removeClass('hidden');
@@ -751,6 +724,7 @@ function skcusersocket(user) {
                   $("#loans").fadeIn();
                   $("#lend").fadeIn();
                   $("#wallet").show();
+                  $("#settings").show();
                   $("#tools").show();
                   $("#login").addClass('hidden');
                   $("#logout").show();
@@ -758,15 +732,25 @@ function skcusersocket(user) {
                   $('#userhivebalance').val(data.hivebalance);
                   $('#userhbdbalance').val(data.hbdbalance);
                   scrollToTop($("#trollbox"));
+                  /*
+                  $("#trollslot").keypress(function(event){
+                      var keycode = (event.keyCode ? event.keyCode : event.which);
+                      if(keycode == "13"){
+                        $('#sendChat').click();
+                      } else {
+                        return keycode;
+                      }
+                    });
+                  */
                 }
-                  };//END Else data == true
+                  }//END Else data == true
                 });
-            };
+            }
         } else {
             showErr("Something Went Wrong!");
         }
     });
-};
+}
 
 var submitLogin = function() {
     if ($("#password").val().toString() == "" && $("#username").val() != "") {
@@ -837,7 +821,7 @@ var submitLogin = function() {
                 greedupdate = false;
                 $("#serverSeed").val(data.ssHash);
                 bootbox.hideAll();
-                showSuccess(`Welcome to Rhom-Roller.com ${data.user}`);
+                showSuccess(`Welcome to Hive.Loans ${data.user}`);
                 $(".gamegui").removeClass("gameguiActive");
                 $(".gameguideactiveC").css("display", "none");
                 if (data.token !== 0) token = data.token;
@@ -845,6 +829,7 @@ var submitLogin = function() {
                 uid = data.uid;
                 socketid = data.socketid;
                 $('#usernamestore').val(data.user);
+                $('#usernamestore').html(data.user);
                 $('#socketid').val(socketid);
                 var userlog = $("#username").val();
                 userdata = {
@@ -862,7 +847,7 @@ var submitLogin = function() {
                     date: (new Date).toUTCString()
                 });
                 alertChatMessage({
-                    message: `<i class="fas fa-exclamation-triangle sexyblackoutline" style="color:yellow;"></i> <b>NOTE</b>: This is <b><u>EXPERIMENTAL</u></b> software alpha testing!\n\nBy using the site past this point you agree Rhom-Roller.com is entirely free from any liability including financial responsibility or injuries incurred, regardless of whether injuries are caused by negligence or due to malfunction. Only roll, invest and stake what you can afford to lose. Please report bugs or any exploits you find to KLYE. Thanks for Helping Alpha Test!`, // \n===========================================================\n*** NOTICE: This is Experimental Software, Use at Your Own Risk! ***\n===========================================================
+                    message: `<i class="fas fa-exclamation-triangle sexyblackoutline" style="color:yellow;"></i> <b>NOTE</b>: This is <b><u>EXPERIMENTAL</u></b> software alpha testing!\n\nBy using the site past this point you agree Hive.Loans is entirely free from any liability including financial responsibility or injuries incurred, regardless of whether injuries are caused by negligence or due to malfunction. Only roll, invest and stake what you can afford to lose. Please report bugs or any exploits you find to KLYE. Thanks for Helping Alpha Test!`, // \n===========================================================\n*** NOTICE: This is Experimental Software, Use at Your Own Risk! ***\n===========================================================
                     date: (new Date).toUTCString()
                 });
 
@@ -893,7 +878,7 @@ var submitLogin = function() {
                 $("#myRollWorst").val((data.worst / 100000000).toFixed(8));
                 $(`#refbank`).val(((data.refbank / 100000000).toFixed(8)));
                 $(`#refpaid`).val(((data.refpaid / 100000000).toFixed(8)));
-                $('#reflink').val(`Rhom-Roller.com/?r=${userlog}`);
+                $('#reflink').val(`Hive.Loans/?r=${userlog}`);
                 $('#AccountLevel').val(parseInt(data.level.lvl));
                 $('.thisLevel').html(`&nbsp${parseInt(data.level.lvl)}&nbsp`);
                 $('.nextLevel').html(`&nbsp${parseInt(data.level.lvl) + 1}&nbsp`);
@@ -960,7 +945,7 @@ $("#passwordchange").on('click', function() {
             '<br><center>Re-Enter New Password:</center>' +
             '<center><div class="input-group autoBettitleC" style="width:69%;background:#181E28;"><span class="input-group-addon addon-sexy" style="max-width: 3.3em !important;padding: 0.3em;"><i class="fa fa-key fa-2x"></i></span><input type="password" class="form-control passwordfield" placeholder="New Password" autocomplete="off" aria-describedby="basic-addon1" id="newpasswordcheck" style="text-align:center;"><span class="input-group-addon addon-sexy" style="max-width: 3.3em !important;padding: 0.5em;">Pass</span></div><center><br>' +
             `<center><span id="newPassErr">&nbsp;</span></center><br>`,
-        title: '<center><span id="sexymodaltitle">Rhom-Roller.com</span><br>Change Account Password</center>',
+        title: '<center><span id="sexymodaltitle">Hive.Loans</span><br>Change Account Password</center>',
         buttons: {
             main: {
                 label: "Change Password",
@@ -997,76 +982,7 @@ $("#passwordchange").on('click', function() {
 
 });
 
-$("#investinfo").on('click', function() {
-    bootbox.dialog({
-        message: '<center>' +
-            'This site allows all users to become the house by allowing the opportunity to invest in the community bankroll. By offering instant asset investment as well as divestment coupled with the ability to deploy real-time leverage / multiplier adjustments up to 99x, users can easily make profit on their Tokens while retaining a high degree of liquidity due to being able to instantly get your capital returned when you wish to do something else with it.' +
-            '<br><br><center><b style="font-size:1.25em;">How does Investment Gain Profit?</b></center><br>' +
-            'Investment gains are credited as profit on each roll lost by any gambler assuming the amount earned by the investors capital is greater than 0.00000001 Token after calculating percentage of bankroll share owned by invested amount times the investment margin mulitplier. However if gamblers win their bet the opposite happens and investors may lose some of their capital, however unless you\'re highly leveraged it is unlikely you will ever lose all of your investment.' +
-            '',
-        title: '<center><span id="sexymodaltitle">Rhom-Roller.com</span><br>Bankroll Investing Information</center>',
-        buttons: {
-            main: {
-                label: "Close",
-                className: "push_button2"
-            }
-        }
-    });
-});
 
-var tos = function() {
-    bootbox.dialog({
-        message: '<center><h2 style="color: #165098 !important;">Introduction</h2></center>' +
-            '<p>These Website Standard Terms and Conditions written on this webpage shall manage your use of our website, Rhom-Roller.com accessible at https://www.Rhom-Roller.com.</p>' +
-            '<p>These Terms will be applied fully and affect to your use of this Website. By using this Website, you agreed to accept all terms and conditions written in here. You must not use this Website if you disagree with any of these Website Standard Terms and Conditions.</p>' +
-            '<center><p><b>Minors or people below 18 years old are not allowed to use this Website!</b></p></center>' +
-            '<center><h2 style="color: #165098 !important;">Intellectual Property Rights</h2></center>' +
-            '<p>Other than the content you own, under these Terms, Rhom-Roller.com and/or its licensors own all the intellectual property rights and materials contained in this Website.</p>' +
-            '<p>You are granted limited license only for purposes of viewing the material contained on this Website.</p>' +
-            '<center><h2 style="color: #165098 !important;">Restrictions</h2></center>' +
-            '<p>You are specifically restricted from all of the following:</p>' +
-            '<ul>' +
-            '<li>publishing any Website material in any other media;</li>' +
-            '<li>selling, sublicensing and/or otherwise commercializing any Website material;</li>' +
-            '<li>publicly performing and/or showing any Website material;</li>' +
-            '<li>using this Website in any way that is or may be damaging to this Website;</li>' +
-            '<li>using this Website in any way that impacts user access to this Website;</li>' +
-            '<li>using this Website contrary to applicable laws and regulations, or in any way may cause harm to the Website, or to any person or business entity;</li>' +
-            '<li>engaging in any data mining, data harvesting, data extracting or any other similar activity in relation to this Website;</li>' +
-            '<li>using this Website to engage in any advertising or marketing.</li>' +
-            '</ul>' +
-            '<p>Certain areas of this Website are restricted from being access by you and Rhom-Roller.com may further restrict access by you to any areas of this Website, at any time, in absolute discretion. Any user ID and password you may have for this Website are confidential and you must maintain confidentiality as well.</p>' +
-            '<center><h2 style="color: #165098 !important;">Your Content</h2></center>' +
-            '<p>In these Website Standard Terms and Conditions, "Your Content" shall mean any audio, video text, img or other material you choose to display on this Website. By displaying Your Content, you grant Rhom-Roller.com a non-exclusive, worldwide irrevocable, sub licensable license to use, reproduce, adapt, publish, translate and distribute it in any and all media.</p>' +
-            '<p>Your Content must be your own and must not be invading any third-partyâ€™s rights. Rhom-Roller.com reserves the right to remove any of Your Content from this Website at any time without notice.</p>' +
-            '<center><h2 style="color: #165098 !important;">Your Privacy</h2></center>' +
-            '<p>Rhom-Roller.com will not share your name, username, email, login information, account status or any other information with any party regardless of inquiry. Under no circumstance will we give any information to any government agency, police department or tax collector even if they have proper warrants and paperwork.<br><center>We respect your privacy and information, confidentiality is important!</center></p>' +
-            '<center><h2 style="color: #165098 !important;">No warranties</h2></center>' +
-            '<p>This Website is provided "as is," with all faults, and Rhom-Roller.com express no representations or warranties, of any kind related to this Website or the materials contained on this Website. Also, nothing contained on this Website shall be interpreted as advising you.</p>' +
-            '<center><h2 style="color: #165098 !important;">Limitation of liability</h2></center>' +
-            '<p>In no event shall Rhom-Roller.com, nor any of its officers, directors and employees, shall be held liable for anything arising out of or in any way connected with your use of this Website whether such liability is under contract. Â Rhom-Roller.com, including its officers, directors and employees shall not be held liable for any indirect, consequential or special liability arising out of or in any way related to your use of this Website.</p>' +
-            '<center><h2 style="color: #165098 !important;">Indemnification</h2></center>' +
-            '<p>You hereby indemnify to the fullest extent Rhom-Roller.com from and against any and/or all liabilities, costs, demands, causes of action, damages and expenses arising in any way related to your breach of any of the provisions of these Terms.</p>' +
-            '<center><h2 style="color: #165098 !important;">Severability</h2></center>' +
-            '<p>If any provision of these Terms is found to be invalid under any applicable law, such provisions shall be deleted without affecting the remaining provisions herein.</p>' +
-            '<center><h2 style="color: #165098 !important;">Variation of Terms</h2></center>' +
-            '<p>Rhom-Roller.com is permitted to revise these Terms at any time as it sees fit, and by using this Website you are expected to review these Terms on a regular basis.</p>' +
-            '<center><h2 style="color: #165098 !important;">Assignment</h2></center>' +
-            '<p>The Rhom-Roller.com is allowed to assign, transfer, and subcontract its rights and/or obligations under these Terms without any notification. However, you are not allowed to assign, transfer, or subcontract any of your rights and/or obligations under these Terms.</p>' +
-            '<center><h2 style="color: #165098 !important;">Entire Agreement</h2></center>' +
-            '<p>These Terms varitute the entire agreement between Rhom-Roller.com and you in relation to your use of this Website, and supersede all prior agreements and understandings.</p>' +
-            '<center><h2 style="color: #165098 !important;">Governing Law & Jurisdiction</h2></center>' +
-            '<p>These Terms will be governed by and interpreted in accordance with the laws of the State of Belize, and you submit to the non-exclusive jurisdiction of the state and federal courts located in Belize for the resolution of any disputes.</p>',
-        title: '<center><span id="sexymodaltitle">Rhom-Roller.com</span><br>Terms & Conditions</center>',
-        buttons: {
-            main: {
-                label: "Close",
-                className: "push_button2"
-            }
-        }
-    })
-
-};
 
 $("#contact").on('click', function() {
     bootbox.dialog({
@@ -1077,10 +993,10 @@ $("#contact").on('click', function() {
             '*<b>Message:</b><br>' +
             '<textarea class ="form-control" id="contactMessage" rows="10" cols="100" placeholder="Type your message here. (required)" style="width:70%;height:5em;" required></textarea><br>' +
             '</font>' +
-            'If you have Discord you can always come ask your question on our server!<br><a href="https://discord.gg/mtwvCpS" style="color:#337ab7;" >Offical Rhom-Roller.com Discord Server</a>' +
+            'If you have Discord you can always come ask your question on our server!<br><a href="https://discord.gg/mtwvCpS" style="color:#337ab7;" >Offical Hive.Loans Discord Server</a>' +
             '</center><br>' +
             '<center><span><b>Want to encrypt your message?</b><br><a href="#" style="color:#337ab7;" id="showpgp">Click here to view our PGP key!</a></span><div id="pgpshow" style="display:none;">-----BEGIN PGP PUBLIC KEY BLOCK-----<br><a href="#" title="Click to Copy to Clipboard"><input class="form-control" readonly onmouseover="this.select()" style="" onclick="copyStringToClipboard(this.value)" value="xsBNBFytr30BCAC7ZgvCfqTGpyuw5eYB3CyQENdqtgSBhmIStI/TCoBJ5sqwr5qEraByxVRh1zToUF3gcJc4U6UeE4ylmukmR2v/6FdDVvvG6Fm3gy2K0J2bDnPllmvpbde8ml04L0cQhLEO7yp4VnuDuAg+tgS2SStlqLFQ8MXfOor8HFhtrKpU4BJuuFXnjNZyLXzgjwTe1eV5swamcnP5MZnxd2jJEWmE2+mXVjhwMWTNe0jRMMrOZ4pt8Fi4WgosP5/n9YpoymtVexR7JXdDGZtjdvAdHTCrS66OYlLIDtZp0KplV+aWYVo2+C17ZQqymkjZb/oKrEgEh0dnU/THABz+CGWM+B3jABEBAAHNLEtMWUUgKE15IFBHUCBLZXkpIDxreWxlanJ0dXJuYnVsbEBnbWFpbC5jb20+wsBtBBMBCgAXBQJcra99AhsvAwsJBwMVCggCHgECF4AACgkQNItJahc92qoSmAgAhleyjvTRnD3i0cUs0IYzEd0b3oMPXfU2y0U5FwliqEKvaE9OO9HDiOBs2CahD+61DeYr42OK8xm+H4cC9xkpEAAXSwGl5ldeF9I1PdnZ5Y7ZzzWXZBcN0vi6CVq4svmTXMGEc7oEuMD9E6Y3ZGEfGu5FPQjAyn/CXQZXUQuHW7iMN2YhdaiMk8ZM9SbgZiGizTBYnSQDN3Nx9fTYbCTpZsYH/23nJkEessSDbA61OI/r2JSE429yKm5KleBjntlN8paOVaUNuNzuWOlyt4lguO2ZxQOf8oe6rF9EY60Di4sep9dLgT6ZL9VJpY7D278/7StTOB97R81d2lBzkaocF87ATQRcra99AQgAtLz7SnVEAtYJTSbQ7jxy3QHlOvAD/WWQsncl5KBUJAp6YIuSwCX5z78uNgzuUSvhHK2oAr9HHprSRYTsyTv5efDwWR+IpFvJLvybGaQGhPB+z7DxfSXix32bMrvzCLGn2JJQDarSK3IRkOM1uxJbwY141FLJHvpkJQcDN/OHOlaUCHFxPCMmxPd+gOTdDT2u44VNMBjkAVOtPDw+pwvnQt4IasXfLstBgbvoKp/pw8THEdp6uT88OlG2iKjZtw2ror5zwr2TJJtHzqFMYODlMEEFdpTFqrJaw7EkYs9IsqowW9Tqa6Ep1QS9S1gY0AwPpQ30wojq1bSKMlC2YbW1DwARAQABwsGEBBgBCgAPBQJcra99BQkPCZwAAhsuASkJEDSLSWoXPdqqwF0gBBkBCgAGBQJcra99AAoJENiB3vM3iy++F3EH/0hoOohOmzaJOM57ov1keEuxLnArW4FG0/sGEdZz0EQgNn7fHCh7SIW4y3hYWGiu5+QIfeLB/jmw2q9pVwyVZzbRzvx6P+nfnHiqIoz8uMrCcRfD90wXFP9khQ1w93SYfJg+gBkS+8h9uSgx0PuipdBx5evRzPuFzYXCzHDQtHR1bQ0Y2C5Dv9bG0F6Dy5KPiti21fBWJh4/Dgg6A4naNt3oKtyU0HMYUTqwN9AvD+O6dV9EVcvxaRdKQAkrVEaeXMh6fZQJsGcZ42xIRfxvnZM4pHRd3OhqXmAQMTqNZzC90U+0ohLqeG2PA/7b2tkajdlAeilhTjt11lTuSZgBfutgxwf/Q6e/dra1Ls48tz57PwlK8bFEP+wnk9T3T73goaXI/ZvwjWcavPV5zUO3yxxSaNZ6E/Fvq65zwheqxJd3wXBu1pprc8k0+aOzoenJv6jLhpOkbRYrl8CU+5sV0nhaPuqM9yKKh+FqOev57O7rB8EbMCG8YYUPMA6oWI/DaCaiHhy1I0gW2blqxRWCREkxlc7fyEStUButdw8rwg5nLjiakmZ/8xP3FXIWB+D/uzVBGSDx5QfHqR4QY9qgY3JHZgIghClsMXwsjJlifdPIa1QJSb4USxDyacBRlTQj5gYNc0sJdvFblW6Vw9gDYw/TZtY6uwwbsLKbLmnpgIW85W9wsc7ATQRcra99AQgA1UpVOUnM1X+i+IhchbhXzK/Fd+iZVbSHGo9eN0zrGCcprzX8tFS4Vm9AWqyR+9vhwCO4OY2nTMEZZ0mG1Lfiv4RcrB0C9te1F1V1+ru+dQnmq1b+wQFdHkQR1lYSuFjrq1v3dp+A9fI5PRK28PEayA+07bDLaToQs8CZLkmvd2wdiK617YrcOClCW4TRYJAs56h19DsRKQ245L6yFaNpoQcaAaLogyCZy/AChjtqIHvNADcfvn+PDPC8R3xP1Y1M6D8zq2jCuKUED5xqBTS9S0H6fTW7VU+t/gpmetrNyuTQ+30sQClCmgMYEKRuQZIAKjDIDwj+UalKAVn3OIUo1wARAQABwsGEBBgBCgAPBQJcra99BQkPCZwAAhsuASkJEDSLSWoXPdqqwF0gBBkBCgAGBQJcra99AAoJEABanYRVBM7T4FYH/3BrnSIXGyHlQkf/Bnj0eapx7In0UzGufrJNk/+SlXBBn4EQ6rYnYtDQMcxBPuVpAHHVi1ZKeaqxciRCzfrA7o84mAUozEFV8upXJCCJmhlSCodjOeupU+N+RzoS3VFkhzY0lds67iAhjg8GY4IvJigIFFdeCmNirmK1AercSjEiRiAFVk7ULbVQ0HBHir0JKJMDLxeQ0Gxo/1uEtuZ0AvpDVCjin8rU9iHStx36wqlB7DyviUaA5VxuHwTyK0QIBKByokr0oa9RSgtMah1nD1hk/eWH/3GTmCfs2ouvX1A0Lq/1F8XMmDXDTYaMCejb9Lyz5aU5R4Jyufce4XaPNJIY0wf/R1C4Ca386NDMu4lHyp7VIgdWj5aCTbdBVmjybTOAlG/zflD2q9bOY1ndfEiiBKr4lKdo5HVPD7Ikvjx8/OgqYhudq+g/yypOpjFmMPhhboXZ/21w2zdfK24Ezy3FE0/Nz1p0Ik5L4EKNjUCzgx8PedMAqfOavBUSIQm/9qIc/G5WSgM2xsd3FSWBPMtQu0x1NeboXMuM0p0zfvU/07wIhznB85LRr6BGaNfSkywrktBL6zUu5fVHsHDeZ96mq0C9Tu6nR1vo6g1PJck2Sbm/PyQGEPmZMupnyHL5lg6ENMNXPSz1YbqX77QNxKjjaA7FZ5j/8CC98OxmMRTkDjdpLw===xIpc"></a><br>-----END PGP PUBLIC KEY BLOCK-----</div><br>&nbsp;<br><sub>( Please ensure e-mail provided is valid! Expect a reply to your email within a day! )</sub></center>',
-        title: '<center><span id="sexymodaltitle">Rhom-Roller.com</span><br>Need Assistance or Have a Question? Contact Us!</center>',
+        title: '<center><span id="sexymodaltitle">Hive.Loans</span><br>Need Assistance or Have a Question? Contact Us!</center>',
         buttons: {
             main: {
                 label: "Send",
@@ -1149,7 +1065,7 @@ $("#secondfactorsettings").on('click', function() {
                     '<center><div class="input-group" style="width:75%;"><span><input type="text" class="form-control"  style="" placeholder="" aria-describedby="basic-addon1" id="delete2fanumber"/></span><br><br><span class="input-group-btn">' +
                     '<button type="button" class="btn  push_button2 sextext" style="margin-right:2px;margin-top:-5px;padding-bottom:4px;" onClick="delete2fa();">Delete</button>' +
                     '</span></div></center>',
-                title: '<center><span id="sexymodaltitle">Rhom-Roller.com</span><br>2FA Security Settings Setup</center>'
+                title: '<center><span id="sexymodaltitle">Hive.Loans</span><br>2FA Security Settings Setup</center>'
             });
         } else {
             bootbox.dialog({
@@ -1157,7 +1073,7 @@ $("#secondfactorsettings").on('click', function() {
                     '<center><input type="text" class="form-control" style="" placeholder="" aria-describedby="basic-addon1" id="confirm2fanumber"/><br><br>' +
                     '<center><button type="button" class="btn  push_button2 sextext" style="" onClick="confirm2fa();">Confirm</button></center>' +
                     '</div><br><div id="2faresponse"></center>',
-                title: '<center><span id="sexymodaltitle">Rhom-Roller.com</span><br>2FA Security Settings Setup</center>'
+                title: '<center><span id="sexymodaltitle">Hive.Loans</span><br>2FA Security Settings Setup</center>'
             });
         }
         window.scrollTo(0, 0);
@@ -1165,7 +1081,7 @@ $("#secondfactorsettings").on('click', function() {
 });
 
 $("#rtos").on('click', function() {
-    tos();
+    termsOfService();
 });
 
 function ValidateEmail() {
@@ -1185,70 +1101,14 @@ function fixToPlaces(p) {
     return x[0] + "." + (x[1] + s).substr(0, p);
 }
 
-var userstatsDialog = function(data) {
-    console.log(data);
-    socket.emit('userstats', {
-        user: data
-    }, function(err, d) {
-        if (err) {
-            console.log(err);
-            return showErr('Error Fetching User Stats!');
-        }
-        if (d) {
-            console.log("userstatsDialog data");
-            console.log(d);
-            var wager = d.wagered / 100000000;
-            var profit = d.profit / 100000000;
-            var bigwin = d.largestWin / 100000000;
-            var bigloss = d.largestLoss / 100000000;
-            var rolls = commaNumber(d.betid);
-            bootbox.dialog({
-              message:
-              `<center>Rolls:<br>${d.bets}<br><br>`+
-              `Wagered:<br>${wager.toFixed(8)} RHOM<br><br>`+
-              `Profit:<br>${profit.toFixed(8)} RHOM<br><br>`+
-              `Biggest Win:<br>${bigwin.toFixed(8)} RHOM<br><br>`+
-              `Biggest Loss:<br>${bigloss.toFixed(8)} RHOM</center>`,
-              title: '<center><span id="sexymodaltitle">Rhom-Roller.com</span><br>@' + data + ' Gambling Statistics</b></center>',
-              buttons: {
-                  main: {
-                      label: "Close",
-                      className: "push_button2"
-                  }
-              }
-            });
-        }
-    });
-};
+var contractDialog = function (datanew) {
 
-var userstatsDialogAdmin = function(data) {
-  console.log(data);
-    socket.emit('adminuserstats', {
-        user: data
-    }, function(err, d) {
-        if (err) {
-            showErr('Error Fetching Stats');
-        }
-        if (d) {
-          console.log(d);
-            var balance = d.balance / 100000000;
-            var wager = d.wagered / 100000000;
-            var profit = d.profit / 100000000;
-            var bigwin = d.largestWin / 100000000;
-            var bigloss = d.largestLoss / 100000000;
-            var invested = d.invested / 100000000;
+            console.log("contractDialog data");
+            console.log(JSON.stringify(datanew));
             bootbox.dialog({
               message:
-              `<center>Balance:<br>${balance.toFixed(8)}<br><br>`+
-              `Rolls:<br>${d.bets}<br><br>`+
-              `Wagered:<br>${wager.toFixed(8)} RHOM<br><br>`+
-              `Profit:<br>${profit.toFixed(8)} RHOM<br><br>`+
-              `Biggest Win:<br>${bigwin.toFixed(8)} RHOM<br><br>`+
-              `Biggest Loss:<br>${bigloss.toFixed(8)} RHOM<br><br>`+
-              `Invested:<br>${(invested).toFixed(8)} RHOM</center>`,
-              //`Invest Profit: ${(invested.investedProfit / 100000000).toFixed(8)} RHOM<br>`+
-              //`Leverage: ${(invested.investedMultiplier / 100000000).toFixed(8)}x<br>`,
-              title: '<center><span id="sexymodaltitle">Rhom-Roller.com</span><br>@' + data + ' Gambling Statistics</b></center>',
+              `<span id="popupActiveTable" style="padding:15px; width:100% !important; height:50%;overflow-y:scroll;"></span><table id="popupActiveHead" style="max-height:30% !important;"></table>`,
+              title: '<center><span id="sexymodaltitle">Hive.Loans</span><br>Contract Details</b></center>',
               buttons: {
                   main: {
                       label: "Close",
@@ -1256,8 +1116,9 @@ var userstatsDialogAdmin = function(data) {
                   }
               }
             });
-        }
-    });
+// CreateTableFromJSON(ourloans, 'ourloans', 'loadActiveloans', 'loadActiveTable', 'loadActiveHead');
+return CreateTableFromJSON(`'${JSON.stringify(datanew)}'`, 'popuploans', 'popupActiveloans', 'popupActiveTable', 'popupActiveHead');
+
 };
 
 var betPublicDialog = function(row) {
@@ -1265,7 +1126,7 @@ var betPublicDialog = function(row) {
   console.log(row);
     bootbox.dialog({
         message: '<div id="betDetail"></div>',
-        title: `<center><span id="sexymodaltitle">Rhom-Roller.com</span><br>Bet Summary for <b id="rollstatslink">@${row.username}</b></center>`, //Bet ID# ' + row.betnumber + '
+        title: `<center><span id="sexymodaltitle">Hive.Loans</span><br>Bet Summary for <b id="rollstatslink">@${row.username}</b></center>`, //Bet ID# ' + row.betnumber + '
         buttons: {
             main: {
                 label: "Close",
@@ -1280,166 +1141,52 @@ var betPublicDialog = function(row) {
         $betDetail.html(`<center><b style="font-size:2em;color:green;">WON!</b><br><h4>Wagered <b>${parseFloat(row.amount).toFixed(8)}</b> RHOM Aiming for <b>${row.target}</b><br>Winning <b style='color:green;'>${row.win}</b> RHOM with a Roll of <b>${row.result}</b></h4>${provablystring}</center>`);
     } else {
         $betDetail.html(`<center><b style="font-size:2em;color:red;">LOST!</b><br><h4>Wagered <b>${parseFloat(row.amount).toFixed(8)}</b> RHOM Aiming for <b>${row.target}</b><br>Losing <b style='color:red;'>${row.win}</b> RHOM with a Roll of <b>${row.result}</b></h4>${provablystring}</center>`);
-    };
+    }
 
     $("#rollstatslink").on('click', function() {
         userstatsDialog(row.username);
     });
 };
 
-var betDetailDialog = function(row) {
-    console.log(`betDetailDialog`);
-  console.log(row);
-    bootbox.dialog({
-        message: '<div id="betDetail"></div>',
-        title: `<center><span id="sexymodaltitle">Rhom-Roller.com</span><br>Bet Summary for #${row.betid}</center>`, //Bet ID# ' + row.betnumber + '
-        buttons: {
-            main: {
-                label: "Close",
-                className: "push_button2"
-            }
-        }
-    });
-    var provablystring;
-    var $betDetail = $("#betDetail");
-    var wincheck = parseFloat(row.win);
-    if (row.ssHash == undefined && row.serverSeedHash == undefined) {
-        provablystring = "";
-    } else {
-      /*
-      if (typeof row.serverSeedHash != undefined){
-        row.ssHash = row.serverSeedHash;
-      }
-      if (typeof row.clientSeed != undefined){
-        row.cs = row.clientSeed;
-      }
-      */
-        //provablystring = `Bet ID:<br><input type="text" id="checkbetid" readonly class="form-control" style="width:69%;text-align:center" value="${row.betid}"><br>Server Seed:<br><input type="text" readonly class="form-control oldserverseed" style="width:69%;" id="oldserverseed" value="Seed Currently Hidden"><br>Server Seed Hash:<br><input type="text" readonly class="form-control" style="width:69%;" value="${row.ssHash}"><br>Client Seed:<br><input type="text" readonly class="form-control" style="width:69%;text:align:center" value="${row.cs}"><br>Nonce:<br><input type="text" readonly class="form-control" style="width:69%;text-align:center" value="${row.nonce}"><br><a href="#" title="Click Here to Show Server Seed for This Roll. This WILL Change the Current Server Seed to a Newly Generated One" onClick="checkServerSeed();">Click Here to Show Server Seed</a><br><sub>(if you show server seed a new one will be generated)</sub><br><br><a href="https://rgbkey.github.io/just-dice/">Check Provability of Roll on 3rd Party Website</a>`;
-        provablystring = `Bet ID:<i class="fa fa-info-circle" title="The BetID is the number of this bet"></i><br><input type="text" id="checkbetid" readonly class="form-control" style="width:95%;text-align:center" value="${row.betid}"><br>Server Seed Hash:<i class="fa fa-info-circle" title="The server seed hash is a SHA-512 hash of the current server seed we're using to help generate your rolls"></i><br><input type="text" readonly class="form-control" style="width:95%;" id="ssHash" value="${row.ssHash}"><br>Server Seed:<i class="fa fa-info-circle" title="The server seed is a hexidecimal string which is part of the data used to generate your rolls"></i><br><input type="text" readonly class="form-control oldserverseed" style="width:95%;" id="oldserverseed" value="Seed Currently Hidden"><br>Client Seed:<i class="fa fa-info-circle" title="The client seed is a value you can specify to help randomize the generation of your rolls"></i><br><input type="text" readonly class="form-control" style="width:95%;text:align:center" id="clientS33d" value="${row.cs}"><br>Nonce:<i class="fa fa-info-circle" title="The nonce is the amount of rolls you've completed with this server & client seed combination"></i><br><input type="text" id="checknonce" readonly class="form-control" style="width:95%;text-align:center" value="${row.nonce}"><br>Actual Hash:<i class="fa fa-info-circle" title="A hash used to help verify roll integrity on the 3rd party site below"></i><br><input type="text" id="actualHash" readonly class="form-control" style="width:95%;text-align:center" value="Used to Help Verify on 3rd Party Sites"><br>Provability Quick Check Value:<br><textarea rows="6" style="height:12vh !important; overflow:hidden;" id="returnedprovability" class="form-control" wrap="hard" placeholder="Your provably fair data will be displayed here when the server responds with the data. You can input this in the top field of the checking site. Note that with large amounts of bets on an account it can take several minutes to fetch the bet data. Copy all of this into the top box on the roll verifier site in order to quickly verify your bets were fair." onmouseover="this.select()" onclick="copyStringToClipboard(this.value)"></textarea><br><a href="#" title="Click Here to Show Server Seed for This Roll. This WILL Change the Current Server Seed to a Newly Generated One" onClick="checkServerSeed();">Click Here to Show Server Seed</a><br><sub>( showing seed will change current server seed )</sub><br><br><a href="https://rgbkey.github.io/just-dice/" target="_blank">Check Provability of Roll on 3rd Party Website</a>`;
+function showWalletHistory(user) {
+  socket.emit('wallethistory', {name:user}, function(err, data){
+    if(err) showErr(err);
+    if(data) {
+      console.log(`showWalletHistory fired!`)
+      $('#userpanel').removeClass('hidden');
+      $("#userpanel").css({'height':'40%','width':'40%','top':'50%','left':'50%'});
+      $('#panelName').val('Wallet History');
+      $('#panelName').html('Wallet History');
+      $("#panelContent").html(`Please Wait While Wallet History Query Completes`);
+      $('#userpanel').fadeIn();
     }
-    if (wincheck >= 0) {
-        $betDetail.html(`<center><b style="font-size:2em;color:green;">WON!</b><br><h4>Bet: <b>${row.amount}</b> RHOM aiming for <b>${row.target}</b><br>Won: <b style='color:green;'>${row.win}</b> RHOM with a Roll of <b>${row.result}</b></h4>${provablystring}</center>`);
-    } else {
-        $betDetail.html(`<center><b style="font-size:2em;color:red;">LOST!</b><br><h4>Bet: <b>${row.amount}</b> RHOM aiming for <b>${row.target}</b><br>Lost: <b style='color:red;'>${row.win}</b> RHOM with a Roll of <b>${row.result}</b></h4>${provablystring}</center>`);
-    }
-    $("#rollstatslink").on('click', function() {
-        userstatsDialog(row.username);
-    });
-};
+  })
+}
 
-
-
-var singlebetDetailDialog = function(row) {
-      console.log(`singlebetDetailDialog`);
-    if (row == undefined) {
-        showErr("No Bet Found in Database!");
-        return;
-    }
-    if (row.username == undefined) {
-        row.username = "";
-    }
-    if (row.ssHash == undefined) {
-        provablystring = "";
-    } else {
-        provablystring = `Bet ID:<br><input type="text" id="checkbetid" readonly class="form-control" style="width:69%;text-align:center" value="${row.betid}"><br>Server Seed:<br><input type="text" readonly class="form-control oldserverseed" style="width:69%;" id="oldserverseed" value="Seed Currently Hidden"><br>Server Seed Hash:<br><input type="text" readonly class="form-control" style="width:69%;" value="${row.serverSeedHash}"><br>Client Seed:<br><input type="text" readonly class="form-control" style="width:69%;text:align:center" value="${row.clientSeed}"><br>Nonce:<br><input type="text" readonly class="form-control" style="width:69%;text-align:center" value="${row.nonce}"><br><a href="#" title="Click Here to Show Server Seed for This Roll. This WILL Change the Current Server Seed to a Newly Generated One" onClick="checkServerSeed();">Click Here to Show Server Seed</a><br><br><a href="https://rgbkey.github.io/just-dice/">Check Provability of Roll on 3rd Party Website</a>`;
-    }
-    bootbox.dialog({
-        message: '<div id="betDetail"></div>',
-        title: '<center><span id="sexymodaltitle">Rhom-Roller.com</span><br>Bet #' + row.betid + ' Summary</center>',
-        buttons: {
-            main: {
-                label: "Close",
-                className: "push_button2"
-            }
-        }
-    });
-    var $betDetail = $("#betDetail");
-    var wincheck = parseFloat(row.win);
-    var direction;
-    if (row.high == "above") {
-        direction = ">";
-    }
-    if (row.high == "below") {
-        direction = "<";
-    }
-    if (wincheck >= 0) {
-        $betDetail.html(`<center><b style="font-size:2em;color:green;">WON!</b><br>${row.username} tested Their Luck on the Dice<br>Betting <b>${(row.betAmount / 100000000)}</b> RHOM Aiming for <b>${direction} ${row.number}</b><br>Winning <b style='color:green;'>${(row.win/ 100000000)}</b> RHOM with a Roll of <b>${row.result}</b><br>${provablystring}</center>`);
-    } else {
-        $betDetail.html(`<center><b style="font-size:2em;color:red;">LOST!</b><br>${row.username} tested Their Luck on the Dice<br>Betting <b>${(row.betAmount / 100000000)}</b> RHOM Aiming for <b>${direction} ${row.number}</b><br>Losing <b style='color:red;'>${(row.win/ 100000000)}</b> RHOM with a Roll of <b>${row.result}</b><br>${provablystring}</center>`);
-    }
-    $("#rollstatslink").on('click', function() {
-        userstatsDialog(row.username);
-    });
-};
-
-//===========================================================
-// Moved site contente down here
-
-
-
-async function showWallet() {
+async function showWallet(username) {
+  if(!username) showErr('You Must Specify a User!');
+  console.log(`showWallet() called`);
   loadingjumbo();
-//alert(`Wallet functions not set to route destinations currently!\n\nDO NOT DEPOSIT ANY HIVE\nUnless you mean to deposit it to support the project development`)
-  console.log(`showWallet() called:`);
   var statsBalTop;
   var statsHBDBal;
   $("#jumbotron").fadeOut('fast');
   var resultData;
-  user = window.localStorage.getItem("user");
-      let walletContent = `<center><h3 class="pagehead" style="color:white !important;">Hive.Loans Web Wallet</h3><table><tbody><tr><td>HIVE Balance</td><td>HBD Balance</td></tr><tr><td><input type="text" id="userhivebalance" class="casperInput" readonly></td><td><input type="text" id="userhbdbalance" style="background: white;color: black;text-align: center;width: 9vw;height: 3vh;font-size: large; border-radius:10px;" readonly></td></tr><tr><td><button type="button" style="font-size: larger; padding: 10px; line-height: 1vh; background: #000; color: white; width: 25%;border-radius:5px; border-top-left-radius: 90px !important; border-top-right-radius: 90px !important;float:left !important;" class="btn curvyuptop push_button3" id="depositbuttonwallet" onClick="depositButtonWallet(user, 'HIVE')" title="Click here to begin a deposit to Hive.Loans"><i class="fas fa-sort-up"></i><br>Deposit</button><button type="button" style="float:right !important;font-size: larger; padding: 10px; line-height: 1vh; background: #000; color: white; width: 10%;border-radius:5px; border-bottom-left-radius: 90px !important; border-bottom-right-radius: 90px !important;" class="btn curvyuptop push_button3" id="withdrawhiveshithere" onClick="withdrawButtonWallet(user, 'HIVE')" title="Click here to begin a Withdraw from Hive.Loans">Withdraw<br><i class="fas fa-sort-down"></i></button></td><td><button type="button" style="font-size: larger; padding: 10px; line-height: 1vh; background: #000; color: white; width: 10%;border-radius:5px; border-bottom-left-radius: 90px !important; border-bottom-right-radius: 90px !important;float:left !important;" class="btn push_button3" id="withdrawhbdshithere" onClick="withdrawButtonWallet(user, 'HBD')" title="Click here to begin a Withdraw from Hive.Loans">Withdraw<br><i class="fas fa-sort-down"></i></button><button type="button" style="font-size: larger; padding: 10px; line-height: 1vh; background: #000; color: white; width: 10%;border-radius:5px;float:right !important; border-top-left-radius: 90px !important; border-top-right-radius: 90px !important;" class="btn push_button3" id="depositbuttonhbdwallet" onClick="depositButtonWallet(user, 'HBD')" title="Click here to begin a deposit to Hive.Loans"><i class="fas fa-sort-up"></i><br>Deposit</button></td></tr><tr><td><input id="userouthivebalance" style="background: white;color: black;text-align: center;width: 9vw;height: 3vh;font-size: large; border-radius:10px;" readonly></td><td><input id="userouthbdbalance" style="background: white;color: black;text-align: center;width: 9vw;height: 3vh;font-size: large; border-radius:10px;"  readonly></td></tr><tr><td>@${user} HIVE Wallet</td><td>@${user} HBD Wallet</td></tr></tbody></table></center><center><h4>Manual Deposit Information<br><sub>Include the Address and Memo below in your Transfer</sub></h4>Address:<br><input type="text" id="depositName"  title="click to copy to clipboard" onmouseover="this.select()" onclick="copyStringToClipboard(this.value)" style="background: white;color: black;text-align: center;width: 9vw;height: 3vh;font-size: large; border-radius:10px;" readonly><br>Memo:<br><input type="text" id="depositMemo" style="background: white;color: black;text-align: center;width: 80%;height: 3vh;font-size: large; border-radius:10px;" title="click to copy to clipboard" onmouseover="this.select()" onclick="copyStringToClipboard(this.value)" onload="$(this.val(uAddress))" readonly><hr><a href="#" style="text-decoration:none !important;color:white !important;" onClick="showWalletHistory();"></sub>click here to view your wallet history</sub></a></center>`;
-//<span id="sendPopup" onClick="sendPopup();"><button class="btn">Deposit</button></span>
-//<span id="withdrawPopup" onClick="withdrawPopup($('#username').val());"><button class="btn">Withdraw</button></span>
-  await hive.api.getAccounts([user], async function(err, result) {
-    if(err){ console.log(err)}
-    if(result){
-      resultData = result;
-      resultData = resultData[0];
-      console.log(resultData);
-      statsBalTop = resultData.balance;
-      statsHBDBal = resultData.hbd_balance;
-      await $("#jumbotron").promise().done(function(){
-          $("#jumbotron").html(moverAddon + walletContent);
-          $("#jumbotron").css({'height':'auto','width':'25%'});
-          $("#jumbotron").center();
-          $("#jumbotron").fadeIn();
-          //$("#userhivebalance").html((uHIVEbalance / 1000 ).toFixed(3) + " HIVE");
-          //$("#userhivebalance").val((uHIVEbalance / 1000).toFixed(3) + " HIVE");
-          //$("#userhbdbalance").html((uHBDbalance / 1000).toFixed(3) + " HBD");
-          //$("#userhbdbalance").val((uHBDbalance / 1000).toFixed(3) + " HBD");
-          $("#userouthivebalance").html(statsBalTop);
-          $("#userouthivebalance").val(statsBalTop);
-          $("#userouthbdbalance").html(resultData.hbd_balance);
-          $("#userouthbdbalance").val(resultData.hbd_balance);
-          $("#useraddress").html(result.address);
-          $("#depositName").html('hive.loans');
-          $("#depositName").val('hive.loans');
-          $("#depositMemo").html(uAddress);
-          $("#depositMemo").val(uAddress);
-            getUserData();
-          //$("#userouthivebalance").html(`${statsBalTop}`);
-          //$("#userouthbdbalance").html(`${statsHBDBal}`);
-      });
+  socket.emit('walletdata', {username: username}, function(err, data){
+    if(err) showErr(err);
+    //if(data) showSuccess(data);
+  });
+};//END showWallet
 
-    }
-  })
-
-
-}
-
-async function showProfile() {
+async function viewUserProfile(user) {
+  console.log(`viewUserProfile() called`);
   loadingjumbo();
+  //var userDelegations = []
 
-  var userDelegations = []
-  var total_vesting_shares;
-  var total_vesting_fund;
-
-  await hive.api.getDynamicGlobalProperties(function(err, result) {
+  await hive.api.getDynamicGlobalProperties( async function(err, result) {
     if(err){console.log(err)}
     total_vesting_shares = parseInt(result.total_vesting_shares);
     total_vesting_fund = parseInt(result.total_vesting_fund_hive);
   });
-
-
   await hive.api.getAccounts([user], async function(err, result) {
     console.log(`getAccounts`)
     if(err){
@@ -1451,22 +1198,6 @@ async function showProfile() {
       var hivePower = parseInt(resultData.vesting_shares);
       var recoverAcct = resultData.recovery_account;
       var hivePower = parseInt(resultData.vesting_shares);
-      memo_key = resultData.memo_key.toString();
-      owner_key = resultData.owner.key_auths[0].toString();
-      active_key = resultData.active.key_auths[0].toString();
-      posting_key = resultData.posting.key_auths[0].toString();
-      owner_key = owner_key.split(',')[0];
-      active_key = active_key.split(',')[0];
-      posting_key = posting_key.split(',')[0];
-      profiledata = resultData.posting_json_metadata;
-      dateCreated = resultData.created;
-
-      await hive.api.getWithdrawRoutes(`"${user}"`, 1, function(err, data) {
-      	console.log(err, data);
-      });
-
-
-
 
       await hive.api.getVestingDelegations(`'${user}'`, '', 0, function(err, result) {
         if(err !== null) {
@@ -1490,10 +1221,12 @@ async function showProfile() {
             <span class="thisLevel" id="thisLevel" style="margin: 0vh 0 0vh 0.5vh;color: white;">&nbsp;13&nbsp;</span>
             <span class="levelprogress" title="Progress to next Account Level" style="width: 34.95%;"></span>
             <span class="autoBettitleTT Logoml nextLevel" id="nextLevel">&nbsp;14&nbsp;</span>
-            </div></td></tr><tr><td><span id="statsBal"></span></td><td><p id="hivePowerHeld"></p></td><td><span id="statHBDsBal"></span></td></tr><tr><td  id="recoverAcct">REcovery shit here</td><td>last login</td><td>Date Created:<br>${dateCreated}</td></tr><tr><td colspan="3"><span id="recAlert"></span><hr><b>Scope Keys & Permissions:<br><br><code>Posting Public Key:</code><br>${posting_key} <i class="far fa-fw fa-eye"></i><br><br><code>Active Public Key:</code><br>${active_key} <i class="far fa-fw fa-eye"></i><br><br><code>Owner Public Key:</code><br>${owner_key} <i class="far fa-fw fa-eye"></i><br><br><code>Memo Public Key:</code><br>${memo_key} <i class="far fa-fw fa-eye"></i></td></tr></tbody></table>`;
+            </div></td></tr><tr><td><span id="statsBal"></span></td><td><p id="hivePowerHeld"></p></td><td><span id="statHBDsBal"></span></td></tr><tr><td  id="recoverAcct">REcovery shit here</td><td>last login</td><td>Date Created:<br>${dateCreated}</td></tr><tr><td colspan="3"><span id="recAlert"></span><hr><b style="font-size:smaller;">Scope Keys & Permissions:<br><br><code>Posting Public Key:</code><br>${posting_key} <i class="far fa-fw fa-eye"></i><br><br><code>Active Public Key:</code><br>${active_key} <i class="far fa-fw fa-eye"></i><br><br><code>Owner Public Key:</code><br>${owner_key} <i class="far fa-fw fa-eye"></i><br><br><code>Memo Public Key:</code><br>${memo_key} <i class="far fa-fw fa-eye"></i></td></tr></tbody></table>`;
             $("#jumbotron").fadeOut('fast');
-            $("#jumbotron").promise().done(function(){
-          $("#jumbotron").html(moverAddon + hypertabletwo);
+          $("#jumbotron").promise().done(function(){
+          $("#jumboHead").show();
+          $("#jumboWrapper").html( hypertabletwo);
+          $("#jumboTitle").html(`Hive.Loans - @${user} Profile`);
           $("#metaprofile").val(profiledata['profile']);
           $('#delegationShow').html(userDelegations);
           $('#urank').val($('#userrank').val());
@@ -1504,13 +1237,13 @@ async function showProfile() {
           profiledata = JSON.parse(profiledata);
 
 
-
+          console.log("profiledata");
           console.log(profiledata);
           var userc = profiledata.profile.profile_image;
           var userabout = profiledata.profile.about;
           var userlocation = profiledata.profile.location;
           var username = profiledata.profile.name;
-          $("#userpic").html(`<img src="${userc}" style="width:5vw;height:5vw;border-radius:15px;border: inset 2px grey;">`);
+          $("#userpic").css({"background-image":`url("${userc}")`}); // `<img src="${userc}" style="width:5vw;height:5vw;border-radius:15px;border: inset 2px grey;">`
           $("#locationid").html(`${profiledata.profile.location}`);
           $("#nameid").html(`${username}`);
           $("#profilestring").html(`${userabout}`);
@@ -1528,6 +1261,7 @@ async function showProfile() {
             $("#prawarn").css({"color":"red"});
             $("#showRecAcct").css({"color":"red"});
             $("#prawarn").html(`❌ Incompatible Recovery Account! <b><a href="#" id="changeRecoveryAcct" style="color:white !important; text-decoration:none !important;" onClick="showRecoveryPanel();">Change Recovery Account</a></b>`);
+            $(".acceptButton").hide();
             $("#recAlert").html(`<sub><b style="color:red;">Recovery Account Invalid!</b><br>Please set @hive.loans as recovery account!<br><br>Click here to change recovery account<br><sub>( This will take 30 days to complete )</sub></sub>`);
           } else {
             $("#recName").css({"color":"lawngreen"});
@@ -1535,20 +1269,198 @@ async function showProfile() {
             $("#prawarn").css({"color":"white"});
             $("#showRecAcct").css({"color":"lawngreen"});
             $("#prawarn").html(`✔️`);
+            $(".acceptButton").show();
             $("#recAlert").html(`<sub><b style="color:lawngreen;">Recovery Account Valid!</b><br><code onclick="showLoans()">You're ready to borrow! Remember to follow the site guidelines while lending..</code></sub>`);
 
           }
       });
-
-
-
     }
 
   });
 }
 
+var termsOfService = function() {
 
-async function showRecoveryPanel() {
+var tosContent = 'Introduction\n\n\n' +
+      'These Website Standard Terms and Conditions written on this webpage shall manage your use of our website, Hive.Loans accessible at https://Hive.Loans.\n\n\n' +
+      'These Terms will be applied fully and affect to your use of this Website. By using this Website, you agreed to accept all terms and conditions written in here. You must not use this Website if you disagree with any of these Website Standard Terms and Conditions.\n\n\n' +
+      'Minors or people below 18 years old are not allowed to use this Website!\n\n\n' +
+      'Intellectual Property Rights\n\n' +
+      'Other than the content you own, under these Terms, Hive.Loans and/or its licensors own all the intellectual property rights and materials contained in this Website.\n\n' +
+      'You are granted limited license only for purposes of viewing the material contained on this Website.\n\n' +
+      'Restrictions\n\n' +
+      'You are specifically restricted from all of the following:\n\n' +
+      '\n\n' +
+      'publishing any Website material in any other media;\n\n' +
+      'selling, sublicensing and/or otherwise commercializing any Website material;\n\n' +
+      'publicly performing and/or showing any Website material;\n\n' +
+      'using this Website in any way that is or may be damaging to this Website;\n\n' +
+      'using this Website in any way that impacts user access to this Website;\n\n' +
+      'using this Website contrary to applicable laws and regulations, or in any way may cause harm to the Website, or to any person or business entity;\n\n' +
+      'engaging in any data mining, data harvesting, data extracting or any other similar activity in relation to this Website;\n\n' +
+      'using this Website to engage in any advertising or marketing.\n\n' +
+      '\n\n' +
+      'Certain areas of this Website are restricted from being access by you and Hive.Loans may further restrict access by you to any areas of this Website, at any time, in absolute discretion. Any user ID and password you may have for this Website are confidential and you must maintain confidentiality as well.\n\n' +
+      'Your Content\n\n' +
+      'In these Website Standard Terms and Conditions, "Your Content" shall mean any audio, video text, img or other material you choose to display on this Website. By displaying Your Content, you grant Hive.Loans a non-exclusive, worldwide irrevocable, sub licensable license to use, reproduce, adapt, publish, translate and distribute it in any and all media.\n\n' +
+      'Your Content must be your own and must not be invading any third-partyâ€™s rights. Hive.Loans reserves the right to remove any of Your Content from this Website at any time without notice.\n\n' +
+      'Your Privacy\n\n' +
+      'Hive.Loans will not share your name, username, email, login information, account status or any other information with any party regardless of inquiry. Under no circumstance will we give any information to any government agency, police department or tax collector even if they have proper warrants and paperwork.<br>We respect your privacy and information, confidentiality is important!\n\n' +
+      'No warranties\n\n' +
+      'This Website is provided "as is," with all faults, and Hive.Loans express no representations or warranties, of any kind related to this Website or the materials contained on this Website. Also, nothing contained on this Website shall be interpreted as advising you.\n\n' +
+      'Limitation of liability\n\n' +
+      'In no event shall Hive.Loans, nor any of its officers, directors and employees, shall be held liable for anything arising out of or in any way connected with your use of this Website whether such liability is under contract. Â Hive.Loans, including its officers, directors and employees shall not be held liable for any indirect, consequential or special liability arising out of or in any way related to your use of this Website.\n\n' +
+      'Indemnification\n\n' +
+      'You hereby indemnify to the fullest extent Hive.Loans from and against any and/or all liabilities, costs, demands, causes of action, damages and expenses arising in any way related to your breach of any of the provisions of these Terms.\n\n' +
+      'Severability\n\n' +
+      'If any provision of these Terms is found to be invalid under any applicable law, such provisions shall be deleted without affecting the remaining provisions herein.\n\n' +
+      'Variation of Terms\n\n' +
+      'Hive.Loans is permitted to revise these Terms at any time as it sees fit, and by using this Website you are expected to review these Terms on a regular basis.\n\n' +
+      'Assignment\n\n' +
+      'The Hive.Loans is allowed to assign, transfer, and subcontract its rights and/or obligations under these Terms without any notification. However, you are not allowed to assign, transfer, or subcontract any of your rights and/or obligations under these Terms.\n\n' +
+      'Entire Agreement\n\n' +
+      'These Terms varitute the entire agreement between Hive.Loans and you in relation to your use of this Website, and supersede all prior agreements and understandings.\n\n' +
+      'Governing Law & Jurisdiction\n\n' +
+      'These Terms will be governed by and interpreted in accordance with the laws of the State of Belize, and you submit to the non-exclusive jurisdiction of the state and federal courts located in Belize for the resolution of any disputes.';
+
+  var termsofContent = '<textarea style="width:100%; height:91%;font-size:smaller;overflow-x:hidden;" id="termsoftextarea" readonly></textarea>' +
+      '<center><button class="button" onclick="showLogin();"><b style="font-weight:900;font-size:larger;">Return to Login</b></button></center>';
+        $("#jumbotron").fadeOut('fast');
+        $("#jumbotron").promise().done(function(){
+$("#jumboHead").show();
+            $("#jumboWrapper").html(termsofContent);
+            $("#termsoftextarea").val(tosContent);
+            $("#jumbotron").css({'height':'90%','width':'25%'});
+            $("#jumbotron").center();
+            $("#jumbotron").fadeIn();
+            $("#jumboTitle").html(`Hive.Loans - Terms of Service`);
+        });
+
+};
+
+async function showProfile() {
+  console.log(`showProfile() called`);
+  loadingjumbo();
+  var result = await getUserAccount(uUsername);
+  result = result[0];
+  console.log(result)
+
+  recoverAcct = result.recovery_account;
+  hivePower = parseInt(result.vesting_shares);
+  recoverAcct = result.recovery_account;
+  hivePower = parseInt(result.vesting_shares);
+  memo_key = result.memo_key;
+  owner_key = result.owner.key_auths[0].toString();
+  active_key = result.active.key_auths[0].toString();
+  posting_key = result.posting.key_auths[0].toString();
+  owner_key = owner_key.split(',')[0];
+  active_key = active_key.split(',')[0];
+  posting_key = posting_key.split(',')[0];
+  profiledata = result.posting_json_metadata;
+  dateCreated = result.created;
+
+    hypertabletwo = `<table style="width:100%;"><tbody><tr><td colspan="3"><span id="metaprofile"><span id="userpic" style="float:right;"></span><br><span id="nameid"></span> <code>( @${uUsername} )</code><br><i class="fas fa-fw fa-globe"></i><span id="locationid"></span><br><b style="font-size:larger;">Rank: ${$('#userrank').val()}</b><br><span id="profilestring"></span></td></tr><tr><td colspan="3"><div class="autoBettitleC2 autoBettitleC2p levelHolder" style="position:relative">
+            <span class="thisLevel" id="thisLevel" style="margin: 0vh 0 0vh 0.5vh;color: white;">&nbsp;13&nbsp;</span>
+            <span class="levelprogress" title="Progress to next Account Level" style="width: 34.95%;"></span>
+            <span class="autoBettitleTT Logoml nextLevel" id="nextLevel">&nbsp;14&nbsp;</span>
+            </div></td></tr><tr><td><span id="statsBal"></span></td><td><p id="hivePowerHeld"></p></td><td><span id="statHBDsBal"></span></td></tr><tr><td  id="recoverAcct">REcovery shit here</td><td>last login</td><td>Date Created:<br>${dateCreated}</td></tr><tr><td colspan="3"><span id="recAlert"></span><hr><b style="font-size:smaller;">Scope Keys & Permissions:<br><br><code>Posting Public Key:</code><br>${posting_key} <i class="far fa-fw fa-eye"></i><br><br><code>Active Public Key:</code><br>${active_key} <i class="far fa-fw fa-eye"></i><br><br><code>Owner Public Key:</code><br>${owner_key} <i class="far fa-fw fa-eye"></i><br><br><code>Memo Public Key:</code><br>${memo_key} <i class="far fa-fw fa-eye"></i></td></tr></tbody></table>`;
+                $("#jumbotron").fadeOut('fast');
+                $("#jumbotron").promise().done(function(){
+$("#jumboHead").show();
+                $("#jumboWrapper").html( hypertabletwo);
+                $("#recoverAcct").html(`<b>Recovery Account</b>:<br><span id="recName"><a href='https://hiveblocks.com/@${recoverAcct}' target="_blank" style="color:${linkColor};">@${recoverAcct}</span?</span><br>`);
+                if(recoverAcct != 'hive.loans' && recoverAcct != 'anonsteem' && recoverAcct != 'beeanon' && recoverAcct != 'blocktrades') {
+                  $("#recName").css({"color":"red"});
+                  linkColor = "red";
+                  $("#recAlert").html(`<sub><b style="color:red;">Recovery Account Invalid!</b><br>Please set @hive.loan as recovery account! Click here to change recovery account<br><sub>( This will take 30 days to complete )</sub></sub>`);
+                } else {
+                  $("#recName").css({"color":"lawngreen !important","font-weight":"700"});
+                  linkColor = "lawngreen";
+                  $("#recAlert").html(`<sub><b style="color:black;">Recovery Account Valid!</b><br>You're ready to borrow! Don't change your recovery account during while borrowing!<br><sub>( Harsh penalties for scam attempts )</sub></sub>`);
+                }
+               $("#metaprofile").val(profiledata['profile']);
+               $('#delegationShow').html(userDelegations);
+                $('#urank').val($('#userrank').val());
+                $("#jumbotron").css({'height':'70%','width':'25%'});
+                $("#jumbotron").center();
+                $("#jumbotron").fadeIn();
+                $("#jumboTitle").html(`Hive.Loans - @${uUsername} Profile`);
+            });
+
+            //getAcct();
+            var userc;
+            var userabout;
+            var userlocation;
+            var username;
+            var hiveVested;
+            var vests;
+            try {
+              profiledata = JSON.parse(profiledata);
+              console.log(profiledata);
+               vests = parseFloat(profiledata.vesting_shares);
+               userc = profiledata.profile.profile_image;
+               userabout = profiledata.profile.about;
+               userlocation = profiledata.profile.location;
+               username = profiledata.profile.name;
+               hiveVested = ( Number(total_vesting_fund) *  Number(vests) ) / Number(total_vesting_shares);
+            } catch(e) {
+              console.log(e);
+            }
+
+
+
+          $("#userpic").css({"background-image":`url("${userc}")`});
+          $("#locationid").val(`${profiledata.profile.location}`);
+          $("#nameid").html(`${username}`);
+          $("#profilestring").html(`${userabout}`);
+          $("#recoverAcct").html(`<span><b>Recovery Account</b>:<br><span id="recName">${recoverAcct}</span><span id="prawarn"></span></span>`);
+          $("#profileRecoverAcct").html(`<span id="precacct">${recoverAcct}</span>`);
+          $("#showRecAcct").html(`@${recoverAcct}`);
+          $("#hivePowerHeld").html(`<b>HIVE Power</b>:<br>${toThree(hiveVested)} HP`);
+          $("#loansHPdisplay").html(`<span id="hplevel">${toThree(hiveVested)}</span> HP`);
+          $("#urank").html(`${$('#userrank').val()}`);
+          loanMax = parseFloat(hiveVested * 0.7);
+
+
+          if(recoverAcct !== 'hive.loans' && recoverAcct !== 'anonsteem' && recoverAcct !== 'beeanon' && recoverAcct !== 'blocktrades') {
+            $("#recName").css({"color":"red"});
+            $("#precacct").css({"color":"red"});
+            $("#prawarn").css({"color":"red"});
+            $("#showRecAcct").css({"color":"red"});
+            $("#prawarn").html(`❌ Incompatible Recovery Account! <b><a href="#" id="changeRecoveryAcct" style="color:white !important; text-decoration:none !important;" onClick="showRecoveryPanel();">Change Recovery Account</a></b>`);
+            $(".acceptButton").hide();
+            $("#recAlert").html(`<sub><b style="color:red;">Recovery Account Invalid!</b><br>Please set @hive.loans as recovery account!<br><br>Click here to change recovery account<br><sub>( This will take 30 days to complete )</sub></sub>`);
+          } else {
+            $("#recName").css({"color":"lawngreen"});
+            $("#precacct").css({"color":"lawngreen"});
+            $("#prawarn").css({"color":"white"});
+            $("#showRecAcct").css({"color":"lawngreen"});
+            $("#prawarn").html(`✔️`);
+            $(".acceptButton").show();
+            $("#recAlert").html(`<sub><b style="color:lawngreen;">Recovery Account Valid!</b><br><code onclick="showLoans()">You're ready to borrow! Remember to follow the site guidelines while lending..</code></sub>`);
+
+          }
+
+      }
+
+
+function showKeysRecoveryPanel() {
+  console.log(`showKeysRecoveryPanel() called`);
+  loadingjumbo();
+  var keyrecoveryContent = `<iframe src='../recovery/index.html' id="frame1" name="frame1" style="width:100%;height:100%;"></iframe>`;
+  $("#jumbotron").fadeOut('fast');
+  $("#jumbotron").promise().done(function(){
+$("#jumboHead").show();
+      $("#jumboWrapper").html(keyrecoveryContent);
+      $("#jumbotron").css({'height':'85%','width':'25%'});
+      $("#jumbotron").center();
+      $("#jumbotron").fadeIn();
+      $("#jumboTitle").html(`Hive.Loans - Account Recovery Center`);
+  });
+}
+
+function showRecoveryPanel() {
+  console.log(`showRecoveryPanel() called`);
   loadingjumbo();
   let newRecAcctVar = '';
   let newRecAcctVarlink;
@@ -1558,37 +1470,248 @@ async function showRecoveryPanel() {
   `<br><center><b>Accepted Recovery Accounts:</b><br><br>`+
   `@hive.loans<br><sub><b>preferred</b> recovery account, enables automated key recovery</sub><br><br>@blocktrades<br><sub>a long time trusted HIVE witness and exchange operator</sub><br><br>@beeanon<br><sub>an anonymous account creator by @someguy123</sub><br><br>@someguy123<br><sub>trustworthy long time HIVE witness</sub><br><br>@anonsteem<br><sub>an anonymous account creator by @someguy123</sub></center><br><br>` +
   `<br><center><input type="text" id="recoveryAcctInput" style="background: white;color: black;text-align: center;width: 15vw;height: 3vh;font-size: large; border-radius:10px;" placeholder="enter name of new recovery account" onkeyup="return newRecAcctVar = $('#recoveryAcctInput').val();"><br><sub>( enter your new recovery account above without the @ )</sub><br>` +
-  `<button type="button" style="font-size: small; padding: 10px; line-height: 1vh; background: #000; color: white; width: 40%;border-radius:5px;" class="btn push_button2" id="setRecoverAccountButton" onClick=" newRecAcctVarlink = 'https://hivesigner.com/sign/change_recovery_account?new_recovery_account=' + newRecAcctVar; window.open(newRecAcctVarlink);" title="Click here to set Recovery Account">Set Recovery Account</button></center><br><br>` +
+  `<button type="button" style="font-size: larger; padding: 10px; line-height: 1vh; background: #000; color: white; width: 40%;border-radius:5px;" class="button" id="setRecoverAccountButton" onClick=" newRecAcctVarlink = 'https://hivesigner.com/sign/change_recovery_account?new_recovery_account=' + newRecAcctVar; window.open(newRecAcctVarlink);" title="Click here to set Recovery Account">Set Recovery Account</button></center><br><br>` +
   `<span style="font-size: smaller;"><i class="fas fa-exclamation-triangle sexyblackoutline" style="color:yellow;"></i> <b>NOTE</b>: To maintain the security necessary to provide automated lending and borrowing, it will take 30 days from the time of changing your recovery account to one listed above for the system to allow you to borrow. Any attempts to change your recovery account while actively borrowing will result in your account being locked down for the remainder of your loan repayment, and a 10% loan tampering fee will be added to your repayment total.`;
   //`<br>By setting the @hive.loans account as your recovery account you'll gain access to automated account recovery offered here under the "Tools" page. As for handling of account recovery if you've selected any of the other Featured Recovery Accounts you'll have to look up their account recovery handling methods.</span><br><br>`;
 
   $("#jumbotron").fadeOut('fast');
   $("#jumbotron").promise().done(function(){
-      $("#jumbotron").html(moverAddon + recoveryContent);
+$("#jumboHead").show();
+      $("#jumboWrapper").html( recoveryContent);
       $("#jumbotron").css({'height':'85%','width':'25%'});
       getAcct();
       $("#jumbotron").center();
       $("#jumbotron").fadeIn();
+      $("#jumboTitle").html(`Hive.Loans - Establish New Account Recovery Warden`);
   });
 }
 
-async function showKeysRecoveryPanel() {
-  loadingjumbo();
-  //window.location.href = '../recovery/index.html'; //one level up
+function showAcctSurrenderPanel(user, contractID, limit, loanData, pgp) {
+  //console.log(`showAcctSurrenderPanel(${user}, ${contractID}, ${limit}, ${JSON.stringify(loanData)}) `);
+  if (typeof user !== 'string') return console.log('user');
+  if (typeof contractID !== 'string') return console.log('contractID Must be a Number!');
+  if (typeof loanData == undefined) return console.log('loanData Must be Defined!');
+  if (typeof pgp != 'string') return console.log('pgp Must be a Number!');
+  try {
+    //loanData = JSON.parse(loanData);
+  } catch (e) {
+    console.log(e);
+    showErr(e)
+  }
+  var newinterest = (loanData.interest / 100);
+  var totalpayments = (loanData.days / 7);
+  var totalrepay =  loanData.amount + (loanData.amount * newinterest);
+  var paymentSum = (totalrepay / totalpayments);
 
-var keyrecoveryContent = `<iframe src='../recovery/index.html' id="frame1" name="frame1" style="width:100%;height:100%;"></iframe>`;
+  var encrypted;
+
+  //window.location.href = '../recovery/index.html'; //one level uphive.auth.isWif(privWif);
+  var surrendercontent = `<script>var validPass = async(keyinput) => {await hive.auth.verify(${user}, keyinput, auths);};var validkey = async(keyinput) => {hive.auth.isWif(keyinput);};</script><h3 class="pagehead" style="color:white !important;">Finalize Lending Contract Agreement<br><sup><code>Lending Contract #<span id="contractsurrenderID"></span><br><br><span id="contractFinalizeData"></span></code></sup></h3><input type="textbox" id="afterSurrenderButtonClick" style="background: white; color: black; text-align: center; width: 80%; height: 10vh; font-size: large; border-radius: 10px;" class="hidden"><table id="surrenderKeysTable"><tbody><tr><td>Account Accepting Contract and Offered as Collateral:<br><input type="text" readonly id="userAcctPass" style="background: white; color: black; text-align: center; width: 80%; height: 3vh; font-size: large; border-radius: 10px;"></td></tr><tr><td><br>Account Master Password or Owner Private Key Below:</td></tr><tr><td><input type="password" id="masterAcctPass" style="background: white; color: black; text-align: center; width: 80%; height: 3vh; font-size: large; border-radius: 10px;"></td></tr><tr><td><br><i class="fa fa-exclamation-triangle" style="color:gold;" aria-hidden="true" title="Notice"></i> Note: Your account will automatically begin a powerdown (or modify an existing one) and will continue to withdraw Hive Power weekly until all outstanding lending contract balances are settled<br><br>You will be provided new posting, active and memo scope keys to retain usage of your account.<br>You'll have to update your keys to the new ones provided wherever the old ones were currently being used, such as in the Hive Keychain</td></tr><tr><td><button class="push_button3" id="submitaccountkeys" onclick="encrypt('${contractID}', \`${pgp}\`)">Accept Loan &amp; Provide Collateral</button></td></tr><tr><td><span id="acceptTitle"></span></td></tr><tr><td><span id="acceptOutcome"></span></td></tr></tbody></table>`;
+
+
+  var newsurrendercontent = `<script>var validPass = async(keyinput) => {await hive.auth.verify(${user}, keyinput, auths);};var validkey = async(keyinput) => {hive.auth.isWif(keyinput);};</script>` +
+  `<h3 class="pagehead" style="color:white !important;">Finalize Lending Contract Agreement<br><sup><code>Lending Contract #<span id="contractsurrenderID"></span><br><br><span id="contractFinalizeData"></span></code></sup></h3>` +
+  `<input type="textbox" id="afterSurrenderButtonClick" style="background: white; color: black; text-align: center; width: 80%; height: 10vh; font-size: large; border-radius: 10px;" class="hidden"><br>` +
+  `Account Accepting Contract and Offered as Collateral:<br>` +
+  `<input type="text" readonly id="userAcctPass" style="background: white; color: black; text-align: center; width: 80%; height: 3vh; font-size: large; border-radius: 10px;"><br><br>` +
+  `Account Master Password or Owner Private Key Below:<br>` +
+  `<input type="password" id="masterAcctPass" style="background: white; color: black; text-align: center; width: 80%; height: 3vh; font-size: large; border-radius: 10px;"><br><br>` +
+  `<b style="font-size:smaller"><i class="fa fa-exclamation-triangle" style="color:gold;" aria-hidden="true" title="Notice"></i> Note: Your account will automatically begin a powerdown (or modify an existing one) and will continue to withdraw Hive Power weekly until all outstanding lending contract balances are settled<br><br>You will be provided new posting, active and memo scope keys to retain usage of your account.<br>You'll have to update your keys to the new ones provided wherever the old ones were currently being used, such as in the Hive Keychain</b><br><br>` +
+  `<button class="button" style="font-size:larger;font-weight:900;" id="submitaccountkeys" onclick="encrypt('${contractID}', \`${pgp}\`)">Accept Loan &amp; Provide Collateral</button><br>` +
+  `<span id="acceptTitle"></span><br>` +
+  `<span id="acceptOutcome"></span><br>` +
+  `` +
+  `` +
+  `` +
+  ``;
 
   $("#jumbotron").fadeOut('fast');
   $("#jumbotron").promise().done(function(){
-      $("#jumbotron").html(moverAddon + keyrecoveryContent);
-      $("#jumbotron").css({'height':'85%','width':'25%'});
+    $("#jumboHead").show();
+      $("#jumboWrapper").html(newsurrendercontent);
+      $("#userAcctPass").val(user);
+      $("#contractsurrenderID").html(contractID);
+      $("#contractFinalizeData").html(`${(loanData.amount / 1000).toFixed(3)} HIVE being Loaned by this Lending Contract<br>requiring ${totalpayments} <span id="surrenderpayments"></span> of ${(paymentSum / 1000).toFixed(3)} HIVE Paid Weekly<br>to the Sum of ${(totalrepay / 1000).toFixed(3)} HIVE over ${loanData.days} Days<br>`);
+      if (totalpayments == 1) {
+        $("#surrenderpayments").html('payment');
+      } else {
+        $("#surrenderpayments").html('payments');
+      }
+      $("#jumbotron").css({'height':'65%','width':'25%'});
       $("#jumbotron").center();
       $("#jumbotron").fadeIn();
+      $("#jumboTitle").html(`Hive.Loans - Finalize Lending Contract Claim`);
   });
 
+  $("input#masterAcctPass").keyup(function (e) {
+    log(e + " " + e.which);
+  	 if (e.which != 8 && e.which != 0 && (e.which < 48 || e.which > 57 ) ) {
+        return false;
+      }
+    });
+
+};//END showAcctRecoverPanel
+
+function showFutures() {
+  console.log(`showFutures() called`);
+  loadingjumbo();
+  let futuresContent = `<center><div id="hiveChart"></div></center>` +
+  `<br>In an upcoming update sometime after v1.0.0 launch Hive.Loans will offer CFD / Futures on HIVE prices and perhaps other commodities.`;
+  $("#jumbotron").fadeOut('fast');
+  $("#jumbotron").promise().done(function(){
+$("#jumboHead").show();
+      $("#jumboWrapper").html(futuresContent);
+      $("#jumbotron").css({'height':'85%','width':'50%'});
+      $("#jumbotron").center();
+      $("#jumbotron").fadeIn();
+      $("#jumboTitle").html(`Hive.Loans - HIVE CFD Futures`);
+      const hivechart = LightweightCharts.createChart(document.getElementById('hiveChart'), {
+        width: $(this).outerWidth() / 1.1 ,
+        height: $(this).outerHeight() / 2,
+        rightPriceScale: {
+          scaleMargins: {
+            top: 0.3,
+            bottom: 0.25,
+          },
+          borderVisible: false,
+        },
+        layout: {
+          backgroundColor: '#131722',
+          textColor: '#d1d4dc',
+        },
+        grid: {
+          vertLines: {
+            color: 'rgba(42, 46, 57, 0)',
+          },
+          horzLines: {
+            color: 'rgba(42, 46, 57, 0.6)',
+          },
+        }
+
+      });
+
+      var areaSeries = hivechart.addCandlestickSeries({
+        topColor: 'rgba(245, 124, 0, 0.4)',
+        bottomColor: 'rgba(245, 124, 0, 0.1)',
+        lineColor: 'rgba(245, 124, 0, 1)',
+        lineWidth: 2,
+      });
+
+      const candlestickSeries = hivechart.addCandlestickSeries({
+        title: 'Hive Price',
+      });
+      var dataChart = [];
+
+//coinmarketcap API key
+//244cc503-bcc0-4412-8009-63297908f9f8
+
+
+/*
+$url = 'https://api.coinmarketcap.com/v1/ticker/ethereum/?convert=USD';
+  $data = file_get_contents($url);
+  $priceInfo = json_decode($data);
+*/
+
+      var exchangecheck = async(limit) => {
+        if(limit == undefined) limit = 10;
+        try {
+          await fetch(`https://min-api.cryptocompare.com/data/v2/histohour?fsym=HIVE&tsym=USD&limit=${limit}&api_key=8d1b444726cc1a6c8ee8bfed73908ea3734215abf7bd85c8180930b28b64a9e2`)
+          .then(res => res.json()).then(json => {
+            console.log(json)
+            dataChart = json.Data.Data;
+            var chartlength = dataChart.length - 1;
+            console.log(chartlength);
+            var lastClose = dataChart[chartlength]['close'];
+            var lastIndex = dataChart.length - 1;
+            var currentIndex = lastIndex + 1;
+            var currentBusinessDay = { day: 29, month: 5, year: 2019 };
+            var ticksInCurrentBar = 0;
+            var currentBar = {
+            	open: null,
+            	high: null,
+            	low: null,
+            	close: null,
+            	time: currentBusinessDay,
+            };
+
+            function mergeTickToBar(price) {
+              //var newChartData = []
+              //console.log(price)
+
+              price.forEach((item, i) => {
+                if (price.open === null) {
+                  price.open = price;
+                  price.high = price;
+                  price.low = price;
+                  price.close = price;
+                } else {
+                  price.close = price.close;
+                  price.high = Math.max(price.high);
+                  price.low = Math.min(price.low);
+                }
+                //newChartData.push(price);
+                //return newChartData;
+                areaSeries.update(dataChart[i]);
+              });
+
+
+
+
+            }
+
+
+
+            areaSeries.setData(dataChart);
+                        dataChart = mergeTickToBar(dataChart);
+            /*
+            response = json;
+            response = response["usd"];
+            hiveprice = response;
+            if(oldhiveusdprice > hiveprice) {
+              $('#pricecheck').html(`1 HIVE = $${ hiveprice} <span id="pricetype">USD</span>`);
+              flashlose($('#pricecheck'));
+            } else if (oldhiveusdprice < hiveprice ){
+              $('#pricecheck').html(`1 HIVE = $${ hiveprice} <span id="pricetype">USD</span>`);
+              flashwin($('#pricecheck'));
+            } else if (oldhiveusdprice ==  hiveprice){
+              $('#pricecheck').html(`1 HIVE = $${ hiveprice} <span id="pricetype">USD</span>`);
+            } else {
+              $('#pricecheck').html(`1 HIVE = $${ hiveprice} <span id="pricetype">USD</span>`);
+            }
+            if(hiveprice) oldhiveusdprice = hiveprice;
+            return hiveprice;
+            */
+          }).catch(function (error) {
+            console.log(error)
+            showErr("Error: " + error);
+          });
+
+        } catch(e) {
+          console.log(`pricefetch error: ${e}`)
+        }
+      };
+
+      exchangecheck(1440);
+
+function nextBusinessDay(time) {
+	var d = new Date();
+	d.setUTCFullYear(time.year);
+	d.setUTCMonth(time.month - 1);
+	d.setUTCDate(time.day + 1);
+	d.setUTCHours(0, 0, 0, 0);
+	return {
+		year: d.getUTCFullYear(),
+		month: d.getUTCMonth() + 1,
+		day: d.getUTCDate(),
+	};
 }
+  });
+
+};//END showFutures
+
 
 async function showAcctRecoverPanel() {
+  console.log(`showAcctRecoverPanel() called`);
   loadingjumbo();
   let newRecAcctVar = '';
   let newRecAcctVarlink;
@@ -1596,93 +1719,40 @@ async function showAcctRecoverPanel() {
   `<center>Current Recovery Account:<br><b><span id="showRecAcct"></span></b></center><br>`+
   `In order to borrow on Hive.Loans your recovery account must be set to an account featured on the Accepted Recovery Accounts list below:<br>` +
   `<br><center><b>Accepted Recovery Accounts:</b><br><br>`+
-  `@hive.loans<br><sub><b>Preferred</b> recovery account, enables automated key recovery</sub><br><br>@beeanon<br><sub>an anonymous account creator by @someguy123</sub><br><br>@someguy123<br><sub>trustworthy long time HIVE witness</sub><br><br>@anonsteem<br><sub>an anonymous account creator by @someguy123</sub></center><br><br>` +
+  `@hive.loans<br><sub><b>Preferred</b> recovery account, enables automated key recovery</sub><br><br>@someguy123<br><sub>trustworthy long time HIVE witness</sub><br><br>@beeanon<br><sub>an anonymous account creator by @someguy123</sub><br><br>@anonsteem<br><sub>an anonymous account creator by @someguy123</sub></center><br><br>` +
   `<br><center><input type="text" id="recoveryAcctInput" style="background: white;color: black;text-align: center;width: 15vw;height: 3vh;font-size: large; border-radius:10px;" placeholder="enter name of new recovery account" onkeyup="return newRecAcctVar = $('#recoveryAcctInput').val();"><br><sub>( enter your new recovery account above without the @ )</sub><br>` +
-  `<button type="button" style="font-size: small; padding: 10px; line-height: 1vh; background: #000; color: white; width: 40%;border-radius:5px;" class="btn push_button2" id="setRecoverAccountButton" onClick=" newRecAcctVarlink = 'https://hivesigner.com/sign/change_recovery_account?new_recovery_account=' + newRecAcctVar; window.open(newRecAcctVarlink);" title="Click here to set Recovery Account">Set Recovery Account</button></center><br><br>` +
+  `<button type="button" style="font-size: larger; padding: 10px; line-height: 1vh; background: #000; color: white; width: 40%;border-radius:5px;" class="button" id="setRecoverAccountButton" onClick=" newRecAcctVarlink = 'https://hivesigner.com/sign/change_recovery_account?new_recovery_account=' + newRecAcctVar; window.open(newRecAcctVarlink);" title="Click here to set Recovery Account">Set Recovery Account</button></center><br><br>` +
   `<span style="font-size: smaller;"><i class="fas fa-exclamation-triangle sexyblackoutline" style="color:yellow;"></i> <b>NOTE</b>: To maintain the security necessary to provide automated lending and borrowing, it will take 30 days from the time of changing your recovery account to one listed above for the system to allow you to borrow. Any attempts to change your recovery account while actively borrowing will result in your account being locked down for the remainder of your loan repayment, and a 10% loan tampering fee will be added to your repayment total.<br>` +
   `<br>By setting the @hive.loans account as your recovery account you'll gain access to automated account recovery offered here under the "Tools" page. As for handling of account recovery if you've selected any of the other Accepted Recovery Accounts you'll have to look up their account recovery handling methods.</span><br><br>`;
 
   $("#jumbotron").fadeOut('fast');
   $("#jumbotron").promise().done(function(){
-      $("#jumbotron").html(moverAddon + recoveryContent);
+$("#jumboHead").show();
+      $("#jumboWrapper").html(recoveryContent);
       $("#jumbotron").css({'height':'85%','width':'25%'});
-      getAcct();
+      //getAcct();
       $("#jumbotron").center();
       $("#jumbotron").fadeIn();
+      $("#jumboTitle").html(`Hive.Loans - Establish New Account Recovery Warden`);
   });
-}
+}//END showAcctRecoverPanel
 
-/*
-`<b>Borrowers accounts must hold atleast 130% of the loans worth</b><br><br>When a Borrower selects an available loan contract their account is turned over to the Hive.Loans service and the account keys are changed.<br>At this point the Borrowing account is granted new posting and active keys allowing them to still utilize the account.<br>` +
-`Our system now effectively owns the borrowers account and uses the keys to automate weekly payouts to the lender until the loan is paid back in full plus interest<br>` +
-`All keys will be return to the borrower upon completion of the loan so they may take ownership of their account back.<br>`+
-*/
- async function showLend() {
-  loadingjumbo();
+
+async function showLend() {
+  console.log(`showLend() called`);
   openLendingTab();
-  let lendingContent = `<center><h3 class="pagehead" style="color:white !important;">Lending Contract Overview Console</h3>` +
-  `<b>Put your crypto holdings to work for you and lend out your HIVE or HBD (Hive Backed Dollars) supplying capital to the lending pool</b><br>` +
-  `Supply low to mid duration loans with interest rates of your choice and get a guaranteed automated repayment every week from the borrower<br>` +
-  `When a borrower accepts a loan the Hive.Loans service requires them to hand over their account keys as collateral for access to the loan.<br><br>` +
-  //`Your Current Hive.Loans Account Balance:<br><span id="lendingBalance"></span>` +
-  `<h3 style="color:white !important;"><b>Create New Lending Contract:</b></h3>` +
-  `<table><tbody><tr><td><b>Amount of HIVE to Lend:</b><br><input type="number" onkeyup="$('#newamount').val(this.value); createLoanPreview();" onkeypress="isNumberKey(this)" class="casperInput" id="newLendAmount" min="1" step="1" placeholder="100" required></td>`+
-  `<td><b>Duration of Contract:</b> (in days)<br><input type="number" onkeyup="$('#newdays').val(this.value); createLoanPreview();" onkeypress="isNumberKey(this);" onkeyup"isNearSeven($(this).val());" class="casperInput" id="newLendDays" min="7" max="91" step="7" list="defaultNumbers" placeholder="7 to 91" required> <datalist id="defaultNumbers"> <option value="7"> <option value="14"> <option value="21"> <option value="28"> <option value="35"> <option value="42"> <option value="49"> <option value="56"> <option value="63"> <option value="70"> <option value="77"> <option value="84"> <option value="91"> </datalist></td>`+
-  `<td><b>Interest Rate:</b> (in percentage %)<br><input type="number" onkeyup="$('#newfee').val(this.value); createLoanPreview();" id="newLendFee" class="casperInput"  min="10" max="30" step="1" placeholder="10 to 30" required></td>` +
-  `<td><button type="button" style="font-size: larger; padding: 10px; line-height: 1vh; background: #000; color: white; width: 20%;border-radius:5px;" class="btn push_button3 createLoanButton1" id="createNewLend" onClick="derp();" title="Click here to create a new lending contract">Create <i class="fas fa-fw fa-vote-yea" style="color:lawngreen;"></i></button></td></tr></tbody></table><br>` +
-  `<span id="createLoanPreview"></span><br><hr>`+
-  `<h4><b>Your HIVE Lending Contracts</b></h4><br><span id="activeLendView"></span><table id="header-fixed"></table><br><br>`+
-  //`<table style="align-items: center !important; padding: 0px; margin: 0px; width: 100%;"><tbody><tr><td><h4><b>Active HIVE Lending Contracts</b></h4></td><td><h4><b>Completed HIVE Lending Contracts</b></h4></td></tr><tr><td><span id="activeLendView" class=""></span><table id="header-fixed"></table></td><td><div id="oldLendView">Loading Completed HIVE Lending Contracts</div></td></tr></tbody></table>`+
-  `</center>`;
-  $("#jumbotron").fadeOut('fast');
-  $("#jumbotron").promise().done(function(){
-      $("#jumbotron").html(moverAddon + lendingContent);
-      $("#jumbotron").css({'height':'85%','width':'60%'});
-      $("#jumbotron").center();
-      $("#jumbotron").fadeIn();
-  });
 }
-
-
-
-
-var loanMax;
 
 async function showLoans() {
-  loadingjumbo();
+  console.log(`showLoans() called`);
   openAllLoansTab();
-  var lendMax;
-    var hpFloat;
-  let borrowContent = `<center><h3 class="pagehead"  style="color:white !important;">Loans Contract Pool Overview</h3>` +
-  `<span id="loanEnabled"></span><br>`+
-  `<b>Leverage your HIVE account as collateral and get liquid HIVE into your Hive.Loans Account in less than 30 seconds!</b><br>` +
-  `If your account is cleared to accept Lending Contracts you may pick a loan offer below by clicking "Accept Loan" beside the entry you choose.<br>` +
-  `Be aware that at this time you may only have 1 loan contract accepted and you'll not be able to cancel the contract until full repayment is complete<br><br>` +
-  `<table style="text-align: center; width: 90%;"><tbody><tr><td><b>Your Current HIVE Power Level:</b><br><span id="loansHPdisplay"></span></td><td><b>Maximum HIVE Loan Allowed:</b><br><b><span id="loanMax" value=""></span> HIVE</b></td></tr></tbody></table><br>`+
-  `<b><span id="contractcount"></span>Available HIVE Lending Contracts</b><br><span id="loadAllLoans"></span><table id="header-fixed" style="max-height:30%;"></table><br><br>`+
-  `<b>Lending Contract Data Browser:</b><br><span id="loadloaninfo"></span><br><br>`+
-  `<br></center>`;
-  $("#jumbotron").fadeOut('fast');
-  $("#jumbotron").promise().done(function(){
-      $("#jumbotron").html(moverAddon + borrowContent);
-      $("#jumbotron").css({'height':'85%','width':'60%'});
-      $("#jumbotron").center();
-        getAcct();
-        console.log(loanMax);
-        loanMax = Math.floor(loanMax);
-      $('span#loanMax').val(`${loanMax.toFixed(3)}`);
-      $('span#loanMax').html(`${loanMax.toFixed(3)}`);
-      var hyperdatatable = `<table class=" " style="background: #444444; border-radius: 10px; border: inset 2px grey; width: 100% !important; height: 5% !important;"><tbody><tr><td><code>Contract #</code><br>~</td><td><code>Contract ID:</code><br>~</td><td><code>Lender:</code><br>~</td><td><code>Amount:</code><br>~</td><td><code>Interest Rate:</code><br>~</td><td><code>Repayment Total:</code><br>~</td><td><code>Duration:</code><br>~</td><td><code>Borrower:</code><br>~</td><td><code>Payments:</code><br>~ / ~</td><td><code>Active:</code><br>~</td><td><code>Completed:</code><br>~</td><td><code>Created:</code><br>~</td></tr></tbody></table>`;
-        $('#loadloaninfo').html(`${hyperdatatable}`);
-      //$('#loadloaninfo').html(`Select a lending contract to inspect above`);
-      $("#jumbotron").fadeIn();
-  });
 }
 
 async function showFaq() {
+  console.log(`showFaq() called`);
   loadingjumbo();
   getFounders();
-  let faqContent = `<center><h3 class="pagehead" style="color:white !important;">Frequently Asked Questions</h3>` +
+  let faqContent = `<center>` +
   `This is an unfinished DEMO of the Hive.Loans project and is in no way meant to represent the launch version<br>` +
   `Many feautures may be broken, bugged, unstable or just straight up missing. It's advised to not use this version<br>` +
   `<a href="https://peakd.com/coding/@klye/a-quick-look-at-an-early-working-prototype-of-the-upcoming-hive-loans-account-as-collateral-community-lending-pool">Check out this post for more information</a><br>`+
@@ -1693,7 +1763,7 @@ async function showFaq() {
   `<br>` +
   `<center>The <span id="backercount"></span> Users who Pledged HIVE or HBD Developement Capital Directly (💸 Backer Rank):<br><sup>( Backers get an enhanced interest rate cap of 35% )</sup><h5><span id="backerslist"></span></h5></center><br>` +
   `<br>` +
-  `<center>The Ultra Exclusive One-of-a-Kind Project Benefactor (💰 Benefactor Rank):<br><sup>( The Backer in top spot at the end of the timer becomes Benefactor! )<br>( Get a monthly payment of 10% of the service revenue! )</sup><h5><span id="benefactorlist">@???????</span></h5></center><br>` +
+  `<center>The Ultra Exclusive One-of-a-Kind Project Benefactor (💰 Benefactor Rank):<br>( Get a monthly payment of 10% of the service revenue! )</sup><h5><span id="benefactorlist">@coininstant</span></h5></center><br>` +
   `<br>`;
   var backersnames = '';
   backerlist.forEach((item, i) => {
@@ -1702,7 +1772,8 @@ async function showFaq() {
 
   $("#jumbotron").fadeOut('fast');
   $("#jumbotron").promise().done(function(){
-      $("#jumbotron").html(moverAddon + faqContent);
+$("#jumboHead").show();
+      $("#jumboWrapper").html( faqContent);
       console.log(foundercount)
       console.log(founderlist)
       $('#founderslist').html(founderlist);
@@ -1711,12 +1782,13 @@ async function showFaq() {
       $("#jumbotron").css({'height':'85%','width':'60%'});
       $("#jumbotron").center();
       $("#jumbotron").fadeIn();
+      $("#jumboTitle").html(`Hive.Loans - Frequently Asked Questions`);
   });
 }
 
 async function showTools() {
   loadingjumbo();
-  let toolsContent = `<center><h3 class="pagehead" style="color:white !important;">HIVE Account Tools & Resources</h3>` +
+  let toolsContent = `<center>` +
   `<h4><b>Set Recovery Account Tools and Private Key Recovery</b></h4>`+
   `<a href="#" style="text-decoration: none !important;color:white !important;" onClick="showRecoveryPanel();"><b><i class="fas fa-fw fa-users-cog"></i> Change Recovery Account</b></a>&nbsp;&nbsp;<i class="fas fa-fw fa-info-circle" title="Use the tool linked below to change your recovery account"></i><br><br>` +
   `<a href="#" style="text-decoration: none !important;color:white !important;" onClick="showKeysRecoveryPanel();"><b><i class="fas fa-fw fa-user-check"></i> Recovery Account Keys</b></a>&nbsp;&nbsp;<i class="fas fa-fw fa-info-circle" title="Use the tool linked below to recover keys to your account"></i><br><br>` +
@@ -1728,46 +1800,104 @@ async function showTools() {
   `and another<br></center>`;
   $("#jumbotron").fadeOut('fast');
   $("#jumbotron").promise().done(function(){
-      $("#jumbotron").html(moverAddon + toolsContent);
+$("#jumboHead").show();
+      $("#jumboWrapper").html( toolsContent);
       $("#jumbotron").css({'height':'85%','width':'25%'});
       $("#jumbotron").center();
       $("#jumbotron").fadeIn();
+      $("#jumboTitle").html(`Hive.Loans - Account Tools & Resources`);
   });
 }
 
-async function showLogin() {
-alert(`!!! UNSTABLE DEVELOPMENT VERSION WARNING !!!\n\nThis is an UNFINISHED / UNTESTED application that contains functions which have the potential to transfer balances unexpectedly and may potentially do operations related to account ownership without warnings. This live site demo in no way represents the a finalized version of this application and is best avoided if we're to be transparent about this matter.\n\n This is to be treated as a demo only!\n\nTHIS IS AN UNFINISHED ALPHA VERSION\n\nBy continuing forward your entirely on your own! Hive.Loans and it's owners hold no liability if you choose to continue forwards from the point of this warning.`)
+
+var isValidUsername;
+function showLogin() {
   loadingjumbo();
   let loginContent = `<center style="font-weight: 600;"><h3 class="pagehead" style="color:white;">HIVE Account Identity Verification</h3>` + //Accessing Hive.Loans Requires a Quick
   `<b id="acctflash1">To Access this Service Specify an Account Below:</b><br>` + //o Login or Register Type a HIVE Account Below
-  `<br><input type="text" id="usernameinput" style="background: white;color: black;text-align: center;width: 15vw;height: 3vh;font-size: large; border-radius:10px;" value="klye" ><br>` +
-  `<span id="loginfuckery"></span>`+
+  `<br><input type="text" id="usernameinput" style="background: white; color: black; text-align: center; width: 15vw; height: 4vh; font-size: xx-large; border-radius: 10px;" value="testdummy" ><br>` +
+  `<code><span id="loginfuckery"></span></code><br>`+
   `<a href="#" onClick="$('#2fa').removeClass('hidden'); $(this).hide();" style="color:white !important;text-decoration: none !important;"><sub>Click here if you have 2FA enabled</a></sub>` +
   `<br><input type='text' style="background: white;color: black;text-align: center;width: 9vw;height: 3vh;font-size: large; border-radius:10px;" class="hidden" placeholder="2FA Code Here" id='2fa'>` +
-  `<br>Please Choose a Verification Method:<br>` +
-  `<center><table><tbody><tr><td style="float: right; width: 45% !important;"><button type="button" style=" font-size: large; padding: 3px; line-height: 1vh; background: #000; color: white; width:55% !important;border-radius:5px; min-width: 8vw !important;" class="btn push_button2" id="skclogologin" onclick="skcusersocket($('#usernameinput').val());" title="Click here to verify identify with Hive KeyChain"><img src="/img/keychaintext.png" class="keychainlogo" style="width:80%"></button></td>` +
-  `<td style="float: left; width: 45% !important;"><button type="button" style="font-size: large;padding: 0;line-height: 1vh;background: #000;color: white;width:55% !important;border-radius:5px;min-width: 8vw !important;" class="btn push_button2" id="login" onclick="login();" title="Click here to verify identify with Hive KeyChain"><img src="/img/hivesigner.svg" class="hivesignerlogo" style="width:100%"></button></td></tr></tbody></table></center>`+
-  `<hr>HiveSigner and Keychain verification methods are the two currently accepted methods of verifying a HIVE identity<br>`+
-  `<br>We will never ask for government ID documents or comply<br>with any KYC record keeping compliance, ever, period.<br><br>`+
-  `By Using this site in you Agree to our <a href="#" style="text-decoration: none !important;color:white !important;">Terms of Service</a>`+
-  `<br><sub style="position: absolute; bottom: 0; width: 100%; left: 0; text-shadow: none !important; color: black;">Our hosting is provided by an extremely privacy savvy company <a style="color:white !important;" class="sexyblackoutline" href="https://pay.privex.io/order?r=klye"><b><u>Privex.io</u></b> <img src="/img/privex.svg" style="bottom: 0;
-    position: absolute;"></a></sub>`;
+  `<br>Choose a Verification Method:<br><br>` +
+  `<center><table><tbody>` +
+  `<tr><td style="width: 45% !important;"><button type="button" class="button" style="font-size: large;padding: 0;line-height: 1vh;background: #000;color: white;width:55% !important;border-radius:5px;min-width: 8vw !important;" class="button" id="login" onclick="login();" title="Click here to verify identify with Hive KeyChain"><img src="/img/hivesigner.svg" class="hivesignerlogo" style="width:100%"></button></td>` +
+  `<td style="width:10%" id="loginspin"></td>` +
+  `<td style="width: 45% !important;"><button type="button" style=" font-size: large; padding: 3px; line-height: 1vh; background: #000; color: white; width:55% !important;border-radius:5px; min-width: 8vw !important;" class="button" id="skclogologin" onclick="$('#loginfuckery').html('Please See Keychain Popup to Continue').css({'color':'lawngreen', 'font-weight':'900'}); showSuccess('Initializing Keychain.. Please Wait'); skcusersocket($('#usernameinput').val());" title="Click here to verify identify with Hive KeyChain"><img src="/img/keychaintext.png" class="keychainlogo" style="width:80%"></button></td></tr></tbody></table></center>`+
+  `<br><br><hr><a style="color:white;" href="https://hivesigner.com/" target="_blank">HiveSigner</a> and <a style="color:white;" href="https://chrome.google.com/webstore/detail/hive-keychain/jcacnejopjdphbnjgfaaobbfafkihpep?hl=en" target="_blank">Hive Keychain</a><br>are Accepted for Verification<br><br>`+
+  `<br>We'll never ask for government ID or implement<br>any Form of KYC Record Keeping Compliance<br><br>`+
+  `<br><b style="font-size: smaller;"><i class="fa fa-exclamation-triangle sexyblackoutline" style="color:gold;" aria-hidden="true"></i> By Logging in you Agree to our <a href="#" style="color:white !important;" onclick="termsOfService();">Terms of Service</a></b>`+
+  `<br><sub style="position: absolute; bottom: 0; width: 100%; left: 0; text-shadow: none !important; color: black;">Our hosting is provided by an extremely privacy savvy company <a style="color:white !important;" class="sexyblackoutline" href="https://pay.privex.io/order?r=klye"><b><u>Privex.io</u></b> <img src="/img/privex.svg" style="max-width: 25px !important; max-height: 25px !important; bottom: 0; right: 0; position: absolute; "></a></sub>`;
 
-  $("#jumbotron").fadeOut('fast');
+ //$('#sending').html('<i style="color:grey" class="fa fa-pulsener fa-pulse fa-2x fa-fw"></i>');
+//<span id="loginspin"></span>
+
   $("#jumbotron").promise().done(function(){
-      $("#jumbotron").html(loginContent);
+$("#jumboHead").show();
+      $("#jumboWrapper").html( loginContent);
       $("#jumbotron").css({'height':'55%','width':'20%'});
       $("#jumbotron").center();
       $("#jumbotron").fadeIn();
+      $("#jumboTitle").html(`Hive.Loans - Welcome to Hive.Loans v0.0.8`);
+      $("#usernameinput").focus();
+      $("#usernameinput").keypress(function(event){
+          var keycode = (event.keyCode ? event.keyCode : event.which);
+          if(keycode == "13"){
+            skcusersocket($('#usernameinput').val());
+          } else {
+            $('#loginfuckery').fadeOut();
+            $('#loginfuckery').css('white');
+            $('#loginfuckery').html();
+
+            setTimeout(function(){
+              var isValidUsername = hive.utils.validateAccountName($('#usernameinput').val());
+              console.log(isValidUsername)
+              if(isValidUsername !== null){
+                $('#loginfuckery').css('red');
+                $('#loginfuckery').html(isValidUsername);
+                $('#loginfuckery').fadeIn();
+              }
+            }, 200);
+          }
+      });
   });
 }
 
-async function showWalletHistory () {
-  console.log(`showWalletHistory fired!`)
-  $('#userpanel').removeClass('hidden');
-        $("#userpanel").css({'height':'40%','width':'40%','top':'50%','left':'50%'});
-  $('#panelName').val('Wallet History');
-  $('#panelName').html('Wallet History');
-  $("#panelContent").html(`Please Wait While Wallet History Query Completes`);
-  $('#userpanel').fadeIn();
+async function showRepayWindow(loanData) {
+  console.log(`showRepayWindow(loanData)`);
+  console.log(loanData)
+  loadingjumbo();
+  try {
+    //loanData = JSON.stringify(loanData);
+  } catch (e) {console.log(e);showErr(`Failed to Parse Loan Data!`)};
+
+  var newinterest = (loanData.interest / 100);
+  var totalpayments = (loanData.days / 7);
+  var totalrepay =  loanData.amount + (loanData.amount * newinterest);
+  var paymentSum = (totalrepay / totalpayments);
+  var collected = loanData.collected;
+  var outstandingDebt = (totalrepay - collected);
+  var encrypted;
+  var superamtvar;
+  //console.log(`showRepayWindow(${user}, ${contractID}, ${limit}, ${loanData}) `);
+
+  var paymentcontent = `<h3 class="pagehead" style="color:white !important;">Manual Payment of Lending Contract Debt<br><sup><code>Lending Contract #<span id="contractsurrenderID"></span><br><br><span id="contractFinalizeData"></span></code></sup></h3><table><tbody><tr><td>Amount of HIVE to Repay:<br><input type="text" onchange="return manualPay = $(this).val();" id="paymentAmt" style="background: white; color: black; text-align: center; width: 80%; height: 3vh; font-size: large; border-radius: 10px;"></td></tr><tr><td>Once the Outstanding Contract Balance is Paid you're given your Owner Key</td></tr><tr><td><button class="button" id="submitmanualpayment" onclick="payloan('${loanData.borrower}', '${loanData.loanId}', document.getElementById('paymentAmt').value)">Submit Payment</button></td></tr><tr><td><span id="acceptTitle"></span></td></tr><tr><td><span id="acceptOutcome"></span></td></tr></tbody></table>`;
+  $("#jumbotron").fadeOut('fast');
+  $("#jumbotron").promise().done(function(){
+$("#jumboHead").show();
+  $("#jumboWrapper").html( paymentcontent);
+  $("#userAcctPass").val(user);
+      $("#contractsurrenderID").html(loanData.loanId);
+      $("#contractFinalizeData").html(`${(loanData.amount / 1000).toFixed(3)} HIVE being Loaned by this Lending Contract<br>requiring ${totalpayments} <span id="surrenderpayments"></span> of ${(paymentSum / 1000).toFixed(3)} HIVE Paid Weekly<br>to the Sum of ${(totalrepay / 1000).toFixed(3)} HIVE over ${loanData.days} Days<br><br><br>Outstanding Contract Balance:<br>${((outstandingDebt / 1000).toFixed(3))} HIVE`);
+      if (totalpayments == 1) {
+      $("#surrenderpayments").html('payment');
+      } else {
+        $("#surrenderpayments").html('payments');
+      }
+      $("#jumbotron").css({'height':'auto','width':'25%'});
+      $("#jumbotron").center();
+      $("#jumbotron").fadeIn();
+      $("#jumboTitle").html(`Hive.Loans - Manual Repayment`);
+  });
+
 }
