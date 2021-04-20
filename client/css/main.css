@@ -294,7 +294,21 @@ hr {
 
 #jumboMove {
   display: inline-block;
-    left: 0.4em;
+    left: 2.0em !important;
+    position: absolute;
+    top: 0.3em;
+}
+
+#jumboBack {
+  display: inline-block;
+    left: 0.4em !important;
+    position: absolute;
+    top: 0.3em;
+}
+
+#jumboForward {
+  display: inline-block;
+    left: 3.0em !important;
     position: absolute;
     top: 0.3em;
 }

@@ -28,19 +28,34 @@ socket.on('connect', function(data){
   if($(`#usernamestore`).val().length > 0) logout();
 });
 
+socket.on('siteaudit', function(data){
+  console.log(`siteaudit data:`);
+  console.log(data);
+  data = JSON.parse(JSON.stringify(data));
+  siteAudit = data;
+  siteAuditData();
+});
+
 socket.on('walletdata', function(data){
   console.log(data);
   var user = data.username;
   var address = data.address;
-  let walletContent = `<center><table style="width:90%;"><tbody><tr><td>HIVE Balance</td></tr><tr><td><center><div class="casperInput input-group" style=""><input type="number" id="userhivebalance" readonly aria-describedby="basic-addon2"><span class="input-group-append"><span class="input-group-text" id="basic-addon2"><b><i class="fab fa-hive" style="color:#E31337;"></i></b></span></span></div></center></td></tr><tr><td><button type="button" style="width:40%;font-weight:900;    font-size: large;" class="button" id="depositbuttonwallet" onClick="depositButtonWallet(\'${user}\', 'HIVE')" title="Click here to begin a deposit to Hive.Loans">Deposit HIVE <i class="fab fa-hive" style="color:#E31337;"></i></button><button type="button" style="width:40%;font-weight:900;    font-size: large;" class="button" id="withdrawhiveshithere" onClick="withdrawButtonWallet(user, 'HIVE')" title="Click here to begin a Withdraw from Hive.Loans">Withdraw HIVE <i class="fab fa-hive" style="color:#E31337;"></i></button></td></tr></tbody></table></center><center><h4>Manual Deposit Information<br><sub>Include the Address and Memo below in your Transfer</sub></h4>Address:<br><input type="text" id="depositName"  title="click to copy to clipboard" onmouseover="this.select()" onclick="copyStringToClipboard(this.value)" style="background: white;color: black;text-align: center;width: 9vw;height: 3vh;font-size: large; border-radius:10px;" readonly><br>Memo:<br><input type="text" id="depositMemo" style="background: white;color: black;text-align: center;width: 70%;height: 3vh;font-size: large; border-radius:10px;" title="click to copy to clipboard" onmouseover="this.select()" onclick="copyStringToClipboard(this.value)" onload="$(this.val(uAddress))" readonly><hr><a href="#" style="text-decoration:none !important;color:white !important;" onClick="showWalletHistory();"></sub>click here to view your wallet history</sub></a><br>` +
+  let walletContent = `<center><table style="width:90%;"><tbody><tr><td>HIVE Balance</td></tr><tr><td><center><div class="casperInput input-group" style=""><input type="number" id="userhivebalance" readonly aria-describedby="basic-addon2"><span class="input-group-append"><span class="input-group-text" id="basic-addon2"><b><i class="fab fa-hive" style="color:#E31337;"></i></b></span></span></div></center></td></tr><tr><td><button type="button" style="width:40%;font-weight:900;    font-size: large;" class="button" id="depositbuttonwallet" onClick="depositButtonWallet(\'${user}\', 'HIVE')" title="Click here to begin a deposit to Hive.Loans">DEPOSIT <i class="fab fa-hive" style="color:#E31337;"></i></button><button type="button" style="width:40%;font-weight:900;    font-size: large;" class="button" id="withdrawhiveshithere" onClick="withdrawButtonWallet(user, 'HIVE')" title="Click here to begin a Withdraw from Hive.Loans">WITHDRAW <i class="fab fa-hive" style="color:#E31337;"></i></button></td></tr></tbody></table></center><center><h4>Manual Deposit Information<br><sub>Include the Address and Memo below in your Transfer</sub></h4>Address:<br><input type="text" id="depositName"  title="click to copy to clipboard" onmouseover="this.select()" onclick="copyStringToClipboard(this.value)" style="background: white;color: black;text-align: center;width: 9vw;height: 3vh;font-size: large; border-radius:10px;" readonly><br>Memo:<br><input type="text" id="depositMemo" style="background: white;color: black;text-align: center;width: 70%;height: 3vh;font-size: large; border-radius:10px;" title="click to copy to clipboard" onmouseover="this.select()" onclick="copyStringToClipboard(this.value)" onload="$(this.val(uAddress))" readonly><hr><a href="#" style="text-decoration:none !important;color:white !important;" onClick="showWalletHistory();"></sub>click here to view your wallet history</sub></a><br>` +
   `<br><span id="wallethistoryspan"></span></center>`;
   $("#jumbotron").promise().done(function(){
-    $("#jumboTitle").html(`Hive.Loans - @${user} Wallet`);
+    $("#jumboBack").show();
+    $("#jumboMove").show();
+    $("#jumboForward").show();
+    $("#jumboHead").show();
+    $("#jumboBack").removeClass("hidden");
+    $("#jumboMove").removeClass("hidden");
+    $("#jumboForward").removeClass("hidden");
+    $("#jumboTitle").html(`Your Hive.Loans Wallet`);
     $("#jumboWrapper").html(walletContent);
     $('#loginDataSave').val(address);
     $('#userhivebalance').val((data.hivebalance / 1000).toFixed(3));
     //$('#userhbdbalance').val((data.hbdbalance / 1000).toFixed(3));
-    $('#depositName').val(data.username);
+    $('#depositName').val('hive.loans');
     $('#depositMemo').val(data.address);
     $("#jumbotron").css({'height':'auto','width':'25%'});
     $("#jumbotron").center();
@@ -145,7 +160,7 @@ socket.on('loadallloans', async function(data) {
           $("#jumboWrapper").html(loansContent);
           $("#jumbotron").css({'height':'85%','width':'60%'});
           $("#jumbotron").center();
-          $("#jumboTitle").html(`Hive.Loans - Lending Contract Pool Overview`);
+          $("#jumboTitle").html(`Lending Contract Pool Overview`);
             var hyperdatatable = `<table id="hyperdatatable" id="loadloans" class=" " style="background: #444444; border-radius: 10px; border: inset 2px grey; width: 100% !important; height: 5% !important;"><tbody><tr><td><code>Loan ID</code><br>~</td><td><code>Lender</code><br>~</td><td><code>Amount</code><br>~</td><td><code>Interest Rate</code><br>~</td><td><code>Repayment Total</code><br>~</td><td><code>Duration</code><br>~</td><td><code>Borrower</code><br>~</td><td><code>Payments</code><br>~ / ~</td><td><code>Active</code><br>~</td></tr></tbody></table>`; //<td><code>Completed</code><br>~</td><td><code>Created</code><br>~</td>
             $('#loadloaninfo').html(`${hyperdatatable}`);
 
@@ -191,6 +206,41 @@ socket.on('loadallloans', async function(data) {
   }
 });
 
+socket.on('loadedShares', async function(data){
+  if(data){
+    let sharesContent = `` +
+    `<table style="width:80%;"><tbody><tr>` +
+    `<td><b>Purchase HLSHARE:</b><br>` +
+    `<div class="casperInput input-group"><input type="number" onchange="$('#newamount').val(this.value); createLoanPreview();" onkeyup="$('#newamount').val(this.value); createLoanPreview();" id="newLendAmount" min="10" max="30" step="1" placeholder="10 to 30" required="" aria-label="Interest Rate" aria-describedby="basic-addon2"><span class="input-group-append"><span class="input-group-text" id="basic-addon2"><b><i class="fab fa-hive" style="color:#E31337;"></i></b></span></span></div></td>` +
+    `<td><b>Duration</b><br><select onchange="$('#newdays').val(this.value); createLoanPreview();" class="casperInput" style="width:4vw !important;" onchange="$('#newdays').val(this.value);" value="7" id="newLendDays" min="7" max="91" step="7" name="newLendDays" placeholder="7 to 91" required><option value="7">7 Days</option> <option value="14">14 Days</option> <option value="21">21 Days</option> <option value="28">28 Days</option> <option value="35">35 Days</option> <option value="42">42 Days</option> <option value="49">49 Days</option> <option value="56">56 Days</option> <option value="63">63 Days</option> <option value="70">70 Days</option> <option value="77">77 Days</option> <option value="84">84 Days</option> <option value="91">91 Days</option></select></td>`+
+    `<td><b>Interest Rate</b><br><div class="casperInput input-group"><input type="number" onchange="$('#newfee').val(this.value); createLoanPreview();" onkeyup="$('#newfee').val(this.value); createLoanPreview();" id="newLendFee" min="10" max="30" step="1" placeholder="10 to 30" required placeholder="Interest Rate" aria-label="Interest Rate" aria-describedby="basic-addon2"><span class="input-group-append"><span class="input-group-text" id="basic-addon2"><b>%</b></span></span></div></td></tr>` +
+    `<tr><td><code>Contract Preview:</code><br><span id="createLoanPreview">Select Some Values above to see Preview</span></td></tr>` +
+    `<tr><td><button type="button" style="font-size:larger;font-weight:900;" class="button" id="createNewLend" onClick="derp();" title="Click here to create a new lending contract">Create Contract <i class="fas fa-fw fa-vote-yea" style="color:lawngreen;"></i></button></td></tr></tbody></table><br>`;
+
+        //$("#jumbotron").fadeOut('fast');
+        $("#jumbotron").promise().done(function(){
+            $("#jumboWrapper").html(sharesContent); //lendingContent
+            $("#jumbotron").css({'height':'85%','width':'60%'});
+            $("#jumbotron").center();
+            //CreateTableFromJSON(data.loans, 'loans', 'activeLendView', 'activeLendTable', 'activeLendHead');
+            //$("#jumbotron").fadeIn();
+            if(dataGrab){
+              $("#loanPreviewBalance").html((dataGrab.hivebalance / 1000));
+            }
+            $("#jumboTitle").html(`Hive.Loans Share Exchange`);
+            $("#newLendAmount").keyup(function (e) {
+                if (e.which != 8 && e.which != 0 && (e.which < 48 || e.which > 57 ) ) {
+                    return false;
+                } else {
+                  if(parseFloat($("#newLendAmount").val()) < 0){
+                    $("#newLendAmount").val(0);
+                  }
+                }
+            });
+        });
+  }
+});
+
 socket.on('loadedLoans', async function(data){
   if(data){
     var dataGrab = await getUserSiteBalance(uUsername).then(res => { return res }).catch(error => {console.log(error)});
@@ -203,7 +253,8 @@ socket.on('loadedLoans', async function(data){
       //showSuccess(`Fetched ${data.loans.length} Loans from History!`);
     }
 
-    let lendingContent =`<center><span id="activeLendView"></span><table id="header-fixed" style="max-height:30% !important;"></table><br>`+
+    let lendingContent =`<center><span id="activeLendView"></span>` +
+    `<table id="header-fixed" style="max-height:30% !important;"></table><br>` +
     `<b>Create New Lending Contract</b>` +
     `<table style="width:80%;"><tbody><tr>` +
     `<td><b>Amount of HIVE:</b><br>` +
@@ -239,7 +290,7 @@ socket.on('loadedLoans', async function(data){
         if(dataGrab){
           $("#loanPreviewBalance").html((dataGrab.hivebalance / 1000));
         }
-        $("#jumboTitle").html(`Hive.Loans - Lending Contract Overview`);
+        $("#jumboTitle").html(`Lending Contract Overview`);
         $("#newLendAmount").keyup(function (e) {
             if (e.which != 8 && e.which != 0 && (e.which < 48 || e.which > 57 ) ) {
                 return false;
@@ -254,7 +305,7 @@ socket.on('loadedLoans', async function(data){
 });
 
 socket.on('depositcredit', function(data){
-  showSuccess(`Deposit of ${data.amount / 1000} ${data.coin} Credited!`);
+  showSuccess(`Deposit of ${data.amount / 1000} ${data.coin} Arrived!`);
   if (data.coin == 'HIVE'){
     uHIVEbalance = data.balance;
     $('#userhivebalance').val(uHIVEbalance / 1000);
@@ -268,35 +319,125 @@ socket.on('depositcredit', function(data){
 
 socket.on('statereply', function(data){
   showErr(data);
-  $('#blocknumber').html(`<a href="https://hiveblocks.com/b/${data.block}" target="_blank" title="Click this to view the block on HiveBlocks.com in a new window!" style="color:white !important; text-decoration: none !important;">#${data.block} <i class="fas fa-external-link-square-alt"></i></a>`);
+  $('#blocknumber').html(`<a href="https://hiveblocks.com/b/${data.block}" target="_blank" title="Click this to view the block on HiveBlocks.com in a new window!" style="color:white !important; text-decoration: none !important;"><code>#</code>${data.block}</a>`);
   flashwin($('#blocknumber'));
 });
+
+var blockssynced = '';
 
 socket.on('latestblock', function(data){
-  $('#blocknumber').html(`<a href="https://hiveblocks.com/b/${data.block}" target="_blank" title="Click this to view the block on HiveBlocks.com in a new window!" style="color:white !important; text-decoration: none !important;">#${data.block} <i class="fas fa-external-link-square-alt" style="font-size:x-small;"></i></a>`);
-  flashwin($('#blocknumber'));
+  console.log(data);
+  if(data.synced === false){
+    blockssynced = '&nbsp;<i class="fa fa-exclamation-triangle sexyblackoutline" style="color:gold;" aria-hidden="true" title="Site is Currently Syncing! Deposits May be Delayed!"></i>';
+  }
+  if(data.synced === true){
+    blockssynced = '';
+  }
+  $('#blocknumber').html(`<a href="https://hiveblocks.com/b/${data.block}" target="_blank" title="Click this to view the block on HiveBlocks.com in a new window!" style="color:white !important; text-decoration: none !important;"><code>#</code>${data.block}</a>${blockssynced}`);
 });
 
-var pricechartInit = 0;
 
+var scrollspeed = 5;
+
+function startScrollbar() {
+
+  var items, scroller = $('#scroller');
+  var width = 0;
+  scroller.children().each(function(){
+      width += $(this).outerWidth(true);
+  });
+  scroller.css('width', width);
+
+  function scroll(){
+      items = scroller.children();
+      var scrollWidth = items.eq(0).outerWidth();
+      scroller.animate({'left' : 0 - scrollWidth}, scrollWidth * 100 / scrollspeed, 'linear', changeFirst);
+  }
+  function changeFirst(){
+      scroller.append(items.eq(0).remove()).css('left', 0);
+      scroll();
+  }
+  scroll();
+}
+
+
+
+var pricechartInit = 0;
+var scrollInit = 0;
 var old_percent_change_1h = 0;
 var old_percent_change_24h = 0;
 var old_percent_change_7d = 0;
 var old_percent_change_30d = 0;
 
 socket.on('hivepriceupdate', function(data){
+  console.log(`hivepriceupdate data:`);
   console.log(data);
-  $('#pricepercentticker').html(`| Total Supply: ${commaNumber((data.total_supply).toFixed(3))} | Market Cap: $${commaNumber((data.market_cap).toFixed(2))} USD | Daily Volume: $${commaNumber((data.volume_24h).toFixed(2))} USD | Last Hour: ${(data.percent_change_1h).toFixed(2)}% | Last Day: ${(data.percent_change_24h).toFixed(2)}% | Past Week: ${(data.percent_change_7d).toFixed(2)}% | Past Month: ${(data.percent_change_30d).toFixed(2)}%`)
+
+  var arrow1;
+  var arrow7;
+  var arrow24;
+  var arrow30;
+
+  if(data.percent_change_1h > 0){
+    arrow1 = "<i class='fas fa-caret-up' style='color:lawngreen;'></i>";
+  } else {
+    arrow1 = "<i class='fas fa-caret-down' style='color:red;'></i>";
+  }
+
+  if(data.percent_change_24h > 0){
+    arrow24 = "<i class='fas fa-caret-up' style='color:lawngreen;'></i>";
+  } else {
+    arrow24 = "<i class='fas fa-caret-down' style='color:red;'></i>";
+  }
+
+  if(data.percent_change_7d > 0){
+    arrow7 = "<i class='fas fa-caret-up' style='color:lawngreen;'></i>";
+  } else {
+    arrow7 = "<i class='fas fa-caret-down' style='color:red;'></i>";
+  }
+
+  if(data.percent_change_30d > 0){
+    arrow30 = "<i class='fas fa-caret-up' style='color:lawngreen;'></i>";
+  } else {
+    arrow30 = "<i class='fas fa-caret-down' style='color:red;'></i>";
+  }
+
+  $('#pricepercentticker').html(commaNumber((data.total_supply).toFixed(3)) + "&nbsp;HIVE");
+  $('#pricepercentticker1').html(commaNumber((data.market_cap).toFixed(2)) + "&nbsp;<code>USD</code>");
+  $('#pricepercentticker2').html(commaNumber((data.volume_24h).toFixed(2)) + "&nbsp;<code>USD</code>");
+  $('#pricepercentticker3').html((data.percent_change_1h).toFixed(2) + "%");
+  $('#pricepercentticker4').html((data.percent_change_24h).toFixed(2) + "%");
+  $('#pricepercentticker5').html((data.percent_change_7d).toFixed(2) + "%");
+  $('#pricepercentticker6').html((data.percent_change_30d).toFixed(2) + "%");
+  $('#one').html(arrow1);
+  $('#two').html(arrow24);
+  $('#three').html(arrow7);
+  $('#four').html(arrow30);
+  if(scrollInit != 1){
+    startScrollbar();
+    scrollInit = 1;
+  }
 });
+
 
 socket.on('hivepriceupdatebackup', function(data){
   console.log(data);
-  $('#pricepercentticker').html(`| Total Supply: --------.--- | Market Cap: $-------.-- USD | Daily Volume: $-.-- USD | Last Hour: -.--% | Last Day: -.--% | Past Week: -.--% | Past Month:-.--%`)
+  $('#pricepercentticker').html(`Total Supply: --------.--- | Market Cap: $-------.-- USD | Daily Volume: $-.-- USD | Last Hour: -.--% | Last Day: -.--% | Past Week: -.--% | Past Month:-.--%`)
 });
 
+var lastHivePrice;
+var lastHiveShortPrice;
+var lastHiveLongPrice;
+
+
+
 socket.on('priceupdate', function(data){
+  if(!hiveprice) oldhiveusdprice = 0;
   var type = 'USD';
-  //console.log(data);
+  if(!data.hiveusdprice) return;
+  if(!data.hiveshortprice) return;
+  if(!data.hivelongprice) return;
+  console.log(data);
   /*
   if(pricechartInit == 0) {
     if(data.datasets == undefined) return;
@@ -306,16 +447,56 @@ socket.on('priceupdate', function(data){
     addData(data.datasets, data.labelssend, "myChart");
   }
   */
+
+
+  if(!lastHivePrice) lastHivePrice = data.hiveusdprice;
+  if(!lastHiveShortPrice) lastHiveShortPrice = data.hiveshortprice;
+  if(!lastHiveLongPrice) lastHiveLongPrice = data.hivelongprice;
+  if(hivechart) {
+    //mergeTickToBar(data.datasets);
+    //dataChart = dataChart.slice(20, dataChart.length - 1);
+    var chartshitstuff = data.chart[0];
+    var newprice = chartshitstuff.close;
+    var newtimestuff = chartshitstuff.time;
+    var theAnswer = {time:newtimestuff, price:newprice};
+    if(dataChart != undefined && dataChart.length > 0){
+      console.log(`currentBar`);
+      console.log(currentBar);
+      mergeNewTickToBar(theAnswer);
+      console.log(`currentBar Now`);
+      console.log(currentBar);
+      //if (firstCFDrun == false) dataChart.push(dataChart);
+    }
+
+  }
+
+
+
+  if(lastHivePrice != data.hiveusdprice) {
+
+  }
+
+  if(lastHiveShortPrice != data.hiveshortprice) {
+
+  }
+
+  if(lastHiveLongPrice != data.hivelongprice) {
+
+  }
+
+  $('#shortSpotPrice').val((data.hiveshortprice).toFixed(6));
+  $('#longSpotPrice').val((data.hivelongprice).toFixed(6));
+  if(lastHivePrice) oldhiveusdprice = lastHivePrice;
   if(oldhiveusdprice > data.hiveusdprice) {
-    $('#pricecheck').html(`1 HIVE = $${ data.hiveusdprice} <code><span id="pricetype">USD</span></code>`);
+    $('#pricecheck').html(`1 HIVE = <i class="fas fa-caret-down" style="color:red;"></i>$${(data.hiveusdprice).toFixed(6)} <code><span id="pricetype">USD</span></code>`);
     flashlose($('#pricecheck'));
   } else if (oldhiveusdprice < data.hiveusdprice ){
-    $('#pricecheck').html(`1 HIVE = $${ data.hiveusdprice} <code><span id="pricetype">USD</span></code>`);
+    $('#pricecheck').html(`1 HIVE = <i class="fas fa-caret-up" style="color:lawngreen;"></i>$${(data.hiveusdprice).toFixed(6)} <code><span id="pricetype">USD</span></code>`);
     flashwin($('#pricecheck'));
-  } else if (oldhiveusdprice ==  data.hiveusdprice){
-    $('#pricecheck').html(`1 HIVE = $${ data.hiveusdprice} <code><span id="pricetype">USD</span></code>`);
+  } else if (oldhiveusdprice == data.hiveusdprice){
+    $('#pricecheck').html(`1 HIVE = <i class="fas fa-caret-right" style="color:lightblue;"></i>$${(data.hiveusdprice).toFixed(6)} <code><span id="pricetype">USD</span></code>`);
   } else {
-    $('#pricecheck').html(`1 HIVE = $${ data.hiveusdprice} <code><span id="pricetype">USD</span></code>`);
+    $('#pricecheck').html(`1 HIVE = $${(data.hiveusdprice).toFixed(6)} <code><span id="pricetype">USD</span></code>`);
   }/*
   if ($('#pricetype').val() == undefined) {
     type = 'USD';

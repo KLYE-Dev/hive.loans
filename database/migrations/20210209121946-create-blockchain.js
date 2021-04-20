@@ -18,6 +18,11 @@ module.exports = {
         defaultValue: 1,
         type: Sequelize.INTEGER
       },
+      synced: {
+        allowNull: false,
+        defaultValue: false,
+        type: Sequelize.BOOLEAN
+      },
       createdAt: {
         allowNull: false,
         defaultValue: Sequelize.NOW,

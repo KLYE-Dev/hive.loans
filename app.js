@@ -22,11 +22,13 @@ if(config.dbSetup === true){
     }
   migrateDB();
 }
+
 const sessiondata = {
   secret: config.secret,
   saveUninitialized: false,
   resave: false,
   cookie:{maxAge: 60000}};
+
 var sessionMiddleware = session(sessiondata);
 app.use(sessionMiddleware);
 app.use(bodyParser.json());
@@ -160,20 +162,16 @@ var numClients = 0;
 
 //socket.io Routes
 io.on("connection", function(socket) {
-
   if(!appSocketList.includes(socket)){
     appSocketList.push(socket);
   }
-
   socket.on('disconnect', function() {
     if(appSocketList.includes(socket)){
       delete appSocketList[socket];
     }
   });
-
   var newapp = require('./socket.js')(socket, io);
-
 });
 
 server.listen(config.port);
-log(`Hive.Loans v${config.version} Started on Port: ${config.port}`);
+log(`WEB: Hive.Loans v${config.version} Started on Port: ${config.port}`);

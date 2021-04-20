@@ -6,9 +6,11 @@ let { pgpKeygen, pgpEncrypt, pgpDecryptAsync, keyPool } = require("../snippets/p
 const DB = require("../database/models");
 const sequelize = DB.sequelize;
 const DataBase = sequelize;
+const { Op } = require("sequelize");
 const Userdata = DataBase.models.Users;
 const Ownkeydata = DataBase.models.Ownerkeys;
 const Depositdata = DataBase.models.Deposits;
+const Withdrawdata = DataBase.models.Withdrawals;
 const Loandata = DataBase.models.Loans;
 
 var userSockets = [];
@@ -24,7 +26,23 @@ var getHivePower = async(user) => {
     var hiveVested = parseFloat(((total_vesting_fund *  hivePower ) / total_vesting_shares).toFixed(3));
     return hiveVested;
 }
-
+  var wdfeetotal = 0;
+async function fetchAuditWithdrawFees() {
+  wdfeetotal = 0;
+  await Withdrawdata.findAll({
+    where:{ fee: {
+      [Op.gt]: 0
+    }},
+    raw: true
+  }).then(async function(entries){
+      wdChecked = entries.map(function(key) {
+          if (key.fee !== -1) {
+            wdfeetotal += parseInt(key.fee);
+          };
+      });
+      return wdfeetotal;
+  });
+}
 
 process.on('message', async function(m) {
   var messageType;
@@ -37,15 +55,25 @@ process.on('message', async function(m) {
       log(m);
       if(m.socketid) {
         sendsocket = m.socketid;
-        if(!userSockets.includes(sendsocket)) userSockets.push(sendsocket);
-      } else {
-        log(`No Return Socket on Message!`);
+        if(!userSockets.includes(sendsocket)){
+          userSockets.push(sendsocket);
+        }
       }
   } catch(e) {
     log(`ERROR: ${e}`);
     return console.error(e);
   }
 switch(m.type) {
+  case 'wdfeeaudit':
+  var fees;
+  fees = await fetchAuditWithdrawFees();
+  process.send(JSON.stringify({
+    type:'massemit',
+    name:'wdfeeaudit',
+    socketid: m.socketid,
+    payload: [wdfeetotal]
+  }));
+  break;
   case 'walletdata':
     async function grabwallet() {
     var userCheck = await Userdata.findOne({where:{username:`${m.username}`}, raw:true, nest: true}).then(result => {return result}).catch(error => {console.log(error)});

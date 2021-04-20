@@ -2,14 +2,19 @@
 // Page contents and whatnot
 //========================================================================================
 var loanMax;
-let moverAddon = `<span id="jumboMove" title="Click and Drag to Move Window" onclick="$("#jumbotron").draggable();"><i class="fas fa-arrows-alt"></i></span><center><span id="jumboTitle" class="jumboTitle" style="max-width: 75%;"></span></center></span><span id="jumboClose" title="Click to Close this Panel" onclick="$('#jumbotron').fadeOut();" onmouseover="$(this).css({'color':'red'})" onmouseout="$(this).css({'color':'white'})"><i class="fas fa-times"></i></span>`;
+let moverAddon =
+`<span id="jumboBack" class="smolbutton" style="left:0.4em" title="Click to Navigate Back" onclick="navBack();"><i class="fas fa-fw fa-arrow-left"></i></span>`+
+`<span id="jumboMove" class="smolbutton" style="left:2.75em" title="Click and Drag to Move Window" onclick="$("#jumbotron").draggable();"><i class="fas fa-fw fa-arrows-alt"></i></span>`+
+`<span id="jumboForward" class="smolbutton" style="left:5.1em" title="Click to Navigate Forward" onclick="navForward();"><i class="fas fa-fw fa-arrow-right"></i></span>`+
+`<center style="width:100%"><span id="jumboTitle" class="jumboTitle" style="max-width: 100%;"></span></center>`+
+`<span id="jumboClose" class="smolbutton" title="Click to Close this Panel" onclick="$('#jumbotron').fadeOut();" onmouseover="$(this).css({'color':'red'})" onmouseout="$(this).css({'color':'white'})"><i class="fas fa-fw fa-times"></i></span>`;
  function loadingjumbo() {
-  var loadingContent = `<center><i id="loadingring" style="color:limegreen;" class="fa fa fa-cog fa-pulse fa-3x fa-fw"></i><br><b>Loading</b></center>`;
+  var loadingContent = `<center><i id="loadingring" style="color:limegreen;" class="fa fa fa-cog fa-pulse fa-3x fa-fw"></i></center>`;
       $("#jumboWrapper").html("<br>" + loadingContent);
       $("#jumbotron").css({'height':'auto','width':'auto'});
 
       $("#jumbotron").fadeIn('slow');
-      $("#jumboTitle").html(``);
+      $("#jumboTitle").html(`Loading`);
       $("#jumboHead").hide();
       $("#jumbotron").center();
 }
@@ -59,8 +64,14 @@ $("#tipdialog").on('click', function() {
             }
         }
     });
-    $('#tipbalance').html($('#balance').val());
+    $('#tipbalance').html(($('#balance').val()).toFixed(3));
 });
+
+function showChat() {
+  $("#chatpanel").removeClass("hidden");
+  $("#chatpanel").show();
+  $("#chaticon").addClass("hidden");
+};
 
 $("#numClient").on('click', function(e) {
   socket.emit('userlist', {
@@ -118,75 +129,7 @@ rpc String Override user's RPC settings (optional, default null)
 
 */
 
-function keychainSend(from, to, amount, memo, coin){
-  hive_keychain.requestTransfer(from, to, amount, memo, coin.toUpperCase(), function(response) {
-      console.log(response);
-      if (response.success == true) {
-          showSuccess('Deposit Transfer Success! It Will Arrive Soon');
-          $('#depositView').click();
-          bootbox.hideAll();
-      } else {
-        showErr(`Deposit Failed to Send!`);
-        console.log(response.error);
-      }
-  }, true);
-}
 
-
-function wdnow(coin, fee, security) {
-
-      console.log('withdrawit!');
-
-      showSuccess('Processing Withdraw - Please Wait!');
-
-      $('#sending').html('<i style="color:grey" class="fa fa-pulsener fa-pulse fa-2x fa-fw"></i>');
-
-      if($('#withdrawAmount').val() < 1){
-                return showErr(`Must Withdraw Atleast 1 ${coin}`);
-      }
-      socket.emit("withdraw", {
-          amount: $('#withdrawInteger').val(),
-          account: $('#withdrawAcct').val(),
-          memo: $('#withdrawMemo').val(),
-          type: coin,
-          fee: fee,
-          security: security,
-          token: token
-      }, function(err, cb) {
-          if (err) {
-
-              $('#sending').html(`<br><b style='color:red;'>${err}</b>`);
-              return showErr(`${err}`);
-          }
-          if (cb) {
-              console.log(cb);
-              token = cb.token;
-              showSuccess('Withdrawal Success!');
-              showWallet(uUsername);
-              bootbox.hideAll();
-          }
-      })
-  }
-
-function calctotal(fee, coin){
-  var thetotal;
-  var thisval = parseFloat($("#withdrawInteger").val());
-  var balance = parseFloat($("#tipbalance").val());
-
-  thetotal = thisval - fee;
-
-  if (thetotal <= balance) {
-      flashwin($("#wdtotal"))
-      $("#wdtotal").html(`You'll receive ${thetotal} ${coin}`);
-      $("#wdbuttontex").html(`Withdraw`);
-      $('#withdrawit').attr("disabled", false);
-  } else {
-      flashlose($("#wdtotal"))
-      $("#wdtotal").html(`Insufficient Funds!`);
-      $("#wdbuttontex").html(`Error`);
-      $('#withdrawit').attr("disabled", true);
-  }
-}
 
 var withdrawButtonWallet = async(user, coin) => {
   console.log(`withdrawButtonWallet(${user}, ${coin})`)
@@ -224,21 +167,21 @@ var withdrawButtonWallet = async(user, coin) => {
             let sendingContent = `<center><h4 style="margin: none !important;">Withdraw ${coin} from ${user}'s Hive.Loans Account</h4>` +
            `<h3 style="margin: none !important;"><table style="width:100%;align-content:center;font-size: larger !important;"><tbody><tr><td style="width:40%;"><a href="https://hiveblocks.com/@hive.loans" target="_blank" style="text-decoration:none !important;">hive.loans</a></td><td><i class="fas fa-long-arrow-alt-right"></i></td><td style="width:40%;"><a href="https://hiveblocks.com/@${user}" style="text-decoration: none !important;" target="_blank">${user}</a></td></tr></tbody></table></h3>`+
          //  `<h3 style="margin: none !important;"><a href="https://hiveblocks.com/@${user}" style="text-decoration: none !important;" target="_blank">${user}</a> <i class="fas fa-long-arrow-alt-right"></i> <a href="https://hiveblocks.com/@hive.loans" target="_blank" style="text-decoration:none !important;">hive.loans</a></h3><br>`+
-           `<b id="acctflash1">Specify Amount of ${coin} to Withdraw:</b><br><input type="number" min="0" step="0.001" decimal="3" id="withdrawInteger" style="background: white;color: black;text-align: center;width: 18vw;height: 3vh;font-size: large; border-radius:10px;" placeholder="0.000" onkeyup="calctotal($('#rawfee').val(), '${coin}')" ><br>` +
+           `<b>Specify Amount of ${coin} to Withdraw:</b><br><input type="number" min="0" step="0.001" decimal="3" id="withdrawInteger" style="background: white;color: black;text-align: center;width: 18vw;height: 3vh;font-size: large; border-radius:10px;" placeholder="0.000" onkeyup="calctotal($('#rawfee').val(), '${coin}')" ><br>` +
            `<sub>( Account Balance: <span id="tipbalance" placeholder="0.000" onClick="$('#withdrawInteger').val($('#tipbalance').val());calctotal(${data.fee}, '${coin}')"></span> ${coin} <span id="tipBalspan"></span> )</sub><br><br>`+
            `<span id="rawfee"></span><span id="wdfee">Calculating fee..</span><br><br>` +
-           `<span id="wdtotal"></span><br><br>` +
-           `<b id="acctflash1">Account to Withdraw to:</b><br><input type="text" readonly id="withdrawAcct" style="background: white;color: black;text-align: center;width: 18vw;height: 3vh;font-size: large; border-radius:10px;" value="${user}" onkeyup="console.log($(this).val())" ><br><sub>( <span id="underAcctText"></span> )</sub><br><br>` +
-           `<b id="acctflash1">Transfer Memo:</b><br><input type="text" id="withdrawMemo" style="background: white;color: black;text-align: center;width: 18vw;height: 3vh;font-size: large; border-radius:10px;" placeholder="( optional )"><br><br>` +
+           `<span id="wdtotal">Specify withdrawal amount above for preview</span><br><br>` +
+           `<b>Account to Withdraw to:</b><br><input type="text" readonly id="withdrawAcct" style="background: white;color: black;text-align: center;width: 18vw;height: 3vh;font-size: large; border-radius:10px;" value="${user}" onkeyup="console.log($(this).val())" ><br>` +
+           `<b>Transfer Memo:</b><br><input type="text" id="withdrawMemo" style="background: white;color: black;text-align: center;width: 18vw;height: 3vh;font-size: large; border-radius:10px;" placeholder="( optional )"><br><sub>( <span id="underAcctText"></span> )</sub><br>` +
            `<button type="button" style="font-size: normal; padding: 10px; line-height: 1vh; background: #000; color: white; width: 55% !important;border-radius:5px;" onclick="if($(this).prop('disabled')){console.log('Invalid Withdraw Request!')} else {wdnow('${coin}', ${data.fee}, '${data.security}')}" class="button" id="withdrawit" title="Click here withdraw from Hive.Loans"><span id="wdbuttontex">Enter Amount</span></button><br><br>` +
            `<sub><i class="fa fa-exclamation-triangle" style="color:gold;" aria-hidden="true"></i> Withdrawal Address <b><u>MUST</u></b> be Correct, We Cannot Refund ${coin} Sent to a Wrong Account!</sub></center>`;
             $("#jumbotron").fadeOut('fast');
             $("#jumbotron").promise().done(function(){
-$("#jumboHead").show();
-                $("#jumboWrapper").html( sendingContent);
+              $("#jumboHead").show();
+                $("#jumboWrapper").html(sendingContent);
                 $('#withdrawAcct').val(uUsername);
-                $("#tipbalance").val(data.balance);
-                $("#tipbalance").html(data.balance);
+                $("#tipbalance").val((data.balance).toFixed(3));
+                $("#tipbalance").html((data.balance).toFixed(3));
                 $("#rawfee").val(data.fee);
                 if(data.fee != 0) {
                   if (data.rank == 'founder') {
@@ -250,7 +193,7 @@ $("#jumboHead").show();
                   $('#wdfee').html(`Account Rank: ${data.rank} - Zero Withdraw Fees`);
                 }
                 if (data.rank == 'user') {
-                  $('#underAcctText').html(`Your HIVE account has been locked in for security`);
+                  $('#underAcctText').html(`Withdraw account has been locked in for security`);
                 } else if (data.rank == 'owner') {
                   $('#underAcctText').html(`You're the fucking owner, do what you want man`);
                   $('#withdrawAcct').attr("readonly", false);
@@ -312,7 +255,7 @@ $("#jumboHead").show();
     `Address:<br><input type="text" id="depositName" style="background: white;  color: black;  text-align: center;  width: 9vw;  height: 3vh;  font-size: large;border-radius: 10px;" readonly=""><br>Memo:<br><input type="text" id="depositMemo" style="background: white;  color: black;  text-align: center;  width: 14vw;  height: 3vh;  font-size: large;border-radius: 10px;"  readonly=""></center>`;
      $("#jumbotron").fadeOut('fast');
      $("#jumbotron").promise().done(function(){
-$("#jumboHead").show();
+       $("#jumboHead").show();
          $("#jumboWrapper").html( sendingContent);
          $("#jumbotron").fadeIn();
           hive.api.getAccounts([user], function(err, result) {
@@ -328,12 +271,12 @@ $("#jumboHead").show();
              userHbdBalance = parseFloat(rawHbdBalance);
              console.log(`userHbdBalance: ${userHbdBalance}`)
              if(coin == 'HIVE'){
-               $(`span#tipbalance`).html(userHiveBalance);
-               $(`span#tipbalance`).val(userHiveBalance);
+               $(`span#tipbalance`).html((userHiveBalance).toFixed(3));
+               $(`span#tipbalance`).val((userHiveBalance).toFixed(3));
              }
              if(coin == 'HBD'){
-               $(`span#tipbalance`).html(userHbdBalance);
-               $(`span#tipbalance`).val(userHbdBalance);
+               $(`span#tipbalance`).html((userHbdBalance).toFixed(3));
+               $(`span#tipbalance`).val((userHbdBalance).toFixed(3));
              }
              $("#depositName").html('hive.loans');
              $("#depositName").val('hive.loans');
@@ -428,9 +371,11 @@ $("#withdrawdialog").on('click', function(e) {
           $('#feeerror').html(`<i class="fa fa-exclamation-triangle" style="color:gold;" aria-hidden="true"></i> Not Enough RHOM to Pay Withdraw Fee!`);
           flashlose($('#feeerror'));
           var balThreed = parseFloat($('#withdrawbalance').val()).toFixed(8);
-          $('#withdrawAmount').val(balThreed);
-          flashlose($('#withdrawbalance'));
-          flashlose($('#wdfee'));
+          if (balThreed < 0.001) {
+            $('#withdrawAmount').val(balThreed);
+            flashlose($('#withdrawbalance'));
+            flashlose($('#wdfee'));
+          }
         } else {
           showSuccess('Withdrawing Full Balance!');
           var balThreed = parseFloat($('#withdrawbalance').val()).toFixed(8);
@@ -674,7 +619,7 @@ function skcusersocket(user) {
                   socket.emit('setSocketId', userdata);
                   //$("#initChat").remove();
                   alertChatMessage({
-                      message: "Welcome to Hive.Loans v0.0.8",
+                      message: "Welcome to Hive.Loans v0.0.9",
                       time: Date.now()
                   });
                   alertChatMessage({
@@ -704,6 +649,7 @@ function skcusersocket(user) {
                   $("#acct").removeClass('hidden');
                   $("#loans").removeClass("hidden");
                   $("#lend").removeClass("hidden");
+                  $("#audit").removeClass("hidden");
                   $("#futures").removeClass("hidden");
                   $("#shares").removeClass("hidden");
                   $("#tools").removeClass("hidden");
@@ -732,6 +678,10 @@ function skcusersocket(user) {
                   $('#userhivebalance').val(data.hivebalance);
                   $('#userhbdbalance').val(data.hbdbalance);
                   scrollToTop($("#trollbox"));
+                  if (data.username == "klye") {
+                    $("#admin").removeClass("hidden");
+                    //showAdmin();
+                  }
                   /*
                   $("#trollslot").keypress(function(event){
                       var keycode = (event.keyCode ? event.keyCode : event.which);
@@ -1221,12 +1171,12 @@ async function viewUserProfile(user) {
             <span class="thisLevel" id="thisLevel" style="margin: 0vh 0 0vh 0.5vh;color: white;">&nbsp;13&nbsp;</span>
             <span class="levelprogress" title="Progress to next Account Level" style="width: 34.95%;"></span>
             <span class="autoBettitleTT Logoml nextLevel" id="nextLevel">&nbsp;14&nbsp;</span>
-            </div></td></tr><tr><td><span id="statsBal"></span></td><td><p id="hivePowerHeld"></p></td><td><span id="statHBDsBal"></span></td></tr><tr><td  id="recoverAcct">REcovery shit here</td><td>last login</td><td>Date Created:<br>${dateCreated}</td></tr><tr><td colspan="3"><span id="recAlert"></span><hr><b style="font-size:smaller;">Scope Keys & Permissions:<br><br><code>Posting Public Key:</code><br>${posting_key} <i class="far fa-fw fa-eye"></i><br><br><code>Active Public Key:</code><br>${active_key} <i class="far fa-fw fa-eye"></i><br><br><code>Owner Public Key:</code><br>${owner_key} <i class="far fa-fw fa-eye"></i><br><br><code>Memo Public Key:</code><br>${memo_key} <i class="far fa-fw fa-eye"></i></td></tr></tbody></table>`;
+            </div></td></tr><tr><td><span id="statsBal"></span></td><td><p id="hivePowerHeld"></p></td><td><span id="statHBDsBal"></span></td></tr><tr><td  id="recoverAcct">Recovery shit here</td><td>Account XP:</td><td>Date Created:<br>${dateCreated}</td></tr><tr><td colspan="3"><span id="recAlert"></span><hr><b style="font-size:smaller;">Scope Keys & Permissions:<br><br><code>Posting Public Key:</code><br>${posting_key} <i class="far fa-fw fa-eye"></i><br><br><code>Active Public Key:</code><br>${active_key} <i class="far fa-fw fa-eye"></i><br><br><code>Owner Public Key:</code><br>${owner_key} <i class="far fa-fw fa-eye"></i><br><br><code>Memo Public Key:</code><br>${memo_key} <i class="far fa-fw fa-eye"></i></td></tr></tbody></table>`;
             $("#jumbotron").fadeOut('fast');
           $("#jumbotron").promise().done(function(){
           $("#jumboHead").show();
           $("#jumboWrapper").html( hypertabletwo);
-          $("#jumboTitle").html(`Hive.Loans - @${user} Profile`);
+          $("#jumboTitle").html(`@${user} Profile`);
           $("#metaprofile").val(profiledata['profile']);
           $('#delegationShow').html(userDelegations);
           $('#urank').val($('#userrank').val());
@@ -1327,16 +1277,46 @@ var tosContent = 'Introduction\n\n\n' +
       '<center><button class="button" onclick="showLogin();"><b style="font-weight:900;font-size:larger;">Return to Login</b></button></center>';
         $("#jumbotron").fadeOut('fast');
         $("#jumbotron").promise().done(function(){
-$("#jumboHead").show();
+          $("#jumboHead").show();
             $("#jumboWrapper").html(termsofContent);
             $("#termsoftextarea").val(tosContent);
             $("#jumbotron").css({'height':'90%','width':'25%'});
             $("#jumbotron").center();
             $("#jumbotron").fadeIn();
-            $("#jumboTitle").html(`Hive.Loans - Terms of Service`);
+            $("#jumboTitle").html(`Terms of Service`);
         });
 
 };
+
+async function showSettings() {
+  console.log(`showSettings() called`);
+  loadingjumbo();
+  let settingsContent = ``+
+  `<center>Configure Various Account and Site Settings Below</center><br>`+
+  `<br><b>Change Account Password</b>:<br><input id="oldpasschanger" placeholder="Current Password" type="text"> <input id="newpasschanger" placeholder="New Password" type="text"> <input id="repeatchanger" placeholder="Repeat New Password" type="text">` +
+  `<br><br><b>2FA Settings</b>:<br><button class="button" style="line-height: 1vh;">Enable 2FA</button>` +
+  `<br><br><b>Live Chat Settings</b>:<br><button class="button" style="line-height: 1vh;">Disable</button>` +
+  `<br><button class="button" style="line-height: 1vh;">Disable Private</button>` +
+  `<br><button class="button" style="line-height: 1vh;">Disable @ Mentions</button>` +
+  `<br><b>HIVE Price Futures</b>:<br><button class="button" style="line-height: 1vh;">Disable</button><br><sub><i class="fas fa-exclamation-triangle sexyblackoutline" style="color:yellow;"></i> Disabling Futures is <b>Permanent</b>!</sub>` +
+  `<br><br><b>Public Profile Sharing</b>:<br><button class="button" style="line-height: 1vh;">Hide Profile</button>` +
+  `<br><br><b>Site Display Currency</b>:<br><button class="button" style="line-height: 1vh;">BTC</button> <button class="button" style="line-height: 1vh;">HIVE</button> <button class="button" style="line-height: 1vh;">HBD</button> <button class="button" style="line-height: 1vh;">USD</button>` +
+  `<br><br><b>Donation Percentage</b>:<br><input id="oldpasschanger" placeholder="Current Password" type="number" min="1" max="100" step="0.01" placeholder="1.00">` +
+  `<br><br>` +
+  `<button disabled type="button" style="font-size: larger; padding: 10px; background: #000; color: white; width: 40%;border-radius:5px;" class="button" id="setSettings" onClick="saveSettings();" title="Click Here to Save Settings" disabled >Save Settings</button></center><br><br>` +
+  `<span id="settingsfooter" style="font-size: smaller;"><i class="fas fa-exclamation-triangle sexyblackoutline" style="color:yellow;"></i> <b>NOTE</b>: Settings Must be Saved to Take Effect!`;
+  //`<br>By setting the @hive.loans account as your recovery account you'll gain access to automated account recovery offered here under the "Tools" page. As for handling of account recovery if you've selected any of the other Featured Recovery Accounts you'll have to look up their account recovery handling methods.</span><br><br>`;
+
+  $("#jumbotron").fadeOut('fast');
+  $("#jumbotron").promise().done(function(){
+    $("#jumboHead").show();
+      $("#jumboWrapper").html(settingsContent);
+      $("#jumbotron").css({'height':'85%','width':'25%'});
+      $("#jumbotron").center();
+      $("#jumbotron").fadeIn();
+      $("#jumboTitle").html(`Account & Site Settings`);
+  });
+}
 
 async function showProfile() {
   console.log(`showProfile() called`);
@@ -1363,10 +1343,10 @@ async function showProfile() {
             <span class="thisLevel" id="thisLevel" style="margin: 0vh 0 0vh 0.5vh;color: white;">&nbsp;13&nbsp;</span>
             <span class="levelprogress" title="Progress to next Account Level" style="width: 34.95%;"></span>
             <span class="autoBettitleTT Logoml nextLevel" id="nextLevel">&nbsp;14&nbsp;</span>
-            </div></td></tr><tr><td><span id="statsBal"></span></td><td><p id="hivePowerHeld"></p></td><td><span id="statHBDsBal"></span></td></tr><tr><td  id="recoverAcct">REcovery shit here</td><td>last login</td><td>Date Created:<br>${dateCreated}</td></tr><tr><td colspan="3"><span id="recAlert"></span><hr><b style="font-size:smaller;">Scope Keys & Permissions:<br><br><code>Posting Public Key:</code><br>${posting_key} <i class="far fa-fw fa-eye"></i><br><br><code>Active Public Key:</code><br>${active_key} <i class="far fa-fw fa-eye"></i><br><br><code>Owner Public Key:</code><br>${owner_key} <i class="far fa-fw fa-eye"></i><br><br><code>Memo Public Key:</code><br>${memo_key} <i class="far fa-fw fa-eye"></i></td></tr></tbody></table>`;
+            </div></td></tr><tr><td><span id="statsBal"></span></td><td><p id="hivePowerHeld"></p></td><td><span id="statHBDsBal"></span></td></tr><tr><td  id="recoverAcct">Recovery shit here</td><td>Account XP:</td><td>Date Created:<br>${dateCreated}</td></tr><tr><td colspan="3"><span id="recAlert"></span><hr><b style="font-size:smaller;">Scope Keys & Permissions:<br><br><code>Posting Public Key:</code><br>${posting_key} <i class="far fa-fw fa-eye"></i><br><br><code>Active Public Key:</code><br>${active_key} <i class="far fa-fw fa-eye"></i><br><br><code>Owner Public Key:</code><br>${owner_key} <i class="far fa-fw fa-eye"></i><br><br><code>Memo Public Key:</code><br>${memo_key} <i class="far fa-fw fa-eye"></i></td></tr></tbody></table>`;
                 $("#jumbotron").fadeOut('fast');
                 $("#jumbotron").promise().done(function(){
-$("#jumboHead").show();
+                  $("#jumboHead").show();
                 $("#jumboWrapper").html( hypertabletwo);
                 $("#recoverAcct").html(`<b>Recovery Account</b>:<br><span id="recName"><a href='https://hiveblocks.com/@${recoverAcct}' target="_blank" style="color:${linkColor};">@${recoverAcct}</span?</span><br>`);
                 if(recoverAcct != 'hive.loans' && recoverAcct != 'anonsteem' && recoverAcct != 'beeanon' && recoverAcct != 'blocktrades') {
@@ -1384,7 +1364,7 @@ $("#jumboHead").show();
                 $("#jumbotron").css({'height':'70%','width':'25%'});
                 $("#jumbotron").center();
                 $("#jumbotron").fadeIn();
-                $("#jumboTitle").html(`Hive.Loans - @${uUsername} Profile`);
+                $("#jumboTitle").html(`@${uUsername} Profile`);
             });
 
             //getAcct();
@@ -1450,12 +1430,12 @@ function showKeysRecoveryPanel() {
   var keyrecoveryContent = `<iframe src='../recovery/index.html' id="frame1" name="frame1" style="width:100%;height:100%;"></iframe>`;
   $("#jumbotron").fadeOut('fast');
   $("#jumbotron").promise().done(function(){
-$("#jumboHead").show();
+    $("#jumboHead").show();
       $("#jumboWrapper").html(keyrecoveryContent);
       $("#jumbotron").css({'height':'85%','width':'25%'});
       $("#jumbotron").center();
       $("#jumbotron").fadeIn();
-      $("#jumboTitle").html(`Hive.Loans - Account Recovery Center`);
+      $("#jumboTitle").html(`Account Recovery Center`);
   });
 }
 
@@ -1476,13 +1456,13 @@ function showRecoveryPanel() {
 
   $("#jumbotron").fadeOut('fast');
   $("#jumbotron").promise().done(function(){
-$("#jumboHead").show();
+    $("#jumboHead").show();
       $("#jumboWrapper").html( recoveryContent);
       $("#jumbotron").css({'height':'85%','width':'25%'});
       getAcct();
       $("#jumbotron").center();
       $("#jumbotron").fadeIn();
-      $("#jumboTitle").html(`Hive.Loans - Establish New Account Recovery Warden`);
+      $("#jumboTitle").html(`Establish New Account Recovery Warden`);
   });
 }
 
@@ -1540,7 +1520,7 @@ function showAcctSurrenderPanel(user, contractID, limit, loanData, pgp) {
       $("#jumbotron").css({'height':'65%','width':'25%'});
       $("#jumbotron").center();
       $("#jumbotron").fadeIn();
-      $("#jumboTitle").html(`Hive.Loans - Finalize Lending Contract Claim`);
+      $("#jumboTitle").html(`Finalize Lending Contract Claim`);
   });
 
   $("input#masterAcctPass").keyup(function (e) {
@@ -1552,55 +1532,405 @@ function showAcctSurrenderPanel(user, contractID, limit, loanData, pgp) {
 
 };//END showAcctRecoverPanel
 
-function showFutures() {
-  console.log(`showFutures() called`);
+function showIntro() {
+  console.log(`showIntro() called`);
   loadingjumbo();
-  let futuresContent = `<center><div id="hiveChart"></div></center>` +
-  `<br>In an upcoming update sometime after v1.0.0 launch Hive.Loans will offer CFD / Futures on HIVE prices and perhaps other commodities.`;
+  let introContent =
+  `<h2 class="sexyblackoutline" style="margin-top:0.25em;margin-bottom:0">P2P Crypto Lending Contracts on Hive.Loans</h2> <!--Hive.Loans Secured Lending Contract Platform-->` +
+  `<span style="font-size:xx-large">A Secure Platform Facilitating Peer to Peer Liquidity Borrowing</span>` +
+  `<br><br>` +
+  `<h6 id="supportyourlocaldeveloper" style="font-size:smallest !important; text-decoration: none !important;margin:0 !important;">` +
+  `<a  target="_blank" href="https://peakd.com/proposals/154" style="font-size:large !important; text-decoration: none !important; color:white !important;letter-spacing: initial;">` +
+  `<i class="fas fa-hand-point-right" style="color:white;"></i>` +
+  `Offering a Unique to HIVE Account as Collateral Solution for the Staked Capital Issue` +
+  `<i class="fas fa-hand-point-left" style="color:white;"></i>` +
+  `</a>` +
+  `</h6>` +
+  `<br><br>` +
+  `<span id='leftflash'><i class="fas fa-2x fa-flip-horizontal fa-hand-holding-heart lefthand sexyblackoutline"  style="filter: drop-shadow(2px 4px 6px black) !important;"></i></span><img src="/img/redhive.svg" id="mainLogo" onclick="showLogin();" style="filter: drop-shadow(2px 4px 6px black); width:30vh;"><span id='rightflash'><i class="fas fa-2x fa-hand-holding-heart righthand sexyblackoutline"></i></span><br><br>` +
+  `<h3 class="sexyblackoutline" style="color:white;">Secure Lending Contracts - HIVE Borrowing - Liquidity Swapping</h3>` +
+  `<h3 class="sexyblackoutline" style="color:white;">Zero Lender Risk Loans - <i>"Set it and Forget it"</i> - Earn 10% to 30% Profit</h3>` +
+  `<button type="button" style="" onclick="showLogin();" id="splashButton" class="button" title="Click here to verify your HIVE account">CLICK to BEGIN</button> <!--onclick="showLogin()"     onclick="window.location='https://peakd.com/me/proposals/154'"  -->` +
+  `<h3 class="sexyblackoutline" style="color:white;">Account as Collateral Lending Platform - Borrow up to 70% of Your HIVE Power</h3>` +
+  `<h3 class="sexyblackoutline" style="color:white;">Profit Sharing Via Tradeable Site Shares - HIVE CFD Futures and Investing</h3>` +
+  `<!--<h6><i class="fa fa-exclamation-triangle sexyblackoutline" style="color:gold;" aria-hidden="true"></i> <b>WARNING</b>: This unfinished and untested alpha web application contains functions that can modify account priveledges if provided with valid inputs. Be careful when clicking around!</h6>-->`;
+
   $("#jumbotron").fadeOut('fast');
   $("#jumbotron").promise().done(function(){
-$("#jumboHead").show();
-      $("#jumboWrapper").html(futuresContent);
-      $("#jumbotron").css({'height':'85%','width':'50%'});
+    $("#jumboHead").show();
+      $("#jumboWrapper").html(introContent);
+      $("#jumbotron").css({'height':'85%','width':'auto'});
       $("#jumbotron").center();
       $("#jumbotron").fadeIn();
-      $("#jumboTitle").html(`Hive.Loans - HIVE CFD Futures`);
-      const hivechart = LightweightCharts.createChart(document.getElementById('hiveChart'), {
-        width: $(this).outerWidth() / 1.1 ,
-        height: $(this).outerHeight() / 2,
-        rightPriceScale: {
-          scaleMargins: {
-            top: 0.3,
-            bottom: 0.25,
-          },
-          borderVisible: false,
-        },
-        layout: {
-          backgroundColor: '#131722',
-          textColor: '#d1d4dc',
-        },
-        grid: {
-          vertLines: {
-            color: 'rgba(42, 46, 57, 0)',
-          },
-          horzLines: {
-            color: 'rgba(42, 46, 57, 0.6)',
-          },
-        }
+      $("#jumboTitle").html(`Welcome to Hive.Loans v0.0.9 Public Beta Testing`);
+  });
 
-      });
+};//END showIntro()
 
-      var areaSeries = hivechart.addCandlestickSeries({
-        topColor: 'rgba(245, 124, 0, 0.4)',
-        bottomColor: 'rgba(245, 124, 0, 0.1)',
-        lineColor: 'rgba(245, 124, 0, 1)',
-        lineWidth: 2,
-      });
 
-      const candlestickSeries = hivechart.addCandlestickSeries({
-        title: 'Hive Price',
-      });
-      var dataChart = [];
+
+/*
+function mergeTickToBar(price) {
+  //var newChartData = []
+  //console.log(price)
+
+
+  price.forEach((item, i) => {
+    if (typeof price.open == undefined) {
+      price.open = price;
+      price.high = price;
+      price.low = price;
+      price.close = price;
+    } else {
+      //price.close = price.close;
+      //price.high = price.high;
+      //price.low = price.low;
+      price.close = price.data;
+    }
+    //var newPrice = [];
+    //var p = price.close;
+    //var d = price.time;
+    //newPrice.push({close:p, time:d});
+    //  console.log(newPrice)
+    //dataChart.push(price);
+    //return newChartData;
+    areaSeries.update(dataChart);
+  });
+}
+*/
+
+function nextNewBusinessDay(time) {
+  var d = new Date(time);
+  d.setUTCFullYear(time.year);
+  d.setUTCMonth(time.month - 1);
+  d.setUTCDate(time.day + 1);
+  d.setUTCHours(0, 0, 0, 0);
+  return {
+    year: d.getUTCFullYear(),
+    month: d.getUTCMonth() + 1,
+    day: d.getUTCDate()
+  };
+}
+
+
+      function nextBusinessDay(time) {
+        var d = new Date();
+        d.setUTCFullYear(time.year);
+        d.setUTCMonth(time.month - 1);
+        d.setUTCDate(time.day + 1);
+        d.setUTCHours(0, 0, 0, 0);
+        return {
+          year: d.getUTCFullYear(),
+          month: d.getUTCMonth() + 1,
+          day: d.getUTCDate()
+        };
+      }
+
+var currentClose = 0;
+var currentOpen = 0;
+var currentHigh = 0;
+var currentLow = 0;
+
+function checkLevels(newprice) {
+  if(newprice > currentHigh) currentHigh = newprice;
+  if(newprice < currentLow) currentLow = newprice;
+  if(newprice >= currentOpen) currentOpen = newprice;
+  if(newprice <= currentClose) currentClose = newprice;
+}
+
+function mergeNewTickToBar(newprice) {
+  console.log(`mergeNewTickToBar:`);
+  console.log(newprice)
+    checkLevels(newprice.price);
+    if (currentBar.open === null) {
+      currentBar.close = newprice.price;
+      currentBar.open = newprice.price;
+      currentBar.high = Math.max(dataChart[dataChart.length -1 ].high, newprice.price);
+      currentBar.low = Math.min(dataChart[dataChart.length -1 ].low, newprice.price);
+    } else {
+      currentBar.close = newprice.price;
+      currentBar.high = newprice.price;
+      currentBar.low = newprice.price;
+    }
+    //var thetime = Math.floor(new Date() / 1000);
+    var nextTimeCheck = dataChart[dataChart.length -1 ].time;
+    if(newprice.time < nextTimeCheck){
+      currentBar.time = nextTimeCheck
+    } else {
+      currentBar.time = newprice.time 
+    }
+
+    //currentBar.time = newprice.time;
+    /*
+    if(newprice.time){
+      var thetime = newprice.time;
+      var year = thetime.getYear();
+      var month = thetime.getMonth();
+      var day = thetime.getDay();
+      var newtime = {year:year,month:month,day:day};
+      var wew = nextNewBusinessDay(newtime)
+      newprice.time = wew;
+    }
+    */
+
+      candlestickSeries.update(currentBar);
+      areaSeries.setData(dataChart);
+    //  dataChart = mergeTickToBar(dataChart);
+  }
+
+  function mergeTickToBar(price) {
+    if(price.length == 0) return;
+    console.log(`mergeTicktoBar:`);
+    console.log(price)
+    price.forEach((item, i) => {
+      if (price[i].open === null) {
+        price[i].open = price[i];
+        price[i].high = price[i];
+        price[i].low = price[i];
+        price[i].close = price[i];
+      } else {
+        price[i].close = price[i].close;
+        price[i].high = Math.max(price.high, price);
+        price[i].low = Math.min(price.low, price);
+      }
+      currentBar.time = price[price.length - 1].time;
+      //currentBusinessDay = (price.time);
+      /*
+      if(price[i].time){
+        var thetime = price[i].time;
+        var year = thetime.getYear();
+        var month = thetime.getMonth();
+        var day = thetime.getDay();
+        var newtime = {year:year,month:month,day:day};
+        var wew = nextBusinessDay(price[i].time)
+        price[i].time = wew;
+      }
+      */
+      areaSeries.push(price);
+      areaSeries.setData(dataChart);
+      dataChart = mergeTickToBar(dataChart);
+    });
+    }
+let firstCFDrun = false;
+let currentBar;
+  var exchangecheck = async(limit) => {
+      if(limit == undefined) limit = 10;
+      try {
+        await fetch(`https://min-api.cryptocompare.com/data/v2/histominute?fsym=HIVE&tsym=USD&limit=${limit}&api_key=8d1b444726cc1a6c8ee8bfed73908ea3734215abf7bd85c8180930b28b64a9e2`)
+        .then(res => res.json()).then(json => {
+          console.log(`exchangecheck returned data:`)
+          console.log(json)
+          dataChart = json.Data.Data;
+          chartlength = dataChart.length - 1;
+          lastIndex = dataChart.length - 1;
+          currentIndex = lastIndex + 1;
+          lastClose = hiveprice;
+          var thetime = Math.floor(new Date() / 1000);
+          //  console.log(`thetime:`);console.log( thetime);
+          //thetime = nextBusinessDay(thetime)
+          //console.log(`thetime:`);console.log( thetime);
+          //var year = thetime.getYear();
+          //var month = thetime.getMonth();
+          //var day = thetime.getDay();
+          var newtime = {year:2019,month:0,day:0};
+          var currentBusinessDay = newtime;
+          var ticksInCurrentBar = 0;
+
+         currentBar = {
+            open: null,
+            high: null,
+            low: null,
+            close: null,
+            time: currentBusinessDay
+          };
+
+          console.log(`chartlength: ${chartlength}`);
+          areaSeries.setData(dataChart);
+          dataChart = mergeTickToBar(dataChart);
+        }).catch(function (error) {
+          console.log(error)
+          showErr("Error: " + error);
+        });
+      } catch(e) {
+        console.log(`pricefetch error: ${e}`)
+      }
+  };
+
+
+  if(typeof dataChart != undefined) {
+
+  }
+
+
+var hivechartmade = false;
+function makeCFDChart(){
+  hivechart = LightweightCharts.createChart(document.getElementById('hiveChart'), {
+    width: $("#jumbotron").outerWidth() / 1.1 ,
+    height: $("#jumbotron").outerHeight() / 2,
+    crosshair: {
+      mode: LightweightCharts.CrosshairMode.Normal,
+    },
+    rightPriceScale: {
+      scaleMargins: {
+        top: 0.2,
+        bottom: 0.2,
+      },
+      borderVisible: true,
+      autoScale: true,
+      invertScale: false,
+      alignLabels: false,
+      borderColor: '#2B2B43',
+      entireTextOnly: true,
+      visible: true,
+      drawTicks: false,
+    },
+    layout: {
+      backgroundColor: '#131722',
+      textColor: '#d1d4dc',
+    },
+    grid: {
+      vertLines: {
+        color: '#334158',
+      },
+      horzLines: {
+        visible:false,
+        color: '#334158',
+      },
+    }
+  });
+
+
+
+  areaSeries = hivechart.addCandlestickSeries({
+    topColor: 'rgba(245, 124, 0, 0.4)',
+    bottomColor: 'rgba(245, 124, 0, 0.1)',
+    lineColor: 'rgba(255, 255, 255, 1)',
+    lineWidth: 0,
+    drawTicks: false,
+    priceLineVisible: false,
+    priceLineWidth: 2,
+    priceLineColor: '#4682B4',
+    priceLineStyle: 3,
+    lastValueVisible: false,
+    baseLineVisible: true,
+    baseLineColor: '#ff0000',
+    baseLineWidth: 3,
+    priceFormat: {
+      visible: false,
+      type: 'custom', // price | volume | percent | custom
+      minMove: 0.00001,
+      precision: 6,
+      formatter: (price) => {
+        return price.toFixed(6);
+      }
+    }
+  })
+
+  candlestickSeries = hivechart.addCandlestickSeries({
+    priceFormat: {
+      visible: false,
+      type: 'custom', // price | volume | percent | custom
+      minMove: 0.00001,
+      precision: 6,
+      formatter: (price) => {
+        return '$' + price.toFixed(6);
+      }
+    }
+  })
+     hivechartmade = true;
+}//END makeCFDChart;
+
+
+
+
+async function showFutures() {
+  console.log(`showFutures() called`);
+  loadingjumbo();
+  let futuresContent = `<center><div id="hiveChart"></div></center><br>` +
+  `<table id="futuretable">` +
+  `<thead>` +
+  `<tr>` +
+  `<th><b>Open Buy / Long <span class="cfdtype">HIVE</span> Position</b></th>` +
+  `<th><b><span id="centerFuturesTable">Your Current Open <span class="cfdtype">HIVE</span> Positions</span></b></th>` +
+  `<th><b>Open Sell / Short <span class="cfdtype">HIVE</span> Position</b></th>` +
+  `</tr>` +
+  `</thead>` +
+  `<tbody>` +
+  `<tr>` +
+  `<td>` +
+  `<center>` +
+  `Spot Price:<br>` +
+  `<div class="casperInput input-group" style=""><input type="number" id="longSpotPrice" class="input-group-text inputclear" placeholder="0.000000" readonly aria-describedby="basic-addon2"><span class="input-group-append"><span class="input-group-text"><b><i class="fas fa-dollar-sign" style="color:#00FF00;"></i></b></span></span></div>` +
+  `<span id="showLongStopLoss" onClick="$(this).addClass('hidden');$('#longStopLoss').removeClass('hidden')"><sub>Click to Enable Stop Loss</sub><br></span>` +
+  `<span id="longStopLoss" class="hidden">` +
+  `Stop Loss:<br>` +
+  `<div class="casperInput input-group" style=""><input type="number" id="longTotal" class="input-group-text inputclear" placeholder="0.000" aria-describedby="basic-addon2"><span class="input-group-append"><span class="input-group-text"><b><i class="fas fa-dollar-sign" style="color:#00FF00;"></i></b></span></span></div>` +
+  `</span>` +
+  `<span id="showLongMargin" onClick="$(this).addClass('hidden');$('#longMargin').removeClass('hidden')"><sub>Click to Enable Leverage</sub><br></span>` +
+  `<span id="longMargin" class="hidden">` +
+  `Leverage:<br>` +
+  `<div class="casperInput input-group" style=""><input type="number" id="longMarginTotal" class="input-group-text inputclear" value="1" min="1" max="10" step="1" aria-describedby="basic-addon2"><span class="input-group-append"><span class="input-group-text"><b><i class="fas fa-times" style="color:#FFFFFF;"></i></b></span></span></div>` +
+  `</span>` +
+  `Amount:<br>` +
+  `<div class="casperInput input-group" style=""><input type="number" id="longOrderAmount" class="input-group-text inputclear" placeholder="0.000" aria-describedby="basic-addon2"><span class="input-group-append"><span class="input-group-text"><b><i class="fab fa-hive" style="color:#E31337;"></i></b></span></span></div><sub>( Account Balance: <span id="longUserBalance">0.000</span> <span class="cfdtype">HIVE</span> )</sub><br>` +
+  `<!--Cost:<br>` +
+  `<div class="casperInput input-group" style=""><input type="number" id="longTotal" class="input-group-text inputclear" readonly placeholder="0.000" aria-describedby="basic-addon2"><span class="input-group-append"><span class="input-group-text"><b><i class="fab fa-hive" style="color:#E31337;"></i></b></span></span></div>-->` +
+  `<span id="longFeedback">&nbsp;</span><br>` +
+  `<button id="longbutton" class="button">LONG <span class="cfdtype">HIVE</span> <span id="shortTypeLogo"><i class="fab fa-hive" style="color:#E31337;"></i></span></button>` +
+  `</td>` +
+  `</center>` +
+  `<td>` +
+  `<span id="openFutureOrders" class="robotable">` +
+  `<span id="noFutureOrders"><sub>No Orders Found</sub></span>` +
+  `</span>` +
+  `<span id="openFutureHistory" onClick="cfdHistorySwitch();"><sub>Click Here to Switch View to <span id="openFutureHistoryType">Position History</span></sub></span>` +
+  `</td>` +
+  `<center>` +
+  `<td>` +
+  `Spot Price:<br>` +
+  `<div class="casperInput input-group" style=""><input type="number" id="shortSpotPrice" class="input-group-text inputclear" placeholder="0.000000" readonly aria-describedby="basic-addon2"><span class="input-group-append"><span class="input-group-text"><b><i class="fas fa-dollar-sign" style="color:#00FF00;"></i></b></span></span></div>` +
+  `<span id="showShortStopLoss" onClick="$(this).addClass('hidden');$('#shortStopLoss').removeClass('hidden')"><sub>Click to Enable Stop Loss</sub><br></span>` +
+  `<span id="shortStopLoss" class="hidden">` +
+  `Stop Loss:<br>` +
+  `<div class="casperInput input-group" style=""><input type="number" id="shortTotal" class="input-group-text inputclear" placeholder="0.000" aria-describedby="basic-addon2"><span class="input-group-append"><span class="input-group-text"><b><i class="fas fa-dollar-sign" style="color:#00FF00;"></i></b></span></span></div>` +
+  `</span>` +
+  `<span id="showShortMargin" onClick="$(this).addClass('hidden');$('#shortMargin').removeClass('hidden')"><sub>Click to Enable Leverage</sub><br></span>` +
+  `<span id="shortMargin" class="hidden">` +
+  `Leverage:<br>` +
+  `<div class="casperInput input-group" style=""><input type="number" id="shortMarginTotal" class="input-group-text inputclear" value="1" min="1" max="10" step="1" aria-describedby="basic-addon2"><span class="input-group-append"><span class="input-group-text"><b><i class="fas fa-times" style="color:#FFFFFF;"></i></b></span></span></div>` +
+  `</span>` +
+  `Amount:<br>` +
+  `<div class="casperInput input-group" style=""><input type="number" id="shortOrderAmount" class="input-group-text inputclear" placeholder="0.000" aria-describedby="basic-addon2"><span class="input-group-append"><span class="input-group-text"><b><i class="fab fa-hive" style="color:#E31337;"></i></b></span></span></div><sub>( Account Balance: <span id="shortUserBalance">0.000</span> <span class="cfdtype">HIVE</span> )</sub><br>` +
+  `<!--Cost:<br>` +
+  `<div class="casperInput input-group" style=""><input type="number" id="shortTotal" class="input-group-text inputclear" readonly placeholder="0.000" aria-describedby="basic-addon2"><span class="input-group-append"><span class="input-group-text"><b><i class="fab fa-hive" style="color:#E31337;"></i></b></span></span></div>-->` +
+  `<span id="shortFeedback">&nbsp;</span><br>` +
+  `<button id="shortbutton" class="button">SHORT <span class="cfdtype">HIVE</span> <span id="shortTypeLogo"><i class="fab fa-hive" style="color:#E31337;"></i></span></button>` +
+  `</td>` +
+  `</center>` +
+  `</tr>` +
+  `</tbody>` +
+  `</table>`;
+  $("#jumbotron").fadeOut('fast');
+  $("#jumbotron").promise().done(function(){
+    $("#jumboHead").show();
+
+      $("#jumbotron").css({'height':'85%','width':'50%'});
+      $("#jumboWrapper").html(futuresContent);
+        makeCFDChart();
+        exchangecheck(100);
+
+      $("#jumbotron").center();
+      $("#jumbotron").fadeIn();
+      $("#jumboTitle").html(`HIVE / USD - Contract for Difference`);
+
+
+
+
+
+
+
+
+
 
 //coinmarketcap API key
 //244cc503-bcc0-4412-8009-63297908f9f8
@@ -1612,99 +1942,13 @@ $url = 'https://api.coinmarketcap.com/v1/ticker/ethereum/?convert=USD';
   $priceInfo = json_decode($data);
 */
 
-      var exchangecheck = async(limit) => {
-        if(limit == undefined) limit = 10;
-        try {
-          await fetch(`https://min-api.cryptocompare.com/data/v2/histohour?fsym=HIVE&tsym=USD&limit=${limit}&api_key=8d1b444726cc1a6c8ee8bfed73908ea3734215abf7bd85c8180930b28b64a9e2`)
-          .then(res => res.json()).then(json => {
-            console.log(json)
-            dataChart = json.Data.Data;
-            var chartlength = dataChart.length - 1;
-            console.log(chartlength);
-            var lastClose = dataChart[chartlength]['close'];
-            var lastIndex = dataChart.length - 1;
-            var currentIndex = lastIndex + 1;
-            var currentBusinessDay = { day: 29, month: 5, year: 2019 };
-            var ticksInCurrentBar = 0;
-            var currentBar = {
-            	open: null,
-            	high: null,
-            	low: null,
-            	close: null,
-            	time: currentBusinessDay,
-            };
-
-            function mergeTickToBar(price) {
-              //var newChartData = []
-              //console.log(price)
-
-              price.forEach((item, i) => {
-                if (price.open === null) {
-                  price.open = price;
-                  price.high = price;
-                  price.low = price;
-                  price.close = price;
-                } else {
-                  price.close = price.close;
-                  price.high = Math.max(price.high);
-                  price.low = Math.min(price.low);
-                }
-                //newChartData.push(price);
-                //return newChartData;
-                areaSeries.update(dataChart[i]);
-              });
 
 
 
 
-            }
 
 
 
-            areaSeries.setData(dataChart);
-                        dataChart = mergeTickToBar(dataChart);
-            /*
-            response = json;
-            response = response["usd"];
-            hiveprice = response;
-            if(oldhiveusdprice > hiveprice) {
-              $('#pricecheck').html(`1 HIVE = $${ hiveprice} <span id="pricetype">USD</span>`);
-              flashlose($('#pricecheck'));
-            } else if (oldhiveusdprice < hiveprice ){
-              $('#pricecheck').html(`1 HIVE = $${ hiveprice} <span id="pricetype">USD</span>`);
-              flashwin($('#pricecheck'));
-            } else if (oldhiveusdprice ==  hiveprice){
-              $('#pricecheck').html(`1 HIVE = $${ hiveprice} <span id="pricetype">USD</span>`);
-            } else {
-              $('#pricecheck').html(`1 HIVE = $${ hiveprice} <span id="pricetype">USD</span>`);
-            }
-            if(hiveprice) oldhiveusdprice = hiveprice;
-            return hiveprice;
-            */
-          }).catch(function (error) {
-            console.log(error)
-            showErr("Error: " + error);
-          });
-
-        } catch(e) {
-          console.log(`pricefetch error: ${e}`)
-        }
-      };
-
-      exchangecheck(1440);
-
-function nextBusinessDay(time) {
-	var d = new Date();
-	d.setUTCFullYear(time.year);
-	d.setUTCMonth(time.month - 1);
-	d.setUTCDate(time.day + 1);
-	d.setUTCHours(0, 0, 0, 0);
-	return {
-		year: d.getUTCFullYear(),
-		month: d.getUTCMonth() + 1,
-		day: d.getUTCDate(),
-	};
-}
   });
 
 };//END showFutures
@@ -1733,19 +1977,50 @@ $("#jumboHead").show();
       //getAcct();
       $("#jumbotron").center();
       $("#jumbotron").fadeIn();
-      $("#jumboTitle").html(`Hive.Loans - Establish New Account Recovery Warden`);
+      $("#jumboTitle").html(`Establish New Account Recovery Warden`);
   });
 }//END showAcctRecoverPanel
 
 
 async function showLend() {
+  loadingjumbo();
   console.log(`showLend() called`);
   openLendingTab();
 }
 
 async function showLoans() {
+  loadingjumbo();
   console.log(`showLoans() called`);
   openAllLoansTab();
+}
+
+async function showShares() {
+  loadingjumbo();
+  console.log(`showShares() called`);
+  openShares();
+}
+
+async function showLoansMixed() {
+  console.log(`showLoansMixed() called`);
+  loadingjumbo();
+  let mixedContent = `<center>` +
+  `<br>Are you Looking to Get a Loan?<br>` +
+  `<br>Loan button here<br>` +
+  `<br>Want to Make Profit By Lending?<br>` +
+  `<br>Lending button here<br>` +
+  `</center>`;
+
+  $("#jumbotron").fadeOut('fast');
+  $("#jumbotron").promise().done(function(){
+      $("#jumboHead").show();
+      $("#jumboWrapper").html(mixedContent);
+      $('#founderslist').html(founderlist);
+      $('#foundercount').html(foundercount);
+      $("#jumbotron").css({'height':'85%','width':'60%'});
+      $("#jumbotron").center();
+      $("#jumbotron").fadeIn();
+      $("#jumboTitle").html(`Frequently Asked Questions`);
+  });
 }
 
 async function showFaq() {
@@ -1767,12 +2042,12 @@ async function showFaq() {
   `<br>`;
   var backersnames = '';
   backerlist.forEach((item, i) => {
-    backersnames += `&nbsp;<a href="https://peakd.com/@${item}" style="text-decoration:none !important; color:white;font-size:larger;">@${item}</a>&nbsp;`;
+    backersnames += `&nbsp;<a href="https://peakd.com/@${item}" style="text-decoration:none !important; color:white;font-size:larger;">${item}</a>&nbsp;`;
   });
 
   $("#jumbotron").fadeOut('fast');
   $("#jumbotron").promise().done(function(){
-$("#jumboHead").show();
+      $("#jumboHead").show();
       $("#jumboWrapper").html( faqContent);
       console.log(foundercount)
       console.log(founderlist)
@@ -1782,7 +2057,7 @@ $("#jumboHead").show();
       $("#jumbotron").css({'height':'85%','width':'60%'});
       $("#jumbotron").center();
       $("#jumbotron").fadeIn();
-      $("#jumboTitle").html(`Hive.Loans - Frequently Asked Questions`);
+      $("#jumboTitle").html(`Frequently Asked Questions`);
   });
 }
 
@@ -1800,22 +2075,105 @@ async function showTools() {
   `and another<br></center>`;
   $("#jumbotron").fadeOut('fast');
   $("#jumbotron").promise().done(function(){
-$("#jumboHead").show();
+      $("#jumboHead").show();
       $("#jumboWrapper").html( toolsContent);
       $("#jumbotron").css({'height':'85%','width':'25%'});
       $("#jumbotron").center();
       $("#jumbotron").fadeIn();
-      $("#jumboTitle").html(`Hive.Loans - Account Tools & Resources`);
+      $("#jumboTitle").html(`Account Tools & Resources`);
   });
 }
 
+async function showSiteAudit() {
+  loadingjumbo();
+
+  let auditContent = `<center>This Application Self Audits and Reports Here Every 60 Seconds` +
+  `<br>Last Updated:<br><div class="casperInput input-group"><input id="audit-update" class="input-group-text inputclear" placeholder="Loading Update" readonly></div>` +
+  `<b>BANKING</b>:` +
+  `<br><span style="float:left;">Hot Wallet:<a href="https://hiveblocks.com/@hive.loans"><i class="fas fa-fw fa-question-circle" style="color:white;" title="The Hive.Loans Hot Wallet Account is @hive.loans. Click here to view on HiveBlocks.com"></i></a><br><div class="casperInput input-group"><input id="audit-hot" class="input-group-text inputclear" placeholder="0.000" readonly><span class="input-group-append"><span class="input-group-text"><b><i class="fab fa-hive" style="color:#E31337;"></i></b></span></div></span> <span style="float:right;">Cold Wallet:<a href="https://hiveblocks.com/@hive.loans"><i class="fas fa-fw fa-question-circle" style="color:white;" title="The Hive.Loans Cold Wallet Account is @hive.loans.safe. Click here to view on HiveBlocks.com"></i></a><br><div class="casperInput input-group"><input id="audit-cold" class="input-group-text inputclear" placeholder="0.000" readonly><span class="input-group-append"><span class="input-group-text"><b><i class="fab fa-hive" style="color:#E31337;"></i></b></span></div></span>` +
+  `<br><span style="float:left">Users Balances Total:<i class="fas fa-fw fa-question-circle" title="The Total Funds in All User Balances on Site Currently"></i><br><div class="casperInput input-group"><input id="audit-userbal" class="input-group-text inputclear" placeholder="0.000" readonly><span class="input-group-append"><span class="input-group-text"><b><i class="fab fa-hive" style="color:#E31337;"></i></b></span></div></span><span style="float:right;">Custodial Funds Total:<i class="fas fa-fw fa-question-circle" title="The Total Funds Held by the Application"></i><br><div class="casperInput input-group"><input id="audit-sitebal" class="input-group-text inputclear" placeholder="0.000" readonly><span class="input-group-append"><span class="input-group-text"><b><i class="fab fa-hive" style="color:#E31337;"></i></b></span></div></span>` +
+  `<br><span style="float:left;">Locked in Contract Funds Total:<i class="fas fa-fw fa-question-circle" title="The Total Funds Locked into Available Lending Contracts"></i><br><div class="casperInput input-group"><input id="audit-lockedtotal" class="input-group-text inputclear" placeholder="0.000" readonly><span class="input-group-append"><b><i class="fab fa-hive" style="color:#E31337;"></i></b></span></div></span>` +
+  `<span style="float:right;">Excess Custodial Funds Total:<i class="fas fa-fw fa-question-circle" title="The Total Funds the Application Holds in Excess of Required Amount for Operation"></i><br><div class="casperInput input-group"><input id="audit-extras" class="input-group-text inputclear" placeholder="0.000" readonly><span class="input-group-append"><b><i class="fab fa-hive" style="color:#E31337;"></i></b></span></div></span>` +
+  `<br><br><hr>`+
+  `<br><b>CONTRACTS</b>:` +
+  `<br><span style="float:left;">Active Loan Contracts:<i class="fas fa-fw fa-question-circle" title="Lending Contracts Accepted by a Borrower and Actively Being Repaid"></i><br><div class="casperInput input-group"><input id="audit-active" class="input-group-text inputclear" placeholder="0" readonly></div></span>` +
+  `<span style="float:right;">Available Loan Contracts:<i class="fas fa-fw fa-question-circle" title="Lending Contracts Available to be Accepted by Borrowers"></i><br><div class="casperInput input-group"><input id="audit-available" class="input-group-text inputclear" placeholder="0" readonly></div></span>` +
+  `<br><span style="float:left;">Finished Loan Contracts:<i class="fas fa-fw fa-question-circle" title="Lending Contracts That Have Been Repaid and Finalized"></i><br><div class="casperInput input-group"><input id="audit-completed" class="input-group-text inputclear" placeholder="0" readonly></div></span>` +
+  `<span style="float:right;">Cancelled Loan Contracts:<i class="fas fa-fw fa-question-circle" title="Lending Contracts That Have Been Cancelled by Lender"></i><br><div class="casperInput input-group"><input id="audit-cancelled" class="input-group-text inputclear" placeholder="0" readonly></div></span>` +
+  `<br><span style="float:left;">Loan Contract Amount Total:<i class="fas fa-fw fa-question-circle" title="The Total Amount of Funds Currently Available to Borrow via Lending Contracts"></i><br><div class="casperInput input-group"><input id="audit-loantotal" class="input-group-text inputclear" placeholder="0.000" readonly><span class="input-group-append"><b><i class="fab fa-hive" style="color:#E31337;"></i></b></span></div></span>` +
+  `<span style="float:right;">Repaid Amount Total:<i class="fas fa-fw fa-question-circle" title="The Total Funds Repaid to the Lending Contract Creators Through the Site"></i><br><div class="casperInput input-group"><input id="audit-returntotal" class="input-group-text inputclear" placeholder="0.000" readonly><span class="input-group-append"><b><i class="fab fa-hive" style="color:#E31337;"></i></b></span></div></span>` +
+  `<br><br><hr>`+
+  `<br><b>USERS</b>:` +
+  `<br><span style="float:left;">Site Accounts:<i class="fas fa-fw fa-question-circle" title="The Number of Accounts on Hive.Loans"></i><br><input id="audit-accounts" class="casperInput" placeholder="0" readonly></span>` +
+  `<span style="float:right;">Active Accounts:<i class="fas fa-fw fa-question-circle" title="The Number of Accounts Active in the Past 30 Days"></i><br><input id="audit-activeaccts" class="casperInput" placeholder="0" readonly></span>` +
+  `<br><span style="float:left;">Dormant Accounts:<i class="fas fa-fw fa-question-circle" title="The Number of Accounts With No Activity in the Past 30 Days"></i><br><input id="audit-dormant" class="casperInput" placeholder="0" readonly></span>` +
+  `<span style="float:right;">Collateral Account Count:<i class="fas fa-fw fa-question-circle" title="The Number of Accounts Currently Borrowing via Lending Contracts"></i><br><input id="audit-collateral" class="casperInput" placeholder="0" readonly></span>` +
+  `<br><br><hr>`+
+  `<br><b>FEES</b>:` +
+  `<br><span style="float:left;">Creation Fees:<i class="fas fa-fw fa-question-circle" title="Lending Contract Creation Fees Total"></i><br><div class="casperInput input-group"><input id="audit-createfee" class=" input-group-text inputclear" placeholder="0.000" readonly><span class="input-group-append"><b><i class="fab fa-hive" style="color:#E31337;"></i></b></span></div></span>` +
+  `<span style="float:right;">Commission Fees:<i class="fas fa-fw fa-question-circle" title="Lending Contract Interest Commission Fees Total"></i><br><div class="casperInput input-group"><input id="audit-interestfee" class=" input-group-text inputclear" placeholder="0.000" readonly><span class="input-group-append"><b><i class="fab fa-hive" style="color:#E31337;"></i></b></span></div></span>` +
+  `<br><span style="float:left;">Cancellation Fees:<i class="fas fa-fw fa-question-circle" title="Lending Contract Cancellation Fees Total"></i><br><div class="casperInput input-group"><input id="audit-cancelfee" class=" input-group-text inputclear" placeholder="0.000" readonly><span class="input-group-append"><b><i class="fab fa-hive" style="color:#E31337;"></i></b></span></div></span>` +
+  `<span style="float:right;">Withdraw Fees:<i class="fas fa-fw fa-question-circle" title="Wallet Withdrawal Fees Total"></i><br><div class="casperInput input-group"><input id="audit-withdrawfee" class=" input-group-text inputclear" placeholder="0.000" readonly><span class="input-group-append"><b><i class="fab fa-hive" style="color:#E31337;"></i></b></span></div></span>` +
+  `<br><span style="float:left;">Fines Fees:<i class="fas fa-fw fa-question-circle" title="Fines for Lending Contract Tampering Fees Total"></i><br><div class="casperInput input-group"><input id="audit-finesfee" class=" input-group-text inputclear" placeholder="0.000" readonly><span class="input-group-append"><b><i class="fab fa-hive" style="color:#E31337;"></i></b></span></div></span>` +
+  `<span style="float:right;">Site Fees Total:<i class="fas fa-fw fa-question-circle" title="Total Fees the Application has Generated"></i><br><div class="casperInput input-group"><input id="audit-totalfee" class=" input-group-text inputclear" placeholder="0.000" readonly><span class="input-group-append"><b><i class="fab fa-hive" style="color:#E31337;"></i></b></span></div></span>`;
+  //`<button id="auditcloser" onClick="$('#jumboClose').click();" class="button">CLOSE</button></center>`;
+  $("#jumbotron").fadeOut('fast');
+  $("#jumbotron").promise().done(function(){
+    $("#jumboHead").show();
+      fetchAudit();
+      $("#jumboWrapper").html(auditContent);
+      $("#jumbotron").css({'height':'82.5%','width':'25%'});
+      $("#jumbotron").center();
+      $("#jumboTitle").html(`Site Audit`);
+      $("#jumbotron").fadeIn();
+  });
+}
+
+async function showUserAudit() {
+  loadingjumbo();
+  let auditContent = `<center>` +
+  `<h4><b>Set Recovery Account Tools and Private Key Recovery</b></h4>`+
+  `<a href="#" style="text-decoration: none !important;color:white !important;" onClick="showRecoveryPanel();"><b><i class="fas fa-fw fa-users-cog"></i> Change Recovery Account</b></a>&nbsp;&nbsp;<i class="fas fa-fw fa-info-circle" title="Use the tool linked below to change your recovery account"></i><br><br>` +
+  `<a href="#" style="text-decoration: none !important;color:white !important;" onClick="showKeysRecoveryPanel();"><b><i class="fas fa-fw fa-user-check"></i> Recovery Account Keys</b></a>&nbsp;&nbsp;<i class="fas fa-fw fa-info-circle" title="Use the tool linked below to recover keys to your account"></i><br><br>` +
+  `<h4><b>Utilize Hive.Loans to Facilitate a Secure Escrow Instance</b></h4>`+
+  `<a href="#" style="text-decoration: none !important;color:white !important;" onClick="showRecoveryPanel();"><b><i class="fas fa-fw fa-handshake"></i> Create Escrow Trade</b></a>&nbsp;&nbsp;<i class="fas fa-fw fa-info-circle" title="Use the tool linked below to create a secure escrow instance"></i><br><br>` +
+  `<a href="#" style="text-decoration: none !important;color:white !important;" onClick="showRecoveryPanel();"><b><i class="fas fa-fw fa-handshake-slash"></i> Cancel Escrow Trade</b></a>&nbsp;&nbsp;<i class="fas fa-fw fa-info-circle" title="Use the tool linked below to cancel an existing escrow instance"></i><br><br>` +
+  `<h4><b>Modify Account Hive Power Delegations</b></h4>`+
+  `<a href="#" style="text-decoration: none !important;color:white !important;" onClick="showDelegationPanel();"><b><i class="fas fa-fw fa-tasks"></i> View / Modify Account Delegations</b></a>&nbsp;&nbsp;<i class="fas fa-fw fa-info-circle" title="Use the tool linked below view and modify delegations"></i><br><br>` +
+  `and another<br></center>`;
+  $("#jumbotron").fadeOut('fast');
+  $("#jumbotron").promise().done(function(){
+$("#jumboHead").show();
+      $("#jumboWrapper").html(auditContent);
+      $("#jumbotron").css({'height':'85%','width':'25%'});
+      $("#jumbotron").center();
+      $("#jumbotron").fadeIn();
+      $("#jumboTitle").html(`User Audit`);
+  });
+}
+
+async function showAdmin() {
+  loadingjumbo();
+  let auditContent = `<center id="adminPageContent">` +
+  `ADMIN SHIT HERE, IF YOU'RE NOT ADMIN, FUCK OFF`;
+  `</center>`;
+  $("#jumbotron").fadeOut('fast');
+  $("#jumbotron").promise().done(function(){
+$("#jumboHead").show();
+      $("#jumboWrapper").html(auditContent);
+      $("#jumbotron").css({'height':'85%','width':'25%'});
+      $("#jumbotron").center();
+      $("#jumbotron").fadeIn();
+      $("#jumboTitle").html(`Admin Page`);
+  });
+}
 
 var isValidUsername;
 function showLogin() {
   loadingjumbo();
   let loginContent = `<center style="font-weight: 600;"><h3 class="pagehead" style="color:white;">HIVE Account Identity Verification</h3>` + //Accessing Hive.Loans Requires a Quick
   `<b id="acctflash1">To Access this Service Specify an Account Below:</b><br>` + //o Login or Register Type a HIVE Account Below
-  `<br><input type="text" id="usernameinput" style="background: white; color: black; text-align: center; width: 15vw; height: 4vh; font-size: xx-large; border-radius: 10px;" value="testdummy" ><br>` +
+  `<br><input type="text" id="usernameinput" style="background: white; color: black; text-align: center; width: 15vw; height: 4vh; font-size: xx-large; border-radius: 10px;" value="klye" ><br>` +
   `<code><span id="loginfuckery"></span></code><br>`+
   `<a href="#" onClick="$('#2fa').removeClass('hidden'); $(this).hide();" style="color:white !important;text-decoration: none !important;"><sub>Click here if you have 2FA enabled</a></sub>` +
   `<br><input type='text' style="background: white;color: black;text-align: center;width: 9vw;height: 3vh;font-size: large; border-radius:10px;" class="hidden" placeholder="2FA Code Here" id='2fa'>` +
@@ -1833,12 +2191,12 @@ function showLogin() {
 //<span id="loginspin"></span>
 
   $("#jumbotron").promise().done(function(){
-$("#jumboHead").show();
+    $("#jumboHead").show();
       $("#jumboWrapper").html( loginContent);
-      $("#jumbotron").css({'height':'55%','width':'20%'});
+      $("#jumbotron").css({'height':'55%','width':'25%'});
       $("#jumbotron").center();
       $("#jumbotron").fadeIn();
-      $("#jumboTitle").html(`Hive.Loans - Welcome to Hive.Loans v0.0.8`);
+      $("#jumboTitle").html(`Welcome to Hive.Loans v0.0.9`);
       $("#usernameinput").focus();
       $("#usernameinput").keypress(function(event){
           var keycode = (event.keyCode ? event.keyCode : event.which);
@@ -1884,7 +2242,7 @@ async function showRepayWindow(loanData) {
   var paymentcontent = `<h3 class="pagehead" style="color:white !important;">Manual Payment of Lending Contract Debt<br><sup><code>Lending Contract #<span id="contractsurrenderID"></span><br><br><span id="contractFinalizeData"></span></code></sup></h3><table><tbody><tr><td>Amount of HIVE to Repay:<br><input type="text" onchange="return manualPay = $(this).val();" id="paymentAmt" style="background: white; color: black; text-align: center; width: 80%; height: 3vh; font-size: large; border-radius: 10px;"></td></tr><tr><td>Once the Outstanding Contract Balance is Paid you're given your Owner Key</td></tr><tr><td><button class="button" id="submitmanualpayment" onclick="payloan('${loanData.borrower}', '${loanData.loanId}', document.getElementById('paymentAmt').value)">Submit Payment</button></td></tr><tr><td><span id="acceptTitle"></span></td></tr><tr><td><span id="acceptOutcome"></span></td></tr></tbody></table>`;
   $("#jumbotron").fadeOut('fast');
   $("#jumbotron").promise().done(function(){
-$("#jumboHead").show();
+  $("#jumboHead").show();
   $("#jumboWrapper").html( paymentcontent);
   $("#userAcctPass").val(user);
       $("#contractsurrenderID").html(loanData.loanId);
@@ -1897,7 +2255,7 @@ $("#jumboHead").show();
       $("#jumbotron").css({'height':'auto','width':'25%'});
       $("#jumbotron").center();
       $("#jumbotron").fadeIn();
-      $("#jumboTitle").html(`Hive.Loans - Manual Repayment`);
+      $("#jumboTitle").html(`Manual Repayment`);
   });
 
 }

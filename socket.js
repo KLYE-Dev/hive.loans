@@ -6,6 +6,7 @@ const QRCode = require('qrcode');
 const hivejs = require('@hiveio/hive-js');
 let { pgpKeygenAsync, pgpEncryptAsync, pgpDecryptAsync } = require("./snippets/pgp.js");
 const {Client,  Signature,  cryptoUtils} = require('@hiveio/dhive');
+let Price = require("./snippets/priceCheck.js");
 new Client('https://api.hive.blog');
 const log = require('fancy-log');
 const io = require("socket.io");
@@ -34,13 +35,16 @@ log("USERS: Initializing Users & Accounts Monitoring...");
 var userThread = spawn.fork(__dirname + '/monitors/userManager.js'); // , [], {}
 log("LOANS: Initializing Loans & Lending Monitoring...");
 var loanThread = spawn.fork(__dirname + '/monitors/lendEngine.js'); // , [], {}
-log("PRICE: Initializing CoinMarketCap HIVE CHART Price Monitoring...");
-var priceThread = spawn.fork(__dirname + '/monitors/futuresPrice.js'); // , [], {}
+log("TICKER: Initializing CoinMarketCap HIVE CHART Price Monitoring...");
+var tickerThread = spawn.fork(__dirname + '/monitors/tickerPrice.js'); // , [], {}
 log("WRITE: Initializing Custom JSON Chain Communication...");
 var scribeThread = spawn.fork(__dirname + '/monitors/hiveScribe.js'); // , [], {}
-log("WRITE: Initializing Local Hive Smart Chain Node");
+log("HSC: Initializing Local Hive Smart Chain Node");
 var hscThread = spawn.fork(__dirname + '/monitors/hscEVM.js'); // , [], {}
-
+log("TRADE: Initializing Share Exchange & Trading...");
+var exchangeThread = spawn.fork(__dirname + '/monitors/exchangeEngine.js');
+log("FUTURES: Initializing HIVE Futures Engine...");
+var futuresThread = spawn.fork(__dirname + '/monitors/cfdEngine.js');
 
 //const oneday = 60 * 60 * 24 * 1000;
 //log(`INITTIME: One Day is ${oneday}ms`);
@@ -61,7 +65,7 @@ function simpleStringify(object){
     }
     return [simpleObject]; // returns cleaned up JSON
 };
-
+//185.130.44.165
 hivejs.api.setOptions({ url: "https://api.hivekings.com" });
 
 var chatHist = [];
@@ -73,6 +77,10 @@ var userRawSockets = [];
 var socketListKeys = Object.keys(socketList);
 var usersHivePower = {};
 var founderslist = [];
+var auditArray = [];
+var auditWalletArray = [];
+var hotWalletBalance = 0;
+var coldWalletBalance = 0;
 var maxWin = 0;
 var bankRoll = 0;
 var greedBR = 0;
@@ -82,7 +90,7 @@ var siteTake = 0;
 var siteEarnings;
 var newCurrentBlock = 0;
 var blockNum = 0;
-
+var dateNow = new Date().getTime();
 
 let hivebtcprice;
 let hiveprice;
@@ -97,6 +105,11 @@ var datas = [];
 var oldprice;
 var lastprice;
 
+var spotprice;
+var spreadpercent = 1;
+var longHIVEprice;
+var shortHIVEprice;
+
 var priceNonce = 0;
 
 function returnTime(){
@@ -109,7 +122,73 @@ function returnTime(){
 
 //https://api.coingecko.com/api/v3/coins/hive?tickers=true&market_data=true&community_data=false&developer_data=false&sparkline=false
 
-var pricecheck = async() => {
+var pricecheck = async(coin) => {
+  if(coin == undefined) coin = "hive";
+  coin = coin.toLowerCase();
+  var checkResponse = await Price.cgpricecheck(coin)
+  .then(await function(res) {
+    priceNonce++;
+    res = res[0];
+    var response = res[coin];
+    hiveprice = parseFloat((response["usd"]).toFixed(6));
+    hivebtcprice = parseFloat((response["btc"]).toFixed(8));
+    var spread = spreadpercent / 100;
+    longHIVEprice = parseFloat((hiveprice + (hiveprice * spread)).toFixed(6));
+    shortHIVEprice = parseFloat((hiveprice - (hiveprice * spread)).toFixed(6));
+    if(config.debug === true){
+      log(`hiveprice:`);
+      log(hiveprice);
+      log(`longHIVEprice:`);
+      log(longHIVEprice);
+      log(`shortHIVEprice:`);
+      log(shortHIVEprice);
+    }
+
+    if((priceNonce % 15) == true){
+      if(newCurrentBlock == 0) return;
+      log(`Saving HIVE Price at Block #${newCurrentBlock}`);
+      Pricedata.create({hiveusdprice: hiveprice, hivebtcprice: hivebtcprice, block: newCurrentBlock});
+    }
+
+    var data = hiveprice;
+    var d1 = new Date();
+    //d1.toUTCString();
+    d1 = Math.floor(d1.getTime()/ 1000)
+    var labels = d1//returnTime();//.push( Date.now());  //s.push(data);
+    hivePriceData.push(data);
+    labelstack.push(labels);
+    var labelssend = {labelstack};
+    var datasets = {hivePriceData};
+    var chartShit = [{close: data, time: labels}]
+    //log(hivePriceData);
+    var hivePriceDataKeys = Object.keys(hivePriceData);
+    var hivePriceDateKeys = Object.keys(labelstack);
+    //renderChart(hivePriceData, hivePriceDataKeys, "myChart");
+
+    socketListKeys = Object.keys(socketList);
+      if(socketListKeys != undefined){
+        socketListKeys.forEach((item, i) => {
+            //log(`sent priceupdate to ${item}`)
+            socketList[item].emit('priceupdate', {hiveusdprice: hiveprice, hiveshortprice: shortHIVEprice, hivelongprice: longHIVEprice, hivebtcprice: hivebtcprice, chart: chartShit}); ///to(socketListKeys[i])
+        });
+      }
+
+    if((hivePriceDateKeys.length > 20) == true){
+      hivePriceDateKeys.shift();
+      labelstack.shift();
+    }
+    if((hivePriceDataKeys.length > 20) == true){
+       hivePriceDataKeys.shift();
+       hivePriceData.shift();
+    }
+    process.stdout.clearLine();
+    //log(`PRICE: 1 HIVE / $${hiveprice} USD / ${hivebtcprice} BTC`)
+
+    return response;
+
+  }).catch(e => {log(`SOCKET: ERROR: pricecheck: ${e} - `);return false;});
+
+        /*
   try {
     fetch('https://api.coingecko.com/api/v3/simple/price?ids=hive&vs_currencies=usd%2Cbtc')
     .then(res => res.json()).then(json => {
@@ -123,6 +202,10 @@ var pricecheck = async() => {
         //log(`Saving HIVE Price at Block #${newCurrentBlock}`);
         Pricedata.create({hiveusdprice: hiveprice, hivebtcprice: hivebtcprice, block: newCurrentBlock});
       }
+    }).catch(priceError => {
+      log(`pricefetch error: ${priceError}`)
+    });
+
       var data = response["usd"];
 
       var labels = returnTime();//.push( Date.now());  //s.push(data);
@@ -155,13 +238,14 @@ var pricecheck = async() => {
   } catch(e) {
     log(`pricefetch error: ${e}`)
   }
+*/
 };
 
 pricecheck();
 
 var priceCheckTimer = setInterval(function(){
   pricecheck();
-}, 15000);
+}, 1000);
 
 function censor(censor) {
   var i = 0;
@@ -177,7 +261,7 @@ function censor(censor) {
 
 async function founders(){
   founderslist = [];
-  var votelist = await hivejs.api.callAsync('condenser_api.list_proposal_votes', [['154'], 1000, 'by_proposal_voter']) .then(res => {return res});
+  var votelist = await hivejs.api.callAsync('condenser_api.list_proposal_votes', [['154'], 1000, 'by_proposal_voter', 'descending']) .then(res => {return res});
   votelist.forEach((item, i) => {
     founderslist.push(item.voter);
   });
@@ -277,6 +361,7 @@ async function splitOffVests(a){
 }
 
 
+
 var getHivePower = async(user) => {
   if(!user) return "No User Specified";
     log(`getHivePower Called!`)
@@ -296,11 +381,38 @@ var connectiontest = async() => {
   try {
     await sequelize.authenticate();
     log('SUCCESS: Connection to DB been Established!');
+    function siteAuditDaemon() {
+      log(`SOCKET: Site Audit in Progress!`);
+      var utpayload = JSON.stringify({type:'grabacct', username:'siteaudit'});
+      rpcThread.send(utpayload);
+      var ltpayload = JSON.stringify({type:'siteaudit'});
+      loanThread.send(ltpayload);
+      var wdpayload = JSON.stringify({type:'wdfeeaudit'});
+      userThread.send(wdpayload);
+      setTimeout(function(){
+        siteAuditDaemon()
+      }, 60000);
+    }
+
+    siteAuditDaemon();
   } catch (error) {
     log('ERROR: Unable to Connect to the Database:', error);
   }
 }
 connectiontest();
+
+var hotWalletData;
+var coldWalletData;
+
+function siteAudit() {
+  log(`SOCKET: Start Site Audit!`);
+  var utpayload = JSON.stringify({type:'getacct', username:'siteaudit'});
+  rpcThread.send(utpayload);
+  var ltpayload = JSON.stringify({type:'siteaudit'});
+  loanThread.send(ltpayload);
+  var wdpayload = JSON.stringify({type:'wdfeeaudit'});
+  userThread.send(wdpayload);
+}
 
 rpcThread.on('message', function(m) {
   try {
@@ -309,7 +421,46 @@ rpcThread.on('message', function(m) {
   } catch(e) {
     log(`Chainsnoop Message Error`);
   }
-
+  switch(m.type){
+    case 'emit':
+      var name = m.name.toString();
+      var socketidparse = m.socketid;
+      var socketid = m.socketid[0].id
+      var newpayload = [];
+      var incomingpayload = m.payload;
+      var socketCorrect = socketList[m.socketid[0].id];
+      incomingpayload.forEach((item, i) => {
+        newpayload.push(item);
+      });
+      if (socketList[m.socketid[0].id]) socketCorrect.emit(`${name}`, newpayload[0]);
+    break;
+    case 'massemit':
+    var name = m.name.toString();
+    var newpayload = [];
+    log(m.payload);
+    var incomingpayload = [m.payload];
+    if(incomingpayload.length > 1){
+      incomingpayload.forEach((item, i) => {
+        auditWalletArray.push(item);
+      });
+    } else {
+      auditWalletArray = m.payload;
+    }
+    switch(m.name){
+      case 'sitewallets':
+        log(`auditWalletArray:`);
+        log(auditWalletArray);
+        //auditArray.push({wallets: auditWalletArray});
+      break;
+    }
+    var masskeys = Object.keys(socketList);
+    for (var i = 0; i < masskeys.length; i++){
+      if (socketList[masskeys[i]]) {
+        socketList[masskeys[i]].emit(`${name}`, auditWalletArray);
+      }
+    }
+    break;
+  }
   if (m.type === 'update'){
     usersInvest = m.users;
     maxWin = m.maxWin;
@@ -351,17 +502,22 @@ rpcThread.on('message', function(m) {
     socketListKeys = Object.keys(socketList);
     if(socketListKeys != undefined){
       socketListKeys.forEach((item, i) => {
-          socketList[item].emit('latestblock', {block:m.block}); ///to(socketListKeys[i])
+          socketList[item].emit('latestblock', {block:m.block, synced:m.synced}); ///to(socketListKeys[i])
       });
     }
   } else if (m.type === 'depositconfirmed'){
     if (userSockets[m.user]) {
       userSockets[m.user].emit('depositcredit', {balance: m.balance, amount: m.amount, coin: m.coin});
     }
+  } else if (m.type === 'grabacct') {
+
+  } else {
+
   }
 
 });
 
+var auditWdFeeArray;
 userThread.on('message', function(m) {
     try{
       m = JSON.parse(m);
@@ -383,8 +539,47 @@ userThread.on('message', function(m) {
         });
         if (socketList[m.socketid[0].id]) socketCorrect.emit(`${name}`, newpayload[0]);
       break;
+      case 'massemit':
+      var name = m.name.toString();
+      var newpayload = [];
+      log(m.payload);
+      var incomingpayload = [m.payload];
+      if(incomingpayload.length > 1){
+        incomingpayload.forEach((item, i) => {
+          auditWdFeeArray.push(item);
+        });
+      } else {
+        auditWdFeeArray = m.payload;
+      }
+      switch(m.name){
+        case 'wdfeeaudit':
+          log(`auditWdFeeArray:`);
+          log(auditWdFeeArray);
+
+        break;
+      }
+      var masskeys = Object.keys(socketList);
+      for (var i = 0; i < masskeys.length; i++){
+        if (socketList[masskeys[i]]) {
+          socketList[masskeys[i]].emit(`${name}`, auditWalletArray);
+        }
+      }
+      break;
     }
 });//END userThread.on('message',
+
+exchangeThread.on('message', function(m) {
+    try{
+      m = JSON.parse(m);
+      log(`loanThread.on('message' message:`);
+      log(m);
+    } catch(e){
+      log(e)
+    }
+
+
+
+  });
 
 loanThread.on('message', function(m) {
     try{
@@ -402,14 +597,16 @@ loanThread.on('message', function(m) {
         var socketid = m.socketid[0].id
         var newpayload = [];
         var incomingpayload = m.payload;
-        if(incomingpayload.length > 1){
-          incomingpayload.forEach((item, i) => {
-            newpayload.push(item);
-          });
-        } else {
-          newpayload = m.payload;
-        }
+        if(incomingpayload != null) {
+          if(incomingpayload.length > 1){
+            incomingpayload.forEach((item, i) => {
+              newpayload.push(item);
+            });
+          } else {
+            newpayload = m.payload;
+          }
 
+        }
         switch(m.name){
           case 'newloanmade':
             jsonBreadCrumb('contracts', 'newloan', m.payload);
@@ -417,8 +614,43 @@ loanThread.on('message', function(m) {
           case 'loannuked':
             jsonBreadCrumb('contracts', 'nukeloan', m.payload);
           break;
+          default:
+            jsonBreadCrumb('contracts', m.name, m.payload);
         }
         if (socketList[m.socketid[0].id]) socketCorrect.emit(`${name}`, newpayload[0]);
+      break;
+      case 'massemit':
+      auditArray = [];
+      var name = m.name.toString();
+      switch(m.name){
+        case 'siteaudit':
+        if(auditWalletArray){
+          m.payload.push({wallets: auditWalletArray});
+          m.payload.push({wdfees: auditWdFeeArray});
+          log(auditArray);
+        }
+        break;
+      }
+      var newpayload = [];
+      var incomingpayload = [m.payload];
+      if(incomingpayload.length > 1){
+        incomingpayload.forEach((item, i) => {
+          auditArray.push(item);
+        });
+        //auditArray.push(auditWalletArray);
+      } else {
+        auditArray = m.payload;
+        //auditArray.push(auditWalletArray);
+      }
+
+      if(auditArray != undefined){
+        var masskeys = Object.keys(socketList);
+        for (var i = 0; i < masskeys.length; i++){
+          if (socketList[masskeys[i]]) {
+            socketList[masskeys[i]].emit(`${name}`, auditArray);
+          }
+        }
+      }
       break;
     }
 
@@ -439,16 +671,15 @@ loanThread.on('message', function(m) {
   }
 });
 
-
-priceThread.on('message', function(m) {
+tickerThread.on('message', function(m) {
     try{
       m = JSON.parse(m);
-      log(`priceThread.on('message' message:`);
+      log(`tickerThread.on('message' message:`);
       log(m);
     } catch(e){
       m = JSON.parse(JSON.stringify(m));
     }
-    log(`priceThread.on('message' message:`);
+    log(`tickerThread.on('message' message:`);
     log(m);
     switch(m.type){
       case 'emit':
@@ -509,8 +740,6 @@ priceThread.on('message', function(m) {
   }
 });
 
-
-
 //===================================================
 //Start the socket.io stuff
 //===================================================
@@ -529,7 +758,7 @@ exports = module.exports = function(socket, io){
       }
 
       var pricepayload = JSON.stringify({type:'hivespotprice', socketid: simpleStringify(socketList[socket.id])});
-      priceThread.send(pricepayload);
+      tickerThread.send(pricepayload);
 
 /*
 var chatpunt = async() => {
@@ -1281,6 +1510,19 @@ socket.on('acceptloan', async function(req, cb) {
 });//END Accept loan
 
 
+
+  socket.on('loadaudit', async function(req, cb){
+    var user = socket.request.session['user'];
+    siteAudit();
+  });
+
+  socket.on('siteaudit', async function(req, cb){
+    var user = socket.request.session['user'];
+    if (user != config.OWNER_ACCOUNT) return cb("Invalid Permissions to Request Audit!", {token: req.token});
+    siteAudit();
+    return cb(null, {token: req.token});
+  });
+
   socket.on('confirmloan', async function(req, cb){
     log(`confirm loan:`);
     log(req);
@@ -1450,24 +1692,43 @@ socket.on('acceptloan', async function(req, cb) {
 
       socket.on("wallethistory", function(req, cb) {
         var user = socket.request.session['user'];
-        var ltpayload = JSON.stringify({type:'wallethistory', username: user, socketid: simpleStringify(socketList[socket.id])});
-        userThread.send(ltpayload);
+        var payload = JSON.stringify({type:'wallethistory', username: user, socketid: simpleStringify(socketList[socket.id])});
+        userThread.send(payload);
         log(`Fetching user ${user} wallet history`)
         return cb(null, 'Fetching Wallet History');
         //return cb(null, 'Fetching Users Loans');
       });
 
+      socket.on("loadaallshares", function(req, cb) {
+        var user = socket.request.session['user'];
+        var payload = JSON.stringify({type:'wallethistory', username: user, socketid: simpleStringify(socketList[socket.id])});
+        exchangeThread.send(payload);
+        log(`Fetching user ${user} wallet history`)
+        return cb(null, 'Fetching Share Exchange');
+        //return cb(null, 'Fetching Users Loans');
+      });
+
       socket.on("loadmyloans", function(req, cb) {
         var user = socket.request.session['user'];
-        var ltpayload = JSON.stringify({type:'loadmyloans', username: user, socketid: simpleStringify(socketList[socket.id])});
-        loanThread.send(ltpayload);
+        var payload = JSON.stringify({type:'loadmyloans', username: user, socketid: simpleStringify(socketList[socket.id])});
+        loanThread.send(payload);
         return cb(null, 'Loading Your Lending Contracts');
         log(`Fetching users loans`)
         //return cb(null, 'Fetching Users Loans');
       });
+
       socket.on("loadallloans", function(req, cb) {
         var user = socket.request.session['user'];
         var ltpayload = JSON.stringify({type:'loadallloans', username: user, socketid: simpleStringify(socketList[socket.id])});
+        loanThread.send(ltpayload);
+        return cb(null, 'Loading All Lending Contracts');
+        log(`Fetching all loans`)
+        //return cb(null, 'Fetching Users Loans');
+      });
+
+      socket.on("useraudit", function(req, cb) {
+        var user = socket.request.session['user'];
+        var ltpayload = JSON.stringify({type:'statecheck', username: user, socketid: simpleStringify(socketList[socket.id])});
         loanThread.send(ltpayload);
         return cb(null, 'Loading All Lending Contracts');
         log(`Fetching all loans`)

@@ -12,6 +12,8 @@ dotenv.config();
       dBpass: process.env.PASS,
       port: process.env.PORT,
       appName: process.env.SITE_ACCOUNT,
+      hotwallet: process.env.HOT_WALLET,
+      coldwallet: process.env.COLD_WALLET,
       demo: process.env.SITE_DEMO,
       sidechainId: process.env.SIDECHAIN_ID,
       bankwif: process.env.ACTIVE_PRIVKEY,

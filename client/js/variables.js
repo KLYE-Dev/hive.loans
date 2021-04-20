@@ -31,6 +31,19 @@ var oldhiveusdprice;
 var oldhivebtcprice;
 var sound = false;
 var userDelegations = [];
+var siteAudit = [];
+
+let hiveprice;
+let hivechart;
+let areaSeries;
+let candlestickSeries = [];
+let dataChart = [];
+let currentBusinessDay;
+let chartlength;
+let currentIndex;
+let lastIndex;
+let lastClose;
+
 
 var total_vesting_shares;
 var total_vesting_fund;

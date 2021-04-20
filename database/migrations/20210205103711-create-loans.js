@@ -88,7 +88,12 @@ module.exports = {
       state: {
         allowNull: false,
         type: Sequelize.STRING,
-        defaultValue: "genesis"
+        defaultValue: "deployed"
+      },
+      fine: {
+        allowNull: false,
+        type: Sequelize.INTEGER,
+        defaultValue: 0
       },
       deployfee: {
         type: Sequelize.INTEGER

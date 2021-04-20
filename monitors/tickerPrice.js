@@ -1,5 +1,6 @@
 const log = require('fancy-log');
 const CoinMarketCap = require('coinmarketcap-api');
+let Price = require("../snippets/priceCheck.js");
 const fetch = require('node-fetch');
 const { config } = require("../config/index.js");
 const apiKey = config.cmcapikey;
@@ -13,7 +14,8 @@ var userSockets = [];
 
 var online = process.connected;
 var pid = process.pid;
-log(`PRICE: Connected: ${online} with PID: ${pid}`);
+
+log(`TICKER: Connected: ${online} with PID: ${pid}`);
 
 var backupfeed = async() => {
   try {
@@ -69,7 +71,7 @@ async function hiveCMCprice() {
     }));
 
   }).catch(error => {
-    log(`PRICE: ERROR: ${error}`);
+    log(`TICKER: ERROR: ${error}`);
     backupfeed();
   });
 }
@@ -95,7 +97,7 @@ process.on("message", function(m){
         }
       }
   } catch(e) {
-    log(`ERROR: ${e}`);
+    log(`TICKER: ERROR: ${e}`);
     return console.error(e);
   }
   switch(m.type) {

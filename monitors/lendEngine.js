@@ -4,6 +4,7 @@ const log = require("fancy-log");
 const DB = require("../database/models");
 const sequelize = DB.sequelize;
 const DataBase = sequelize;
+const { Op } = require("sequelize");
 const Userdata = DataBase.models.Users;
 const Depositdata = DataBase.models.Deposits;
 const Loandata = DataBase.models.Loans;
@@ -14,16 +15,20 @@ log(`LOANS: Connected: ${online} with PID: ${pid}`);
 
 var loadedLoans = [];
 var userSockets = [];
+var siteAudit = [];
+
+var messageType;
+var sendsocket;
+let userData;
+let userCheck;
+var LoanID;
+let loanData;
+let loanCheck;
+var loanFee;
 
 process.on('message', async function(m) {
-  var messageType;
-  var sendsocket;
-  let userData;
-  let userCheck;
-  var LoanID;
+  var dateNow = (new Date).toUTCString();
   let loanData;
-  let loanCheck;
-  var loanFee;
   try {
       m = JSON.parse(m);
       log(`lendEngine.js Message:`);
@@ -182,13 +187,13 @@ switch(m.type){
           cancelFee = 0;
           break;
         }
-        log(`loanFee:`)
-        log(loanFee)
-        log(`cancelFee:`)
-        log(cancelFee)
+        //log(`loanFee:`)
+        //log(loanFee)
+        //log(`cancelFee:`)
+        //log(cancelFee)
         var deploytotalcost = m.amount + loanFee;
-        log(`deploytotalcost:`);
-        log(deploytotalcost);
+        //log(`deploytotalcost:`);
+        //log(deploytotalcost);
         if(deploytotalcost <= userData.hivebalance) {
           LoanID = crypto.randomBytes(16).toString('hex');
           sequelize.transaction().then(async function(t) {
@@ -220,8 +225,8 @@ switch(m.type){
       }
     break;
     //END case 'newloan'
+
     case 'acceptloan':
-    let loanData;
     let loanCheck = await Loandata.findOne({where:{loanId:`${m.loanId}`}, raw:true, nest: true}).then(result => {return result}).catch(error => {console.log(error)});
     if (loanCheck === null) {
       return log(`SOCKET: ERROR: Loan ${m.loanId} not found in DB!`);
@@ -231,7 +236,7 @@ switch(m.type){
       if(loanData.username == m.user) return log(`LOANS: ERROR: You Cannot Accept your Own Contracts.`);
       loanAmount = parseInt(loanData.amount);
     }
-    let userCheck = await Userdata.findOne({where:{username:`${m.user}`}, raw:true, nest: true}).then(result => {return result}).catch(error => {console.log(error)});
+    userCheck = await Userdata.findOne({where:{username:`${m.user}`}, raw:true, nest: true}).then(result => {return result}).catch(error => {console.log(error)});
     if (userCheck === null) {
       return log('Error: Faucet failed to fetch users statistics!');
     } else {
@@ -252,25 +257,30 @@ switch(m.type){
             return cb('Claiming Failed, Try again Later!', {token: req.token});
           });
         });
-
-
-
     break;
+    //END case 'acceptloan'
+
     case 'cancelloan':
+    if(m.loanId == undefined){
+      return log(`LOANS: Variable loanId is Undefined!`);
+    }
     userCheck = await Userdata.findOne({where:{username:`${m.username}`}, raw:true, nest: true}).then(result => {return result}).catch(error => {console.log(error)});
     if (userCheck === null) {
       return log(`LOANS: ERROR: User ${m.username} not found in DB!`);
     } else {
       userData = JSON.parse(JSON.stringify(userCheck));
-      loanCheck = await Loandata.findOne({where:{loanId:`${m.loanId}`}, raw:true, nest: true}).then(result => {return result}).catch(error => {console.log(error)});
-      if (loanCheck === null) {
+
+      var loanChecker = await Loandata.findOne({where:{loanId:`${m.loanId}`}, raw:true, nest: true}).then(result => {return result}).catch(error => {console.log(error)});
+
+      if (loanChecker === null) {
         return log(`LOANS: ERROR: Loan ${m.loanId} not found in DB!`);
       } else {
-        loanData = JSON.parse(JSON.stringify(loanCheck));
+        loanData = JSON.parse(JSON.stringify(loanChecker));
         var loanAmount = parseInt(loanData.amount);
-        if(loanData.active === 0 && loanData.username === m.username && loanData.cancelled === 0){
-        loanAmount = parseInt(loanAmount - loanData.cancelfee);
+        if(loanData.active === 0 && loanData.cancelled === 0){
+          if(loanData.username !== m.username || loanData.username !== config.owner) return log(`LOANS: @${m.username} Tried to Cancel a Loan Belonging to @${loanData.username}!`);
 
+        loanAmount = parseInt(loanAmount - loanData.cancelfee);
         userData.hivebalance += loanAmount;
         userData.activelends--;
         await Loandata.update({completed: true, cancelled: true, state: 'cancelled'},{where:{loanId:`${m.loanId}`}});
@@ -299,6 +309,7 @@ switch(m.type){
     }
     break;
     //END case 'cancelloan'
+
     case 'infoloan':
     loanCheck = await Loandata.findOne({where:{loanId:`${m.loanId}`}, raw:true, nest: true}).then(result => {return result}).catch(error => {console.log(error)});
     if (loanCheck === null) {
@@ -316,6 +327,7 @@ switch(m.type){
     }
     break;
     //END case 'infoloan'
+
     case 'myloanlist':
     var fetchUserLoans = async() => {
     loanCheck = await Loandata.findAll({
@@ -348,6 +360,7 @@ switch(m.type){
     await fetchUserLoans();
     break;
     //END case 'myloanlist'
+
     case 'statecheck':
     var fetchUserState = await Loandata.findAll({
       where: {username: m.username},
@@ -401,5 +414,133 @@ switch(m.type){
     await fetchUserState();
     break;
     //END case 'statecheck'
+    case 'useraudit':
+    var fetchUserState = await Loandata.findAll({
+      where: {username: m.username},
+      order: [ [ 'createdAt', 'DESC' ]],
+      raw: true
+    }).then(function(entries){
+        var loanStates = [];
+        let stateCheked = entries.map(function(key) {
+            if (key.id !== -1) {
+                delete key.id;
+            }
+            if (key.userId !== -1) {
+                delete key.userId;
+            }
+            if (key.username !== -1) {
+                delete key.username;
+            }
+            if (key.nextcollect !== -1) {
+                delete key.nextcollect;
+            }
+            if (key.updatedAt !== -1) {
+                delete key.updatedAt;
+            }
+            if (key.createdAt !== -1) {
+                delete key.createdAt;
+            }
+            return key;
+        });
+        stateCheked.forEach((item, i) => {
+          loanStates.push(item);
+        });
+        if (loanStateCheckNow === null) {
+          return log(`LOANS: ERROR: Loans not found in DB!`);
+          process.send(JSON.stringify({
+            type:'emit',
+            name:'statereply',
+            socketid: m.socketid,
+            error: 'loans not found!',
+            payload: [{username: m.username, loanstates: loanStates, token: m.token}]
+          }));
+        } else {
+          process.send(JSON.stringify({
+            type:'emit',
+            name:'statereply',
+            socketid: m.socketid,
+            error: null,
+            payload: [{username: m.username, loanstates: loanStates, token: m.token}]
+          }));
+        }
+    });
+    await fetchUserState();
+    break;
+    //END case 'useraudit'
+    case 'siteaudit':
+            var loanState = [];
+            var userState = [];
+            var bankState = [];
+
+                async function fetchUsersSiteState(){
+                  var wew = await Userdata.findAll({
+                    where:{     createdAt: {
+                      [Op.lte]: dateNow
+                    }},
+                    order: [[ 'createdAt', 'DESC' ]],
+                    raw: true
+                  }).then(function(entries){
+                      let usersCheked = entries.map(function(key) {
+                          if (key.id !== -1) {
+                              delete key.id;
+                          }
+                          if (key.userId !== -1) {
+                              delete key.userId;
+                          }
+                          if (key.createdAt !== -1) {
+                              delete key.createdAt;
+                          }
+                          return key;
+                      });
+                      usersCheked.forEach((item, i) => {
+                        userState.push(item);
+                      });
+                      if (userState == null || loanState == null) {
+                        return log(`LOANS: ERROR: Loans not found in DB!`);
+                        process.send(JSON.stringify({
+                          type:'massemit',
+                          name:'siteaudit',
+                          error: 'site audit failed!',
+                          payload: [{loansstate: loanState, usersstate: userState, date: dateNow}]
+                        }));
+                      } else {
+                        process.send(JSON.stringify({
+                          type:'massemit',
+                          name:'siteaudit',
+                          error: null,
+                          payload: [{loansstate: loanState, usersstate: userState, date: dateNow}]
+                        }));
+                        return wew;
+                      }
+                  });
+                }
+    var stateLoanCheked;
+    async function fetchLoansState() {
+      await Loandata.findAll({
+        raw: true
+      }).then(async function(entries){
+          stateLoanCheked = entries.map(function(key) {
+              if (key.id !== -1) {
+                  delete key.id;
+              }
+              if (key.userId !== -1) {
+                  delete key.userId;
+              }
+              if (key.nextcollect !== -1) {
+                  delete key.nextcollect;
+              }
+              if (key.createdAt !== -1) {
+                  delete key.createdAt;
+              }
+              return key;
+          });
+          stateLoanCheked.forEach((item, i) => {
+            loanState.push(item);
+          });
+          await fetchUsersSiteState();
+      });
+    }
+    await fetchLoansState();
+    break;
   }
 })//END process.on message

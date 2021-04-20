@@ -3,7 +3,7 @@ const {
   Model
 } = require('sequelize');
 module.exports = (sequelize, DataTypes) => {
-  class Blockchain extends Model {
+  class Order extends Model {
     /**
      * Helper method for defining associations.
      * This method is not a part of Sequelize lifecycle.
@@ -12,14 +12,18 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       // define association here
     }
-  }
-  Blockchain.init({
-    siteblock: DataTypes.INTEGER,
-    headblock: DataTypes.INTEGER,
-    synced: DataTypes.BOOLEAN
+  };
+  Order.init({
+    userId: DataTypes.INTEGER,
+    orderId: DataTypes.STRING,
+    username: DataTypes.STRING,
+    action: DataTypes.STRING,
+    amount: DataTypes.INTEGER,
+    remain: DataTypes.INTEGER,
+    active: DataTypes.BOOLEAN
   }, {
     sequelize,
-    modelName: 'Blockchain',
+    modelName: 'Order',
   });
-  return Blockchain;
+  return Order;
 };

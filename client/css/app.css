@@ -647,12 +647,13 @@ filter: "progid:DXImageTransform.Microsoft.Dropshadow(OffX=-12, OffY=12,Color='#
   /* background-color:#979797 !important; */
   border: 1px solid #5f96ef !important;
   border-bottom: 1px solid #5f96ef !important;
-  /* color:#165098; */
+  /* color:#165098;
   -webkit-transition: all ease-in-out .25s;
   -moz-transition: all ease-in-out .25s;
   -ms-transition: all ease-in-out .25s;
   -o-transition: all ease-in-out .25s;
   transition: all ease-in-out .25s;
+  */
 }
 
 .nav-tabs > li.active > a,
@@ -686,29 +687,34 @@ filter: "progid:DXImageTransform.Microsoft.Dropshadow(OffX=-12, OffY=12,Color='#
 
 .nav > li > a:hover {
     color: #5f96ef !important;
-    /* background-color: white !important; */
+    /* background-color: white !important;
     -moz-transition: all ease-in-out .25s;
     -ms-transition: all ease-in-out .25s;
     -o-transition: all ease-in-out .25s;
     transition: all ease-in-out .25s;
+     */
     }
 
 .nav > li > a:active {
     color: #165098 !important;
     background-color:rgba(255, 255, 255, 1) !important;
+    /*
 	    -moz-transition: all ease-in-out .25s;
     -ms-transition: all ease-in-out .25s;
     -o-transition: all ease-in-out .25s;
     transition: all ease-in-out .25s;
+     */
     }
 
 .nav > li > a:focus {
     color: #165098 !important;
     background-color:rgba(255, 255, 255, 0.05) !important;
+    /*
 	    -moz-transition: all ease-in-out .25s;
     -ms-transition: all ease-in-out .25s;
     -o-transition: all ease-in-out .25s;
     transition: all ease-in-out .25s;
+     */
     }
 
 .nav > li.active > a,

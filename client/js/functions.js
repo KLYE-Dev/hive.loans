@@ -1,19 +1,93 @@
+function keychainSend(from, to, amount, memo, coin){
+  hive_keychain.requestTransfer(from, to, amount, memo, coin.toUpperCase(), function(response) {
+      console.log(response);
+      if (response.success == true) {
+          showSuccess('Deposit Transfer Success! It Will Arrive Soon');
+          $('#depositView').click();
+          bootbox.hideAll();
+      } else {
+        showErr(`Deposit Failed to Send!`);
+        console.log(response.error);
+      }
+  }, true);
+}
 
+
+function wdnow(coin, fee, security) {
+      console.log('withdrawit!');
+      showSuccess('Processing Withdraw - Please Wait!');
+      $('#sending').html('<i style="color:grey" class="fa fa-pulsener fa-pulse fa-2x fa-fw"></i>');
+      if($('#withdrawAmount').val() < 1){
+                return showErr(`Must Withdraw Atleast 1 ${coin}`);
+      }
+      socket.emit("withdraw", {
+          amount: $('#withdrawInteger').val(),
+          account: $('#withdrawAcct').val(),
+          memo: $('#withdrawMemo').val(),
+          type: coin,
+          fee: fee,
+          security: security,
+          token: token
+      }, function(err, cb) {
+          if (err) {
+              $('#sending').html(`<br><b style='color:red;'>${err}</b>`);
+              return showErr(`${err}`);
+          }
+          if (cb) {
+              console.log(cb);
+              token = cb.token;
+              showSuccess('Withdrawal Success!');
+              showWallet(uUsername);
+              bootbox.hideAll();
+          }
+      })
+  }
+
+function calctotal(fee, coin){
+  var thetotal;
+  var thisval = parseFloat($("#withdrawInteger").val());
+  var balance = parseFloat($("#tipbalance").val());
+  thetotal = thisval - fee;
+  if (thetotal <= balance) {
+      flashwin($("#wdtotal"))
+      $("#wdtotal").html(`You'll receive ${thetotal.toFixed(3)} ${coin}`);
+      $("#wdbuttontex").html(`Withdraw`);
+      $('#withdrawit').attr("disabled", false);
+  } else {
+      flashlose($("#wdtotal"))
+      $("#wdtotal").html(`Insufficient Funds!`);
+      $("#wdbuttontex").html(`Error`);
+      $('#withdrawit').attr("disabled", true);
+  }
+}
 
   function addData(data, chart) {
     if(data == undefined) return;
-
-    dataChart.push(data);
-
-    hivechart.update();
+    if(typeof hivechart == undefined) return;
+    console.log(`addData data:`);
+    console.log(data);
+    var datasets = [{data:data}];
+    dataChart.push(datasets);
   }
 
   function removeData(chart) {
       chart.data.labels.pop();
-      chart.data.datasets.forEach((dataset) => {
-          dataset.data.pop();
-      });
+      chart.data.datasets.forEach((dataset) => {dataset.data.pop()});
       chart.update();
+  }
+
+  var cfdHistoryShow = false;
+  function cfdHistorySwitch() {
+    console.log(`cfdHistorySwitch Called! cfdHistoryShow: ${cfdHistoryShow}`);
+    if(cfdHistoryShow == false){
+      $('#openFutureHistoryType').html(`Open Positions`);
+      $('#centerFuturesTable').html(`Your Closed Past <span class="cfdtype">HIVE</span> Positions`);
+      cfdHistoryShow = true;
+    } else {
+      $('#openFutureHistoryType').html(`Position History`);
+      $('#centerFuturesTable').html(`Your Current Open <span class="cfdtype">HIVE</span> Positions`);
+      cfdHistoryShow = false;
+    }
   }
 
   function commaNumber(nStr) {
@@ -27,6 +101,130 @@
       }
       return x1 + x2;
   };
+
+  let navList = [];
+  let navIndex = 0;
+  let ourIndex = 0;
+
+  function navCheck() {
+    if(navList){
+      if(navList.length >= 100) {
+        navList.pop();
+        return true;
+      } else {
+        return true;
+      }
+    } else {
+      console.log(`No Navigation History!`);
+      //navList = [];
+      return false;
+    }
+  }
+
+  async function navLast(u) {
+    var lastNav = navList[navList.length - 1];
+    if(navList){
+      if(u == lastNav){
+        return true;
+      } else {
+        return navList[navList.length - 1];
+      }
+    } else {
+      console.log(`No Navigation History!`);
+      //navList = [];
+      return false;
+    }
+  }
+
+  async function navAdd(u) {
+    if(navList){
+      console.log(`Adding ${u} to Navigation!`)
+      if(u){
+        var isLast = await navLast(`${u}`);
+        if(isLast !== true){
+          navList.push(`${u}`);
+          navIndex = navList.length - 1;
+          if(ourIndex = (navList.length - 1)) {
+            ourIndex++;
+            navIndex = ourIndex;
+            console.log(`ourIndex: ${ourIndex}`)
+          } else if((navList.length - 1) <= ourIndex){
+            ourIndex = (navList.length - 1);
+          } else {
+            ourIndex = (navList.length - 1);
+          }
+          console.log(`ourIndex: ${ourIndex}`)
+        } else {
+          console.log(`Already Last Nav Entry!`)
+        }
+        console.log(navList);
+        return true;
+      } else {
+        console.log(`Failed to Add Navigation!`);
+        return false;
+      }
+    } else {
+      console.log(`No Navigation History, Adding ${u}!`);
+      navList.push(`${u}`);
+      return false;
+    }
+  }
+
+  function navBack() {
+    if(navList){
+      if(navList.length < 1) {
+        $('#jumboBack').css({"color":"grey"});
+        $('#jumboForward').css({"color":"grey"});
+        console.log(`No Navigation History!`);
+        return false;
+      } else {
+        $('#jumboBack').css({"color":"white"});
+        $('#jumboForward').css({"color":"white"});
+        if(ourIndex > 0) {
+          ourIndex--;
+          console.log(`ourIndex: ${ourIndex}`)
+        }
+        if(ourIndex == (navList.length - 1)) {
+          ourIndex = (navList.length - 2);
+          console.log(`ourIndex: ${ourIndex}`)
+        }
+        $(`#${navList[ourIndex]}`).click();
+        return true;
+      }
+    } else {
+      console.log(`No Navigation History!`);
+      navList = [];
+      return false;
+    }
+  }
+
+  async function navForward() {
+    if(navList){
+      if(navList.length < 1) {
+        console.log(`No Navigation History!`);
+        return false;
+      } else {
+        if(ourIndex < (navList.length - 1)) {
+          ourIndex++;
+          console.log(`ourIndex: ${ourIndex}`)
+        }
+        var isLast = await navLast(`${navList[ourIndex]}`);
+        if(isLast == true){
+          return navList.pop();
+        }
+        if(isLast != false){
+          return navList.pop();
+        }
+        $(`#${navList[ourIndex]}`).click();
+        return true;
+      }
+    } else {
+      console.log(`No Navigation History!`);
+      navList = [];
+      return false;
+    }
+  }
+
 
   function cmcpricecheck() {
     try {
@@ -423,8 +621,8 @@ function CountDownTimer(dt, id) {
 }
 */
 
-let hiveprice;
 
+/*
 var pricecheck = async() => {
   if(!hiveprice) oldhiveusdprice = 0;
   try {
@@ -456,6 +654,7 @@ var pricecheck = async() => {
 };
 
 pricecheck();
+*/
 
 //========================================================================
 
@@ -492,22 +691,22 @@ var showPopup = function(text, type){
 }
 
 var flashsec = function(elements) {
-  $(elements).css({'color':'#cc0000 !important'});
-  $(elements).animate({'color':'#000000 !important'},900);
+  $(elements).css({'color':'#CC0000 !important'});
+  $(elements).animate({'color':'#000000 !important'}, 300);
   $(elements).css({'color':'#000000 !important'});
 
 };
 
 var flashwin = function(elements) {
-  $(elements).css({'color':'#00ff00 !important'});
-  $(elements).animate({'color':'#FFFFFF !important'},900);
+  $(elements).css({'color':'#00FF00 !important'});
+  $(elements).animate({'color':'#FFFFFF !important'}, 300);
   $(elements).css({'color':'#FFFFFF !important'});
 
 };
 
 var flashlose = function(elements) {
-  $(elements).css({'color':'#cc0000 !important'});
-  $(elements).animate({'color':'#FFFFFF !important'},900);
+  $(elements).css({'color':'#CC0000 !important'});
+  $(elements).animate({'color':'#FFFFFF !important'}, 300);
   $(elements).css({'color':'#FFFFFF !important'});
 
 };
@@ -616,7 +815,16 @@ function createLoanPreview() {
   }
 }
 
-function cancelContract(contractID) {
+function cancelContract(contractID, state) {
+  console.log(`contractID`);
+  console.log(contractID);
+  if(contractID === undefined){
+    return showErr(`ERROR: Variable loanId is Undefined!`);
+  }
+  if(state === undefined){
+    return showErr(`ERROR: Variable state is Undefined!`);
+  }
+  if(state !== 'deployed') return showErr(`Cannot Cancel Active Contract!`);
   socket.emit('cancelloan', {loanId: contractID, token: token}, function(err, data){
       if(err) {
         showErr(err);
@@ -683,6 +891,194 @@ function acceptContract(contractID) {
         //showErr(`ERROR: Cannot Complete Lending Contract Request!\nThis site is under construction and not yet fully operational!\n\nWith your current Hive Power you could borrow up to ${data.limit} HIVE!\n\nLooking forward to launch, hope to see you there!`);
       }
   })
+}
+
+var theDATA = siteAudit;
+var theWALLET;
+var theWDFEES;
+var newUpdateDate;
+var siteAccts;
+var siteAcctsActive;
+var siteAcctsDormant;
+var siteAcctsOwned;
+var siteLoans;
+var usersBal = 0;
+var siteActiveLoans = 0;
+var siteActiveLends = 0;
+var siteActive = 0;
+var siteAvailable = 0;
+var siteCompleted = 0;
+var siteCancelled = 0;
+var siteTotalActive = 0;
+var siteTotalAllTime = 0;
+var siteTotalCollected = 0;
+var siteDeployFee = 0;
+var siteCancelFee = 0;
+var siteFineFee = 0;
+var siteCommissionFee = 0;
+var siteTotalFee = 0;
+var hotWalletBalance = 0;
+var coldWalletBalance = 0;
+var totalCustodial = 0;
+
+function siteAuditData() {
+  console.log(`siteAuditData Fired!`);
+  if(typeof siteAudit[0] != undefined && typeof siteAudit[1] != undefined && typeof siteAudit[2] != undefined){
+    console.log(`siteAudit:`);
+    console.log(siteAudit);
+    theDATA = siteAudit[0];
+    theWALLET = siteAudit[1].wallets;
+    theWDFEES = siteAudit[2].wdfees;
+    hotWalletBalance = parseFloat(theWALLET[0]);
+    coldWalletBalance = parseFloat(theWALLET[1]);
+    newUpdateDate = theDATA.date;
+    siteAccts = theDATA.usersstate;
+    siteLoans = theDATA.loansstate;
+    siteActiveLoans = 0;
+    siteActiveLends = 0;
+    usersBal = 0;
+    siteAccts = siteAccts.length;
+    siteAcctsActive = 0;
+    siteAcctsDormant = 0;
+    siteAcctsOwned = 0;
+    siteLoans = siteLoans.length;
+    siteActive = 0;
+    siteAvailable = 0;
+    siteCompleted = 0;
+    siteCancelled = 0;
+    siteActiveLoans = 0;
+    siteActiveLends = 0;
+    siteTotalCollected = 0;
+    siteDeployFee = 0;
+    siteCancelFee = 0;
+    siteFineFee = 0;
+    siteCommissionFee = 0;
+    siteTotalFee = 0;
+    siteTotalActive = 0;
+    siteTotalAllTime = 0;
+    var userIndex = [];
+    for(i = 0; i < siteAccts; i++){
+      var userIs = theDATA.usersstate[i].username;
+      userIndex.push(theDATA.usersstate[i].username)
+      userIndex[theDATA.usersstate[i].username] = theDATA.usersstate[i];
+      var userActiveDate = new Date(theDATA.usersstate[i].updatedAt);
+      var dateNow = new Date();
+      dateNow.setDate(dateNow.getDate() - 30);
+      if(dateNow > userActiveDate){
+        siteAcctsDormant++;
+      } else {
+        siteAcctsActive++;
+      }
+      usersBal += (theDATA.usersstate[i].hivebalance / 1000);
+      siteActiveLoans += theDATA.usersstate[i].activeloans;
+      siteActiveLends += theDATA.usersstate[i].activelends;
+      siteAcctsOwned += theDATA.usersstate[i].activeloans;
+    }
+
+    for(k = 0; k < siteLoans; k++){
+      var interestPercentage = theDATA.loansstate[k]['interest'] / 100;
+      var rankModifier = 0;
+      var loanUser = theDATA.loansstate[k].username;
+      console.log(`loanUser: ${loanUser}`);
+      var userState = userIndex[loanUser];
+      console.log(`userState: ${userState}`);
+      var userRank = userState.rank;
+        switch(userRank){
+          case 'user':
+            rankModifier = 1;
+          break;
+          case 'founder':
+            rankModifier = 0.5;
+          break;
+          case 'backer':
+            rankModifier = 1;
+          break;
+          case 'benefactor':
+            rankModifier = 0;
+          break;
+          case 'owner':
+            rankModifier = 0;
+          break;
+        }
+
+      siteCommissionFee += (((interestPercentage * (theDATA.loansstate[k].amount / 1000))) * rankModifier);
+      siteDeployFee += parseFloat((theDATA.loansstate[k].deployfee / 1000).toFixed(3));
+      siteFineFee += parseFloat((theDATA.loansstate[k].fine / 1000).toFixed(3));
+      switch(theDATA.loansstate[k].state){
+        case "finished":
+          siteCompleted++;
+          siteTotalCollected += (theDATA.loansstate[k].collected / 1000);
+          //siteTotalActive -= parseFloat((theDATA.loansstate[k].amount / 1000).toFixed(3));
+          siteTotalAllTime += parseFloat((theDATA.loansstate[k].amount / 1000).toFixed(3));
+        break;
+        case "deployed":
+          siteAvailable++;
+          siteTotalActive += parseFloat((theDATA.loansstate[k].amount / 1000).toFixed(3));
+          siteTotalCollected += parseFloat((theDATA.loansstate[k].collected / 1000).toFixed(3));
+          siteTotalAllTime += parseFloat((theDATA.loansstate[k].amount / 1000).toFixed(3));
+        break;
+        case "cancelled":
+          siteCancelled++;
+          siteCancelFee += parseFloat((theDATA.loansstate[k].cancelfee / 1000).toFixed(3));
+          //siteTotalActive -= parseFloat((theDATA.loansstate[k].amount / 1000).toFixed(3));
+        break;
+        case "accepted":
+          siteActive++;
+          siteTotalActive += parseFloat((theDATA.loansstate[k].amount / 1000).toFixed(3));
+          siteTotalCollected += parseFloat((theDATA.loansstate[k].collected / 1000).toFixed(3));
+          siteTotalAllTime += parseFloat((theDATA.loansstate[k].amount / 1000).toFixed(3));
+        break;
+      }
+    }
+
+    siteTotalFee = parseFloat(siteDeployFee) + parseFloat(siteCancelFee) + parseFloat(siteFineFee) + parseFloat(siteCommissionFee) + parseFloat(theWDFEES);
+    totalCustodial = hotWalletBalance + coldWalletBalance;
+    var totalNeededCustodial = siteTotalActive + usersBal;
+    var totalExtra = totalCustodial - totalNeededCustodial;
+    $('#audit-hot').val(hotWalletBalance.toFixed(3));
+    $('#audit-cold').val(coldWalletBalance.toFixed(3));
+    $('#audit-extras').val(totalExtra.toFixed(3));
+    if(totalExtra < 0){
+      var alert = `<i class="fa fa-exclamation-triangle sexyblackoutline" style="color:gold;" title="AUDIT FAILED! Value is Less Than Expected!" aria-hidden="true"></i>`;
+      $('#audit-extras').css({"color":"red"});
+    }
+    $('#audit-lockedtotal').val(siteTotalActive.toFixed(3));
+    $('#audit-sitebal').val(totalCustodial.toFixed(3));
+    $('#audit-accounts').val(siteAccts);
+    $('#audit-activeaccts').val(siteAcctsActive);
+    $('#audit-dormant').val(siteAcctsDormant);
+    $('#audit-collateral').val(siteAcctsOwned);
+    $('#audit-update').val(newUpdateDate);
+    $('#audit-userbal').val(usersBal.toFixed(3));
+    $('#audit-active').val(siteActive);
+    $('#audit-available').val(siteAvailable);
+    $('#audit-completed').val(siteCompleted);
+    $('#audit-cancelled').val(siteCancelled);
+    $('#audit-loantotal').val(siteTotalActive.toFixed(3));
+    $('#audit-returntotal').val(siteTotalCollected.toFixed(3));
+    $('#audit-createfee').val(siteDeployFee.toFixed(3));
+    $('#audit-interestfee').val(siteCommissionFee.toFixed(3));
+    $('#audit-cancelfee').val(siteCancelFee.toFixed(3));
+    $('#audit-withdrawfee').val(theWDFEES[0].toFixed(3));
+    $('#audit-finesfee').val(siteFineFee.toFixed(3));
+    $('#audit-totalfee').val(siteTotalFee.toFixed(3));
+
+  } else {
+    console.log(`siteAudit Data Undefined!`);
+  }
+}
+
+function fetchAudit(data) {
+  socket.emit('loadaudit', {token: token}, function(err, data){
+    if(err) {
+      console.log(err);
+      showErr(err);
+    }
+    if(data) {
+      siteAudit = data;
+      siteAuditData();
+    }
+  });
 }
 
 function infoContract(data) {
@@ -839,7 +1235,6 @@ var formatChatMessage = function(message, prepend){
     if (message.username == 'klye') {
         message.username = 'klye';
         message.flair = '<b title="Owner">🧙</b>';
-        $(`.chatUserName.${message.rng}`).css({"color":"lightgreen !important"});
     } else {
       if(message.rank == 'founder'){
         message.flair = '<b title="Founder">⚡</b>';
@@ -861,6 +1256,11 @@ var formatChatMessage = function(message, prepend){
         $("#trollbox").append(`<div class="chatList" id="${message.rng}"><span class="chatTime"><a href="#" title="${date}"><i class="far fa-clock" style="color:grey; text-decoration: none !important;"> </i></a></span> <span class="modspan ${message.rng}"></span> <span class="vipspan ${message.rng}"></span><span class="uid sextext" title="User Identification Number">(${message.userId})</span><span class="chatFlair">${message.flair}</span><span class="chatUser iw-mTrigger" onClick='userMenu(this, \"${message.username}\", \"${message.rng}\");'><a href="#" class="chatUserName ${message.rng} iw-mTrigger" title="Double Click to Open Trollbox Menu" onClick='userMenu(this, \"${message.username}\", \"${message.id}\");'>@<b>${message.username}</b></a></span><span class="userLvL ${message.rng}" title="Account Level"></span> <span class="pchat" style="color: white"></span></div>`);
         $(".pchat").eq(-1).text(message.msg);
     }
+
+    if(message.username == 'klye'){
+      $(`.chatUserName.${message.rng}`).css({"color":"white","text-shadow":"0px 0px 3px yellow"});
+    }
+
     scrollToTop($("#trollbox"));
 }
 
@@ -1066,6 +1466,9 @@ function CreateTableFromJSON(data, name, elementid, tablename, tableheadname) {
               break;
               case "state":
               $(th).html("State");
+              break;
+              case "fine":
+              $(th).html("Fine");
               break;
               case "amount":
               $(th).html("Amount");
@@ -1487,6 +1890,13 @@ function CreateTableFromJSON(data, name, elementid, tablename, tableheadname) {
 
                   }
               }
+              if (col[j] == "fine") {
+                  if (data[i][col[j]] == 0) {
+                      data[i][col[j]] = "<code>none</code>";
+                  } else {
+                    data[i][col[j]] = (data[i][col[j]] / 1000).toFixed(3) + " <i class=\"fab fa-fw fa-hive hivered\"></i>";
+                  }
+              }
 
 
     /*
@@ -1571,7 +1981,7 @@ var hiveloanslogo = `<span style="color:white;">
 ██╔══██║██║░╚████╔╝░██╔══╝░░░░░██║░░░░░██║░░██║██╔══██║██║╚████║░╚═══██╗
 ██║░░██║██║░░╚██╔╝░░███████╗██╗███████╗╚█████╔╝██║░░██║██║░╚███║██████╔╝
 ╚═╝░░╚═╝╚═╝░░░╚═╝░░░╚══════╝╚═╝╚══════╝░╚════╝░╚═╝░░╚═╝╚═╝░░╚══╝╚═════╝░\n<br>\n<br>
-v0.0.8 Alpha - By @KLYE`;
+v0.0.9 Alpha - By @KLYE`;
 
 var versionwarning = `
 ========================================================================\n<br>

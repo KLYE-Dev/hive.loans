@@ -1,7 +1,7 @@
 'use strict';
 module.exports = {
   up: async (queryInterface, Sequelize) => {
-    await queryInterface.createTable('Withdrawals', {
+    await queryInterface.createTable('Orders', {
       id: {
         allowNull: false,
         autoIncrement: true,
@@ -9,44 +9,45 @@ module.exports = {
         type: Sequelize.INTEGER
       },
       userId: {
-        type: Sequelize.INTEGER
+        type: Sequelize.STRING,
+        allowNull: false
+      },
+      orderId: {
+        type: Sequelize.STRING,
+        allowNull: false
       },
       username: {
-        type: Sequelize.STRING
+        type: Sequelize.STRING,
+        allowNull: false
       },
-      sentto: {
-        type: Sequelize.STRING
-      },
-      txid: {
-        type: Sequelize.STRING
+      action: {
+        type: Sequelize.STRING,
+        allowNull: false
       },
       amount: {
-        type: Sequelize.INTEGER
-      },
-      fee: {
         type: Sequelize.INTEGER,
+        allowNull: false
+      },
+      remain: {
+        type: Sequelize.INTEGER,
+        allowNull: false
+      },
+      active: {
+        type: Sequelize.BOOLEAN,
         allowNull: false,
-        defaultValue: 0,
-      },
-      coin: {
-        type: Sequelize.STRING
-      },
-      confirmed: {
-        type: Sequelize.BOOLEAN
+        default: true
       },
       createdAt: {
         allowNull: false,
-        defaultValue: Sequelize.NOW,
         type: Sequelize.DATE
       },
       updatedAt: {
         allowNull: false,
-        defaultValue: Sequelize.NOW,
         type: Sequelize.DATE
       }
     });
   },
   down: async (queryInterface, Sequelize) => {
-    await queryInterface.dropTable('Withdrawals');
+    await queryInterface.dropTable('Orders');
   }
 };

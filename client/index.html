@@ -1,12 +1,13 @@
 <html>
 <head>
-<title>Hive.Loans - v0.0.8</title>
+<title>Hive.Loans - v0.0.9</title>
 <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.2/css/all.css">
 <link rel="stylesheet" href="/css/mainstatic.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/alertifyjs@1.13.1/build/css/themes/bootstrap.min.css"/>
-<link rel="stylesheet" href="/css/contextMenu.css"/>
+<link rel="stylesheet" href="/css/contextMenu.css">
+<link rel="stylesheet" href="/css/tickr-style-red.css">
 <link rel="shortcut icon" type="image/x-icon" href="/img/favicon.ico">
-<script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+<script src="/js/packages/lightweight-charts.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-contextmenu/2.7.1/jquery.contextMenu.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-contextmenu/2.7.1/jquery.ui.position.js"></script>
@@ -19,27 +20,30 @@
   <nav style="float:right;">
     <ul class="menu sexyblackoutline">
       <li id="profile" class="menu-sub-item hidden" onmouseover="$('#menufuckery').fadeIn();$('#menufuckery2').fadeOut();" onmousedown="$('#menufuckery').fadeOut();"> <!--.addClass('hidden')    $('#menufuckery').fadeOut();-->
-        <a onClick="showProfile()"><b><i class="fas fa-fw fa-user"></i> Profile</b></a>
+        <a onClick="showProfile(); navAdd(this.id);"><b><i class="fas fa-fw fa-user"></i> Profile</b></a>
         <span id="menufuckery" class="" onload="$('#menufuckery').hide();">
-          <center><ul id="usernamestoreul"><b>@<span id="usernamestore"></span></b></ul></center>
+          <ul id="usernamestoreul"><b>@<span id="usernamestore"></span></b></ul>
           <hr id="profilehorizon">
-          <ul id="wallet" class="submenushit hidden"><li><a onClick="showWallet(uUsername)"><b><i class="fas  fa-fw fa-wallet"></i> Wallet</b></a></li></ul>
-          <ul id="tools" class="submenushit hidden"><li><a onClick="showTools();"><b><i class="fas  fa-fw fa-tools"></i> Tools</b></a></li></ul>
-          <ul id="settings" class="submenushit hidden"><li><a onClick="showSettings()"><b><i class="fas  fa-fw fa-cogs"></i> Settings</b></a></li></ul>
+          <ul id="admin" onClick="showAdmin(); navAdd('admin');" class="submenushit hidden"><li><a onClick=""><b><i class="fab fa-fw  fa-android"></i> Admin</b></a></li></ul>
+          <ul id="wallet" onClick="showWallet(uUsername); navAdd('wallet');" class="submenushit hidden"><li><a onClick=""><b><i class="fas  fa-fw fa-wallet"></i> Wallet</b></a></li></ul>
+          <ul id="tools" onClick="showTools(); navAdd('tools');" class="submenushit hidden"><li><a onClick=""><b><i class="fas  fa-fw fa-tools"></i> Tools</b></a></li></ul>
+          <ul id="settings" onClick="showSettings(); navAdd('settings');" class="submenushit hidden"><li><a onClick=""><b><i class="fas  fa-fw fa-cogs"></i> Settings</b></a></li></ul>
           <ul id="profilelogout" class="submenushit hidden"><li><a onClick="logout();"><b><i class="fas  fa-fw fa-door-open"></i> Log Out</b></a></li></ul>
         </span>
       </li>
       <li id="loansmenu" class="menu-sub-item hidden" onmouseover="$('#menufuckery2').fadeIn();$('#menufuckery').fadeOut();" onmousedown="$('#menufuckery2').fadeOut();"> <!--.addClass('hidden')    $('#menufuckery').fadeOut();-->
-        <a onClick="showLoansMixed()"><b><i class="fas fa-landmark"></i> Loans</b></a>
+        <a onClick="showLoansMixed(); navAdd('loansmenu');"><b><i class="fas fa-landmark"></i> Loans</b></a>
         <span id="menufuckery2" onload="$('#menufuckery2').hide();">
-          <ul id="lend" class="submenushit hidden"><li><a onClick="showLend()"><b><i class="fas  fa-fw fa-chart-line"></i> Lend</b></a></li></ul>
-          <ul id="loans" class="submenushit hidden"><li><a onClick="showLoans()"><b><i class="fas fa-fw fa-comments-dollar"></i> Borrow</b></a></li></ul>
+          <ul id="lend" onClick="showLend(); navAdd('lend');" class="submenushit hidden"><li><a><b><i class="fas  fa-fw fa-chart-line" title="Click Here to Lend HIVE"></i> Lend</b></a></li></ul>
+          <ul id="loans" onClick="showLoans(); navAdd('loans');" class="submenushit hidden"><li><a><b><i class="fas fa-fw fa-comments-dollar" title="Click Here to Borrow HIVE"></i> Borrow</b></a></li></ul>
+          <ul id="audit" onClick="showSiteAudit(); navAdd('audit');" class="submenushit hidden"><li><a><b><i class="fas fa-fw fa-search-dollar" title="Click Here to View Site Audit"></i> Audit</b></a></li></ul>
         </span>
       </li>
 
-      <li><a id="shares" class="hidden" onClick="showShares()"><b><i class="fas fa-fw fa-chart-pie"></i> Dividends</b></a></li>
-      <li><a id="futures" class="hidden" onClick="showFutures()"><b><i class="far fa-fw fa-chart-bar"></i> Futures</b></a></li>
-      <li><a id="faq" class="hidden" onClick="showFaq();"><b><i class="fas fa-fw fa-question-circle"></i> FAQ</b></a></li>
+      <li><a id="shares" class="hidden" onClick="showShares();"><b><i class="fas fa-fw fa-chart-pie"></i> Shares</b></a></li>
+      <li><a id="futures" class="hidden" onClick="showFutures();"><b><i class="far fa-fw fa-chart-bar" title="Click Here to Check HIVE Price Activities"></i> Price</b></a></li>
+      <li><a id="faq" class="hidden" onClick="showFaq();"><b><i class="fas fa-fw fa-question-circle" title="Click Here to Read FAQ"></i> FAQ</b></a></li>
+      <li><a id="chaticon" class="hidden" onclick="showChat(); $('#chaticon').addClass('hidden');" title="Click Here to Enable Chat"><b><i class="fas fa-comment-dots"></i></b></a></li>
       <li><a id="logout" class="hidden" style="float: right;"  onClick="logout();showSuccess('Logging Out Now...')"><b><i class="fas   fa-fw fa-power-off" title="Power Off / Logo Out"></i></b></a></li>
       <li><a id="login" class="hidden" style="float: right;" onClick="showLogin()"><b><i class="fas  fa-fw fa-sign-in-alt"></i> Login</b></a></li>
       <li><a id="menuburger" class="hidden" style="position: fixed; top: 0.7em; right: 1.1em;"><b><i class="fas   fa-fw fa-2x fa-bars"></i></b></a></li>
@@ -71,24 +75,39 @@
   </span>
   </span>-->
   <!--END userstats-->
+  <!--
   <span id="backerstats" class="backerstats " style="padding:5px;text-align: center; height: auto !important;">
     <div id="backerHead"><span id="backerMove" title="Click and Drag to Move Window"><i class="fas fa-arrows-alt"></i></span><span id="backersClose" title="Click to Close this Panel" onclick="$('#backerstats').fadeOut();" onmouseover="$(this).css({'color':'red'})" onmouseout="$(this).css({'color':'white'})"><i class="fas fa-times"></i></span></div>
       <span id="backerWrapper">
         <b style="color:gold;" class="sexyblackoutline">Winner of<br>Benefactor Rank</b><br><b style="font-size:x-large;">👑@CoinInstant</b>
-      </span><!--END statwrapper-->
-  </span>
+      </span>
+  </span>-->
 
 
-  <span id="alertpanel" class="alertpanel hidden" style="padding:5px;text-align: center; height: auto !important;">
-    <div id="alertHead"><span id="alertMove" title="Click and Drag to Move Window"><i class="fas fa-arrows-alt"></i></span><span id="alertTitle">Alert</span><span id="alertClose" class="hidden" title="Click to Close this Panel" onclick="$('#alertpanel').fadeOut();" onmouseover="$(this).css({'color':'red'})" onmouseout="$(this).css({'color':'white'})"><i class="fas fa-times"></i></span></div>
+  <span id="alertpanel" class="alertpanel alertphide hidden" style="padding:5px;text-align: center; height: auto !important;">
+    <div id="alertHead">
+      <span id="alertMove" title="Click and Drag to Move Window">
+        <i class="fas fa-arrows-alt"></i>
+      </span>
+      <span id="alertTitle">Alert</span>
+      <span id="alertClose" class="hidden" disabled title="Click to Close this Panel" onclick="$('#alertphide').fadeOut();" onmouseover="$(this).css({'color':'grey'})" onmouseout="$(this).css({'color':'grey'})">
+        <i class="fas fa-times"></i>
+      </span>
+    </div>
       <span id="alertWrapper">
         This is an alert panel
       </span><!--END alertWrapper-->
   </span>
 
 
-<span id="chatpanel" class="chatpanel hidden" style="padding:5px;text-align: center; bottom:1vh !important; right:15vw !important; height:50%; width:15%;">
-  <div id="chatHead"><span id="chatMove" title="Click and Drag to Move Window"><i class="fas fa-arrows-alt"></i></span><span id="chatName" style="display: inline-block">Loading</span><span id="chatClose" title="Click to Close this Panel" onclick="$('#chatpanel').fadeOut();" onmouseover="$(this).css({'color':'red'})" onmouseout="$(this).css({'color':'white'})"><i class="fas fa-times"></i></span></div>
+<span id="chatpanel" class="chatpanel hidden" style="padding:5px;text-align: center; top: 7%; bottom:1vh !important; right:15vw !important; height:50%; width:15%;">
+  <div id="chatHead">
+    <span id="chatMove" class="smolbutton" title="Click and Drag to Move Window"><i class="fas fa-arrows-alt"></i></span>
+    <span id="chatName" style="display: inline-block">Loading</span>
+    <span id="chatClose" class="smolbutton" title="Click to Close this Panel" onclick="$('#chatpanel').fadeOut(); $('#chaticon').show(); $('#chaticon').removeClass('hidden');" onmouseover="$(this).css({'color':'red'})" onmouseout="$(this).css({'color':'white'})">
+    <i class="fas fa-times"></i>
+    </span>
+  </div>
     <span id="chatWrapper">
       <span id="chatContent" style="text-align: left !important;">
         <div id="chat">
@@ -103,73 +122,90 @@
 </span><!--END chatpanel-->
 
 
-<span id="sitealertpanel" class="sitealertpanel" style="padding:5px;text-align: center; top:20%; height:30%; width:15%;">
-  <div id="alertHead"><span id="alertMove" title="Click and Drag to Move Window"><i class="fas fa-arrows-alt"></i></span>
-    <span id="alertName" style="display: inline-block"><i class="fa fa-exclamation-triangle sexyblackoutline" style="color:gold;" aria-hidden="true"></i> ALERT: <span id="spanMessage">Unfinished Alpha Testing!</span></span>
-    <span id="alertClose" title="Click to Close this Panel" onclick="$(this).fadeOut();" onmouseover="$(this).css({'color':'red'})" onmouseout="$(this).css({'color':'white'})"><i class="fas fa-times"></i></span>
+<span id="sitealertpanel" class="sitealertpanel" style="padding: 5px; text-align: center; top: 7%; height: 30%; width: 20%;">
+  <div id="alertHead"><span id="alertMove" class="smolbutton" title="Click and Drag to Move Window"><i class="fas fa-arrows-alt"></i></span>
+    <span id="alertName" style="display: inline-block"><i class="fa fa-exclamation-triangle sexyblackoutline" style="color:gold;" aria-hidden="true"></i> <span id="spanMessage">This Application is Under Construction</span> <i class="fa fa-exclamation-triangle sexyblackoutline" style="color:gold;" aria-hidden="true"></i></span>
+    <span id="alertClose" class="smolbutton" title="Click to Close this Panel" onclick="$(this).fadeOut();" onmouseover="$(this).css({'color':'red'})" onmouseout="$(this).css({'color':'white'})"><i class="fas fa-times"></i></span>
   </div>
     <span id="alertWrapper">
-      <span id="alertContent"><br>This site is an Unfinished Alpha and does not represent the production version of Hive.Loans!<br>
-        <br>This site contains feautures that can change account ownership. Be aware that when you're exploring this alpha version some functions may work and others may not function correctly or at all!<br>
-        <br>By hitting ACCEPT below you acknowledge this is an alpha and Hive.Loans is not responsible for any potential damages to account or balances<br>
-        <button type="button" class="button sextext" id="closeAlertButton" onclick="$('#sitealertpanel').fadeOut();">ACCEPT</button></span>
+      <span id="alertContent"><br>This site is an <u>Unfinished Alpha</u> in public testing!<br>This Demo Doesn't Represent the Final Production Version!<br>
+        <br><b><u>NOTE</u></b>: Within are features that can change account ownership.<br>Be aware when you're exploring this early access version<br>Some functions may not operate correctly or result in bugs!<br>
+        <br>By hitting ACCEPT below you acknowledge this is an alpha and Hive.Loans is not responsible for any potential damages incurred!<br>
+        <button type="button" class="button sextext" id="closeAlertButton" onclick="$('#sitealertpanel').fadeOut();">ACCEPT</button></span> <button type="button" class="button sextext" id="leaveAlertButton" onclick="window.location = 'https://google.com';">LEAVE</button></span>
     </span>
 </span>
 
-
-<!--<span id="userpanel" class="userpanel hidden" style="padding:5px;text-align: center; top:20%; height:55%; width:55%;">
-  <span id="panelMove" title="Click and Drag to Move Window"><i class="fas fa-arrows-alt"></i></span><span id="panelName" style="display: inline-block">Loading</span><span id="panelClose" title="Click to Close this Panel" onclick="$('#userpanel').fadeOut();" onmouseover="$(this).css({'color':'red'})" onmouseout="$(this).css({'color':'black'})"><i class="fas fa-times"></i></span><hr>
-    <span id="panelWrapper">
-      <span id="panelContent"></span>
-    </span>
-</span>-->
-
-  <!--<span id="sitestats" class="sitestats hidden" style="padding:5px;text-align: center;left:70%; height:auto;">
-    <span id="sitestatssMove" title="Click and Drag to Move Window"><i class="fas fa-arrows-alt"></i></span><span id="sitestatsName" class="sitestatsName" style="display: inline-block"></span><span id="refreshSiteStats" style-"float:right" title="Click to Refresh" onClick="getSiteStats();"><i class="fas fa-sync"></i></span><hr>
-      <span id="resizablesitestats" class="ui-widget-content">
-        <span id="sitestatsBal"><b>Available HIVE Pool</b>:<br>Loading<br></span><br>
-        <span id="siteLoaned"><b>HIVE Loaned Out</b>:<br>0.000<br></span><br>
-        <span id="sitePaid"><b>HIVE Repaid</b>:<br>0.000<br></span><br>
-        <span id="siteProfit"><b>HIVE Lender Profit</b>:<br>0.000<br></span><br>
-        <span id="siteOnLoan"><b>HIVE Outstanding</b>:<br>0.000<br></span><br>
-        <span id="siteInterest"><b>Average Interest Rate</b>:<br>0.000%<br></span><br>
-        <span id="siteTotalActive"><b>Total Active Loans</b>:<br>0<br></span><br>
-        <span id="siteTotalEnded"><b>Total Ended Loans</b>:<br>0<br></span><br>
-        <span id="siteLoanTotal"><b>Total Loan Contracts</b>:<br>0<br></span><br>
-        <span id="siteAlert"></span><br>
-        <i class="fas fa-vector-square resizer"></i>
-      </span>
-  </span>-->
-
   <div class="jumbotron sexyblackoutline" id="jumbotron" style="box-shadow: black 0px 0px 14px 0px; height: 85%; width:auto; display: block;top:6%; border: 2px outset #eae6e6; border-radius: 15px; color: white !important; background: grey;position:fixed;padding-left:10px;padding-right:10px;" onload="setTimeout(function(){$(this).center()}, 100);">
-    <div id="jumboHead"><span id="jumboMove" title="Click and Drag to Move Window"><i class="fas fa-arrows-alt"></i></span><center><span id="jumboTitle" class="jumboTitle"></span></center><span id="jumboClose" title="Click to Close this Panel" onclick="$('#jumbotron').fadeOut();" onmouseover="$(this).css({'color':'red'})" onmouseout="$(this).css({'color':'white'})"><i class="fas fa-times"></i></span></div>
-      <center><span id="jumboWrapper">
-        <h2 class="sexyblackoutline" style="margin-top:0.25em;margin-bottom:0">P2P Capital Lending Contracts on Hive.Loans</h2> <!--Hive.Loans Secured Lending Contract Platform-->
-        <span style="font-size:xx-large">Building a Gateway for Peer to Peer Liquidity Borrowing</span><br><br>
-        <h6 id="supportyourlocaldeveloper" style="font-size:smallest !important; text-decoration: none !important;margin:0 !important;"><a  target="_blank" href="https://peakd.com/proposals/154" style="font-size:large !important; text-decoration: none !important; color:white !important;letter-spacing: initial;"><i class="fas fa-hand-point-right" style="color:white;"></i> Moving HIVE Forwards 3 Seconds at a Time - View <u><b style="color:#ededed;">Proposal #154</b></u> funding this project by <b style="color:#ededed;">clicking here</b> <i class="fas fa-hand-point-left" style="color:white;"></i></a></h6><br><br>
-        <span id='leftflash'><i class="fas fa-2x fa-flip-horizontal fa-hand-holding-heart lefthand sexyblackoutline"  style="filter: drop-shadow(2px 4px 6px black) !important;"></i></span><img src="/img/redhive.svg" id="mainLogo" onclick="showLogin();" style="filter: drop-shadow(2px 4px 6px black); width:30vh;"><span id='rightflash'><i class="fas fa-2x fa-hand-holding-heart righthand sexyblackoutline"></i></span><br><br>
-        <button type="button" style="" onclick="showLogin();" id="splashButton" class="button" title="Click here to verify your HIVE account">CLICK to BEGIN</button> <!--onclick="showLogin()"     onclick="window.location='https://peakd.com/me/proposals/154'"  -->
-        <h3 class="sexyblackoutline" style="color:white;">Soon Offering Secure Lending Transactions, HIVE Borrowing and Liquidity Swapping</h3>
-        <h3 class="sexyblackoutline" style="color:white;">Zero Lender Risk Loans - <i>"Set it and Forget it"</i> - Earn 10% to 30% Profit*</h3>
-        <h3 class="sexyblackoutline" style="color:white;">Use Your Account as Collateral to Borrow up to 70% of its HIVE Value</h3>
-        <h5 class="sexyblackoutline" style="color:white;"><br>Congrats to @CoinInstant for winning the backer leaderboard auction winning the <b style="color:gold;">Benefactor</b> ranking!</h5>
-        <h6><i class="fa fa-exclamation-triangle sexyblackoutline" style="color:gold;" aria-hidden="true"></i> <b>WARNING</b>: This unfinished and untested alpha web application contains functions that can modify account priveledges if provided with valid inputs. Be careful when clicking around!</h6>
+    <div id="jumboHead">
+      <span id="jumboBack" style="left: 0.4em; color:grey;" class="smolbutton" onclick="navBack();"  title="Click to Navigate Back">
+        <i class="fas fa-fw fa-arrow-left"></i>
+      </span>
+      <span id="jumboMove" style="left: 2.75em; color:white;" class="smolbutton" title="Click and Drag to Move Window">
+        <i class="fas fa-fw fa-arrows-alt"></i>
+      </span>
+      <span id="jumboForward" style="left:5.1em; color:grey;" class="smolbutton"  title="Click to Navigate Forward" onclick="navForward();">
+        <i class="fas fa-fw fa-arrow-right"></i>
+      </span>
+      <center style="width:100%;">
+        <span id="jumboTitle" style="max-width: 100%;" class="jumboTitle">
+          Welcome to Hive.Loans
+        </span>
+      </center>
+      <span id="jumboClose" class="smolbutton" title="Click to Close this Panel" onclick="$('#jumbotron').fadeOut();" onmouseover="$(this).css({'color':'red'})" onmouseout="$(this).css({'color':'white'})">
+        <i class="fas fa-fw fa-times"></i>
+      </span>
+    </div>
+      <center>
+        <span id="jumboWrapper">
+          <h2 class="sexyblackoutline" style="margin-top:0.25em;margin-bottom:0">P2P Crypto Lending Contracts on Hive.Loans</h2> <!--Hive.Loans Secured Lending Contract Platform-->
+          <span style="font-size:xx-large">A Secure Platform Facilitating Peer to Peer Liquidity Borrowing</span>
+          <br><br>
+          <h6 id="supportyourlocaldeveloper" style="font-size:smallest !important; text-decoration: none !important;margin:0 !important;">
+            <a  target="_blank" href="https://peakd.com/proposals/154" style="font-size:large !important; text-decoration: none !important; color:white !important;letter-spacing: initial;">
+              <i class="fas fa-hand-point-right" style="color:white;"></i>
+                Offering a Unique to HIVE Account as Collateral Solution for the Staked Capital Issue
+              <i class="fas fa-hand-point-left" style="color:white;"></i>
+            </a>
+          </h6>
+          <br><br>
+          <span id='leftflash'><i class="fas fa-2x fa-flip-horizontal fa-hand-holding-heart lefthand sexyblackoutline"  style="filter: drop-shadow(2px 4px 6px black) !important;"></i></span><img src="/img/redhive.svg" id="mainLogo" onclick="showLogin();" style="filter: drop-shadow(2px 4px 6px black); width:30vh;"><span id='rightflash'><i class="fas fa-2x fa-hand-holding-heart righthand sexyblackoutline"></i></span><br><br>
+          <button type="button" style="" onclick="showLogin();" id="splashButton" class="button" title="Click here to verify your HIVE account">CLICK to BEGIN</button> <!--onclick="showLogin()"     onclick="window.location='https://peakd.com/me/proposals/154'"  -->
+          <h3 class="sexyblackoutline" style="color:white;">Secure Lending Contracts - HIVE Borrowing - Liquidity Swapping</h3>
+          <h3 class="sexyblackoutline" style="color:white;">Zero Lender Risk Loans - <i>"Set it and Forget it"</i> - Earn 10% to 30% Profit</h3>
+          <h3 class="sexyblackoutline" style="color:white;">Account as Collateral Lending Platform - Borrow up to 70% of Your HIVE Power</h3>
+          <h3 class="sexyblackoutline" style="color:white;">Profit Sharing Via Tradeable Site Shares - HIVE CFD Futures and Investing</h3>
+          <!--<h6><i class="fa fa-exclamation-triangle sexyblackoutline" style="color:gold;" aria-hidden="true"></i> <b>WARNING</b>: This unfinished and untested alpha web application contains functions that can modify account priveledges if provided with valid inputs. Be careful when clicking around!</h6>-->
       </span><!--END jumboWrapper-->
     </center>
   </div>
-
 </div><!--END content-->
+
  <footer style="padding:1vh;" class="sexyblackoutline">
-   <b>&copy; 2021 Hive.Loans <code>v0.0.8 Pre-Alpha</code></b>
-   <span class="footersplitter"></span>
-   <b><span id="blocknumber">#0</span></b>
-   <span class="footersplitter"></span>
-   <span id="pricecheck">1 HIVE / Loading</span>
-     <span id="pricepercentticker"><code><sub>| Total Supply: -------.--- | Market Cap: $-------.-- USD | Daily Volume: $-------.-- USD | Last Hour: -.--% | Last Day: -.--% | Past Week: -.--% | Past Month: -.--%</code></sub></span>
-   <span id="discord" style="color:#f0f0f8 !important;text-decoration: none !important;">Need Help or Have Questions? <a href="https://discord.gg/mtwvCpS" target="_blank" rel="noopener noreferrer" style="color:#f0f0f8 !important;text-decoration: none !important;"><i class="fab fa-fw fa-2x fa-discord sexyblackoutline" style="padding-left:0.5em;padding-right:0.5em;color:#f0f0f8; float:right;margin-right: 2vw; font-size: 1.5em !important; line-height: 0.75em !important; "></i> <b>Join Our Discord</b> <i class="fas fa-angle-right"></i></a></span>
-   <span id="github" style='color: #f0f0f8;float: right;margin-top: -0.22em;margin-right: 1.3em;vertical-align: middle;'><a href="https://github.com/KLYE-Dev/hive.loans" target="_blank" rel="noopener noreferrer" style="z-index: 999999; color:#f0f0f8 !important;text-decoration: none !important;"><i class="fab fa-fw fa-2x fa-github-square sexyblackoutline" style="padding-left:0.5em;padding-right:0.5em;color:#f0f0f8; float:right; font-size: 1.5em !important; line-height: 0.75em !important; "></i></a></span>
+   <b>&copy; 2021 Hive.Loans <code>v0.0.9</code></b><span class="footersplitter"></span><span id="blocknumber"><code>#</code>00000000</span><span class="footersplitter"></span><span id="pricecheck">1 HIVE = Loading</span><span class="footersplitter"></span>
+
+   <div id="scrollerWrapper">
+       <ul id="scroller">
+	        <li>Total&nbsp;Supply:&nbsp;<span id="pricepercentticker" class="isabsolute"></span></li>
+          <li>Market&nbsp;Cap:&nbsp;$<span id="pricepercentticker1" class="isabsolute"></span></li>
+          <li>Daily&nbsp;Volume:&nbsp;$<span id="pricepercentticker2" class="isabsolute"></span></li>
+          <li>Last&nbsp;Hour:&nbsp;<span id="one">?</span><span id="pricepercentticker3" class="isabsolute"></span></li>
+          <li>Last&nbsp;Day:&nbsp;<span id="two">?</span><span id="pricepercentticker4" class="isabsolute"></span></li>
+          <li>Past&nbsp;Week:&nbsp;<span id="three">?</span><span id="pricepercentticker5" class="isabsolute"></span></li>
+          <li>Past&nbsp;Month:&nbsp;<span id="four">?</span><span id="pricepercentticker6" class="isabsolute"></span></li>
+      </ul>
+  </div>
+   <span id="discord" style="color:#f0f0f8 !important;text-decoration: none !important;">
+     <a href="https://discord.gg/mtwvCpS" target="_blank" rel="noopener noreferrer" style="color:#f0f0f8 !important;text-decoration: none !important;" title="Visit Our Discord!">
+       <i class="fab fa-fw fa-2x fa-discord sexyblackoutline" style="padding-left:0.5em;padding-right:0.5em;color:#f0f0f8; float:right;margin-right: 2vw; font-size: 2em !important; line-height: 1.2em !important; "></i>
+     </a>
+   </span>
+   <span id="github" style='color: #f0f0f8;float: right;margin-top: -0.22em;margin-right: 1.3em;vertical-align: middle;'>
+     <a href="https://github.com/KLYE-Dev/hive.loans" target="_blank" rel="noopener noreferrer" style="z-index: 999999; color:#f0f0f8 !important;text-decoration: none !important;" title="Visit the Github!">
+       <i class="fab fa-fw fa-2x fa-github-square sexyblackoutline" style="padding-left:0.5em;padding-right:0.5em;color:#f0f0f8; float:right; font-size: 2em !important; line-height: 1.2em !important; "></i>
+     </a>
+   </span>
  </footer>
- <!--<span id="usernamestore"></span>--><span id="socketid"></span><span id="plugintype"></span><span id="useraddress"></span><span id="newamount"></span><span id="newdays"></span><span id="newfee"></span><span id="userrank"></span>
+<span id="socketid"></span><span id="plugintype"></span><span id="useraddress"></span><span id="newamount"></span><span id="newdays"></span><span id="newfee"></span><span id="userrank"></span>
 </body>
 </html>
 <script src="https://cdn.jsdelivr.net/npm/hivesigner@3.2.1/dist/hivesigner.min.js"></script>
@@ -185,11 +221,10 @@
 <script src="/js/packages/colorFader.js"></script>
 <script src="/js/packages/contextMenu.min.js"></script>
 <script src="/js/packages/openpgp.min.js"></script>
-<script src="/js/packages/aes256.js"></script>
+<!--<script src="/js/packages/aes256.js"></script>-->
 <script src="/js/dialogs.js"></script>
 <script src="/js/variables.js"></script>
 <script src="/js/actions.js"></script>
-<script src="/js/visuals.js"></script>
 <script src="/js/functions.js"></script>
 <script src="/js/connections.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.js"></script>
@@ -565,6 +600,7 @@ alertify.defaults = {
 
  //alertify.set('notifier','position', 'left', 'close');
 
+//TICKER shit
 
 
 </script>

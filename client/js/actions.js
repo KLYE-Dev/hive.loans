@@ -236,6 +236,15 @@ function openLendingTab() {
     });
 }
 
+function openShares() {
+    socket.emit('loadaallshares', {token: token}, function(err, data){
+      if(err) showErr(err);
+      if(data) {
+        //showSuccess(data);
+      }
+    });
+}
+
 function openAllLoansTab() {
     socket.emit('loadallloans', {token: token}, function(err, data){
       if(err) showErr(err);
@@ -307,6 +316,7 @@ var contractMenu = function(ele, contractID, data) {
           console.log(data);
           var menutype = data.menu;
           var loanId = data.loanId;
+          var deployuser = data.user;
           var messageid = contractID;
 
           if(menutype === "admin"){
@@ -324,17 +334,21 @@ var contractMenu = function(ele, contractID, data) {
                   }
               },
               {
-                  name: '💀Nuke Contract',
+                  name: '💀Cancel Contract',
                   fun: function () {
-                          getUserBlog(user)
+                    if(data.state != 'accepted'){
+                      cancelContract(loanId, data.state);
+                    } else {
+                      showErr(`ERROR: Cannot Cancel Active Loans!`);
+                    }
                   }
               },
-              {
+              /*{
                   name: '🛠Edit Contract',
                   fun: function () {
                           getUserBlog(user)
                   }
-              },
+              },*/
               {
                   name: '💸View Lender Profile',
                   fun: function () {
@@ -387,6 +401,19 @@ var contractMenu = function(ele, contractID, data) {
                   name: '🧾View Contract',
                   fun: function () {
                           getUserBlog(user)
+                  }
+              },
+              {
+                  name: '💀Cancel Contract',
+                  fun: function () {
+                    if(user == deployuser ){
+                      cancelContract(loanId, data.state)
+                    } else if(data.state != 'accepted') {
+                      showErr(`Cannot Cancel Active Contracts!`);
+                    } else {
+                      showErr(`Invalid Permissions to Cancel Contract!`);
+                    }
+
                   }
               },
               {

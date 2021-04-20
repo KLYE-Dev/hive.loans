@@ -17,6 +17,9 @@ const Chaindata = DataBase.models.Blockchain;
 
 var online = process.connected;
 var pid = process.pid;
+var hotWalletData;
+var coldWalletData;
+
 log(`CHAIN: Connected: ${online} with PID: ${pid}`);
 
 
@@ -46,12 +49,29 @@ get: function() {
     }
 });
 
-process.on('message', function(m) {
+var fetchAccountHive = async (user) => {
+    log(`CHAIN: fetchAccountHive(${user})`);
+    if(!user) return "No User Specified";
+      log(`getHivePower Called!`);
+      var resultData = await hivejs.api.callAsync('condenser_api.get_accounts', [[`${user}`]]).then((res) => {return JSON.parse(JSON.stringify(res))}).catch((e) => log(e));
+      return resultData;
+};
+
+var fetchAccountHbd = async (user) => {
+    log(`CHAIN: fetchAccountHbd(${user})`);
+    if(!user) return "No User Specified";
+      log(`getHivePower Called!`);
+      var resultData = await hivejs.api.callAsync('condenser_api.get_accounts', [[`${user}`]]).then((res) => {return JSON.parse(JSON.stringify(res))}).catch((e) => log(e));
+      return resultData;
+};
+
+process.on('message', async function(m) {
   try {
       m = JSON.parse(m);
-      if(config.debug == true) log(m);
-      log(`chainSnoop.js Message:`);
-      log(m);
+      if(config.debug == false) {
+        log(`chainSnoop.js Message:`);
+        log(m);
+      }
   } catch(e) {
     log(`ERROR: ${e}`);
     return console.error(e);
@@ -66,7 +86,25 @@ process.on('message', function(m) {
       } else {
         log(`CHAIN: ERROR: No User Was Specified!`);
       }
-      break;
+    break;
+
+    case 'grabacct':
+      log(`CHAIN: grabacct was called by ${m.username}`)
+      if (m.username != config.owner && m.username != "siteaudit") {
+        log(`CHAIN: ERROR: User ${m.username} Tried to Grab Accounts!`);
+      } else if(m.username == undefined) {
+        log(`CHAIN: ERROR: No User Was Specified!`);
+      } else {
+        log(`CHAIN: Fetching @hive.loans Account for Audit`);
+        hotWalletData = await grabAcct("hive.loans");
+        log(`CHAIN: Fetching @hive.loans.safe Account for Audit`);
+        coldWalletData = await grabAcct("hive.loans.safe");
+          var walletData = [];
+          walletData.push(hotWalletData[0].balance);
+          walletData.push(coldWalletData[0].balance);
+          return process.send(JSON.stringify({type:'massemit', name: "sitewallets", payload: walletData}));
+      }
+    break;
   }
 });
 
@@ -123,11 +161,11 @@ var saveHeadBlock = async() => {
 }
 
 function saveBlock(blockSave) {
-  Chaindata.update({siteblock: blockSave},{where:{id:1}});
+  Chaindata.update({siteblock: blockSave, synced:synced},{where:{id:1}});
 }
 
 function saveHead(blockSent) {
-  Chaindata.update({headblock: blockSent},{where:{id:1}});
+  Chaindata.update({headblock: blockSent, synced:synced},{where:{id:1}});
 }
 
 
@@ -186,8 +224,8 @@ function returnTime(){
 
 let scanrate = 0;
 let synced = false;
-const version = "0.0.81";
-const apinodes = ["hived.privex.io", "api.hivekings.com", "api.deathwing.me", "api.hive.blog", "api.openhive.network", "hive.loelandp.nl", "hive-api.arcange.eu", "rpc.ausbit.dev", "anyx.io"];
+const version = "0.0.9";
+const apinodes = ["hived.privex.io", "api.hivekings.com", "api.deathwing.me", "api.hive.blog", "api.openhive.network", "hive.roelandp.nl", "hive-api.arcange.eu", "rpc.ausbit.dev", "anyx.io"];
 //hivejs.api.setOptions({ url: "https://api.hivekings.com" });//http://185.130.44.165/
 hivejs.api.setOptions({ url: "https://api.hivekings.com" });
 
@@ -256,6 +294,19 @@ async function changenode() {
   }
   log(`CHAIN: Changed API Node to ${apinodes[apiindex]}`);
   await hivejs.api.setOptions({ url: `https://${apinodes[apiindex]}` });
+}
+
+async function grabAcct(u) {
+  var v = "";
+  if (u == config.hotwallet){
+    v = "Hot Wallet";
+  }
+  if (u == config.coldwallet){
+    v = "Cold Wallet";
+  }
+  log(`CHAIN: Fetching ${v} Account @${u}`);
+  var acctData = await hivejs.api.callAsync('condenser_api.get_accounts', [[`${u}`]]).then((res) => {return JSON.parse(JSON.stringify(res))}).catch((e) => log(e));
+  return acctData;
 }
 
 //changenode();
@@ -617,6 +668,7 @@ var newbytesParsed;
        hivejs.api.getOpsInBlock(blockNum, false, async function (err, block) {
         if(err){
           log(`Ooops. Parsed too fast!`);
+          synced = false;
           await timeout(3005);
           //log(`parseblock line 422`)
           return setTimeout(() => {return parseBlock(blockNum)});
@@ -637,6 +689,7 @@ var newbytesParsed;
               process.stdout.clearLine();
               log(`parseblock line 438`)
               parseOn = false;
+              synced = true;
               return setTimeout(() => {return parseBlock(blockNum)});
             }
 
@@ -651,7 +704,6 @@ var newbytesParsed;
             saveBlock(blockNum);
             saveHead(lastHeadBlock);//lastSafeBlock = fetchSafe();
           }
-          synced = false;
           //newbytesParsed = byteSize(block);
           if(newbytesParsed != undefined){//log(`block byte size: ${newbytesParsed}`)
             bytesParsed += newbytesParsed;//log(`Total Byte size of session: ${bytesParsed}`);
@@ -663,11 +715,12 @@ var newbytesParsed;
           }
           blockNum++;
           recentblock = blockNum + 1;
-          process.send(JSON.stringify({type: 'blockupdate', block: blockNum}));
+          process.send(JSON.stringify({type: 'blockupdate', block: blockNum, synced:synced}));
           if (shutdown) {
             return bail();
           } else {
             parseOn = false;
+            //process.send(JSON.stringify({type: 'blockupdate', block: blockNum, synced:synced}));
             //log(`parseblock line 592 Block number: #${blockNum} head block: ${lastHeadBlock}`)
             return parseBlock(blockNum);
           }
@@ -829,7 +882,7 @@ var process_transfer = async function (transaction, op) {
 process.on("SIGINT", function () {
     shutdown = true;
     log(`CHAIN: Shutting down in 1 seconds, start again with block ${blockNum}`);
-    Chaindata.update({siteblock: blockNum},{where:{id:1}});
+    Chaindata.update({siteblock: blockNum, synced: synced},{where:{id:1}});
     setTimeout(bail('shutdown'), 1000);
 });
 

@@ -1,0 +1,37 @@
+.isabsolute {
+	position: unset;
+	display: initial;
+	top: 17px;
+	left: -1px;
+	margin: 1px;
+	padding: 1px;
+}
+#scroller{
+	position: relative;
+	display: inline-flex;
+	height:100%;
+	width:auto;
+	margin:1px;
+	padding:1px;
+	line-height:30px;}
+#scroller li{
+	float:left;
+	height:30px;
+	width:auto;
+	padding: 0 5px 0 5px;
+	list-style-position:inside;
+	display: inline;
+}
+#scrollerWrapper{
+	height:30px;
+	margin:0px;
+	overflow:hidden;
+	border: none;
+	/* background:#F2F2F2; */
+	width: 10%;
+	position: initial;
+	display: inline-flex;
+	top: 7%;
+	z-index: 999999;
+	left: 20.9%;
+}
