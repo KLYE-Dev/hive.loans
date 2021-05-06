@@ -14,9 +14,14 @@ module.exports = (sequelize, DataTypes) => {
     }
   };
   Pricelog.init({
-    hiveusdprice: DataTypes.DECIMAL(9,8).UNSIGNED,
-    hivebtcprice: DataTypes.DECIMAL(6,5).UNSIGNED,
-    block: DataTypes.BIGINT.UNSIGNED,
+    hivebtcprice: DataTypes.DECIMAL,
+    hiveusdprice: DataTypes.DECIMAL,
+    hbdbtcprice: DataTypes.DECIMAL,
+    hbdusdprice: DataTypes.DECIMAL,
+    btcusdprice: DataTypes.BIGINT,
+    block: DataTypes.BIGINT,
+    synced: DataTypes.BOOLEAN,
+    validdate: DataTypes.DATE(4),
   }, {
     sequelize,
     modelName: 'Pricelog',

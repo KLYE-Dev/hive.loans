@@ -21,7 +21,9 @@ module.exports = (sequelize, DataTypes) => {
     amount: DataTypes.INTEGER,
     fee: DataTypes.INTEGER,
     coin: DataTypes.STRING,
-    confirmed: DataTypes.BOOLEAN
+    confirmed: DataTypes.BOOLEAN,
+    confirmedblock: DataTypes.INTEGER,
+    confirmedtxid: DataTypes.STRING
   }, {
     sequelize,
     modelName: 'Withdrawals',

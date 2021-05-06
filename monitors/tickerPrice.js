@@ -1,8 +1,10 @@
+const { config } = require("../config/index.js");
+let debug = config.debug;
+const owner = config.owner;
 const log = require('fancy-log');
 const CoinMarketCap = require('coinmarketcap-api');
 let Price = require("../snippets/priceCheck.js");
 const fetch = require('node-fetch');
-const { config } = require("../config/index.js");
 const apiKey = config.cmcapikey;
 const client = new CoinMarketCap(apiKey);
 
@@ -116,7 +118,7 @@ function hbdCMCprice() {
   );}).catch(console.error);
   setTimeout(function() {
     hbdCMCprice();
-  }, 10000)
+  }, 300000)
 }
 
   //hbdCMCprice();

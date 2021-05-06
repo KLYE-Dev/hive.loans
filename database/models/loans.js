@@ -17,6 +17,7 @@ module.exports = (sequelize, DataTypes) => {
     userId: DataTypes.INTEGER,
     loanId: DataTypes.STRING,
     username: DataTypes.STRING,
+    funded: DataTypes.BOOLEAN,
     amount: DataTypes.INTEGER,
     days: DataTypes.INTEGER,
     interest: DataTypes.INTEGER,

@@ -46,7 +46,7 @@ var fetchUserDBQuery = async (table, name) => {
 };
 
 var fetchSafe = async() => {
-  hivejs.api.getDynamicGlobalProperties(await function (err, result) {
+  hive.api.getDynamicGlobalProperties(await function (err, result) {
       if(err) log(err);
       if (result) {
         result = JSON.parse(JSON.stringify(result));
@@ -58,7 +58,7 @@ var fetchSafe = async() => {
 };
 
 var fetchHead = async() => {
-  hivejs.api.getDynamicGlobalProperties(await function (err, result) {
+  hive.api.getDynamicGlobalProperties(await function (err, result) {
       if(err) log(err);
       if (result) {
           result = JSON.parse(JSON.stringify(result));
@@ -70,7 +70,7 @@ var fetchHead = async() => {
 };
 
 var saveHeadBlock = async() => {
-  hivejs.api.getDynamicGlobalProperties(await function (err, result) {
+  hive.api.getDynamicGlobalProperties(await function (err, result) {
       if(err) log(err);
       if (result) {
           result = JSON.parse(JSON.stringify(result));
@@ -143,8 +143,8 @@ let scanrate = 0;
 let synced = false;
 const version = "0.0.81";
 const apinodes = ["hived.privex.io", "api.hivekings.com", "api.deathwing.me", "api.hive.blog", "api.openhive.network", "hive.loelandp.nl", "hive-api.arcange.eu", "rpc.ausbit.dev", "anyx.io"];
-//hivejs.api.setOptions({ url: "https://api.hivekings.com" });//http://185.130.44.165/
-hivejs.api.setOptions({ url: "https://api.hivekings.com" });
+//hive.api.setOptions({ url: "https://api.hivekings.com" });//http://185.130.44.165/
+hive.api.setOptions({ url: "https://api.hivekings.com" });
 
 /*
     stream.on('data', function(block) {
@@ -220,7 +220,7 @@ async function changenode() {
     apiindex = 0;
   }
   log(`SNOOP: Changed API Node to ${apinodes[apiindex]}`);
-  await hivejs.api.setOptions({ url: `https://${apinodes[apiindex]}` });
+  await hive.api.setOptions({ url: `https://${apinodes[apiindex]}` });
 }
 
 changenode();
@@ -342,7 +342,7 @@ var letsgo = async() => {
     blockNum = await fetchLastBlockDB();
       sleep(3000);
 
-      hivejs.api.getDynamicGlobalProperties(await function (err, result) {
+      hive.api.getDynamicGlobalProperties(await function (err, result) {
           sleep(3000);
           if (result) {
               lastb = result["last_irreversible_block_num"];
@@ -356,7 +356,7 @@ var letsgo = async() => {
       if(typeof blockNum !== 'number'){
         synced = false;
         log("SNOOP: Start Block Undefined! Fetching Last Irreversible Block - Please Wait.");
-        hivejs.api.getDynamicGlobalProperties(function (err, result) {
+        hive.api.getDynamicGlobalProperties(function (err, result) {
             sleep(3000);
             if (result) {
                 lastb = result["last_irreversible_block_num"];
@@ -421,7 +421,7 @@ async function parseBlock(blockNum) {
 var newbytesParsed;
     newCurrentBlock = blockNum;
     scanrate++;
-    await hivejs.api.getOpsInBlock(blockNum, false, async function (err, block) {
+    await hive.api.getOpsInBlock(blockNum, false, async function (err, block) {
       if(err){
         log(`Ooops. Parsed too fast!`);
         await timeout(9000);
@@ -529,7 +529,7 @@ var newbytesParsed;
                         log(operation);
                         log(`PROPOSAL PAY DETECTED - ROUTING TO KLYE`)
                         saveBlock(blockNum);
-                        hivejs.broadcast.transfer(bankwif, appName, 'klye', operation.payment, "Hive.Loans Proposal Payment Auto-Routing", function (fuckeduptransfer, senttransfer) {
+                        hive.broadcast.transfer(bankwif, appName, 'klye', operation.payment, "Hive.Loans Proposal Payment Auto-Routing", function (fuckeduptransfer, senttransfer) {
                             if (fuckeduptransfer) log("Refund Fucked Up: " + fuckeduptransfer);
                             if (senttransfer) log("Refund of Deposit Transfer to " + depositer + " Sent!");
                         }); //end refund transfer
@@ -551,7 +551,7 @@ var newbytesParsed;
 
 var process_vote = async function(op) {
   log(op);
-  await hivejs.broadcast.vote(bankwif, appName, op.author, op.permlink, op.weight, function(err, result) {
+  await hive.broadcast.vote(bankwif, appName, op.author, op.permlink, op.weight, function(err, result) {
     if(err){
       log(`SNOOP: process_vote ERROR: ${err}`);
     }
@@ -580,7 +580,7 @@ var process_transfer = async function (op, transaction) {
     let userNameCheck = await Userdata.findOne({where:{address:depositmemo}, raw:true, nest: true}).then(result => {return result}).catch(error => {console.log(error)});
     if (userNameCheck === null) {
       if(refunds === true){
-        hivejs.broadcast.transfer(bankwif, appName, depositer, op.data.amount, "Hive.Loans Deposit Refund - No Account is Linked to Specified Address!", function (fuckeduptransfer, senttransfer) {
+        hive.broadcast.transfer(bankwif, appName, depositer, op.data.amount, "Hive.Loans Deposit Refund - No Account is Linked to Specified Address!", function (fuckeduptransfer, senttransfer) {
             if (fuckeduptransfer) console.log("Refund Fucked Up: " + fuckeduptransfer);
             if (senttransfer) log("Refund of Deposit Transfer to " + depositer + " Sent!");
         }); //end refund transfer
@@ -602,7 +602,7 @@ var process_transfer = async function (op, transaction) {
       } else {
           log("SNOOP: Deposit Detected is NOT a Hive.Loans Supported Token..." + depositer);
           /*
-          hivejs.broadcast.transfer(bankwif, appName, depositer, op.data.amount, "Hive.Loans Deposit Refund - Please Only Send HIVE / HBD!", function (fuckeduptransfer, senttransfer) {
+          hive.broadcast.transfer(bankwif, appName, depositer, op.data.amount, "Hive.Loans Deposit Refund - Please Only Send HIVE / HBD!", function (fuckeduptransfer, senttransfer) {
               if (fuckeduptransfer) {
                   console.log("Refund Fucked Up: " + fuckeduptransfer);
               }

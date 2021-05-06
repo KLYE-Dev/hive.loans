@@ -86,13 +86,13 @@ await hive.api.getWithdrawRoutes(`${user}`, 1, function(err, data) {
 
 /* Used to check a public key account owner
 console.log(`getKeyReferences:`);
-await hivejs.api.getKeyReferences([owner_key], function(err, result) {
+await hive.api.getKeyReferences([owner_key], function(err, result) {
   console.log(err, result);
 });
 */
 
 
 
-hivejs.broadcast.accountUpdate(wif, account, owner, active, posting, memoKey, jsonMetadata, function(err, result) {
+hive.broadcast.accountUpdate(wif, account, owner, active, posting, memoKey, jsonMetadata, function(err, result) {
   console.log(err, result);
 });

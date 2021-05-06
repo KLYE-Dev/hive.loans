@@ -1,6 +1,8 @@
+const { config } = require("../config/index.js");
+const debug = config.debug;
+const owner = config.owner;
 const log = require('fancy-log');
 let Price = require("../snippets/priceCheck.js");
-const { config } = require("../config/index.js");
 const DB = require('../database/models');
 const sequelize = DB.sequelize;
 const DataBase = sequelize;
@@ -131,7 +133,7 @@ var getUsersFutures = async(username, active) => {
 
 var cgpricecheck = async(coin) => {
   var response = [];
-  if(config.debug == true) log(`FUTURES: CoinGecko.com Price Check of ${coin.toUpperCase()} Called...`);
+  if(debug == true) log(`FUTURES: CoinGecko.com Price Check of ${coin.toUpperCase()} Called...`);
   if(coin == undefined) {
     coin = "hive";
   } else {
@@ -250,7 +252,7 @@ process.on('message', async function(m) {
   let loanData;
   try {
       m = JSON.parse(m);
-      if(config.debug == true){
+      if(debug === true){
         log(`cfdEngine.js Message:`);
         log(m)
       }
@@ -273,6 +275,9 @@ process.on('message', async function(m) {
 
     break;
     case 'stats':
+
+    break;
+    case 'overnightcheck':
 
     break;
     case 'open':

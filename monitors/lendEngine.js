@@ -1,5 +1,8 @@
-var crypto = require("crypto");
 const { config } = require("../config/index.js");
+let debug = config.debug;
+const owner = config.owner;
+var crypto = require("crypto");
+const getStringByteSize = require('../snippets/getStringByteSize.js');
 const log = require("fancy-log");
 const DB = require("../database/models");
 const sequelize = DB.sequelize;
@@ -77,9 +80,9 @@ switch(m.type){
             if (key.cancelfee !== -1) {
                 delete key.cancelfee;
             }
-            //if (key.cancelled !== -1) {
-            //    delete key.cancelled;
-            //}
+            if (key.status == 'cancelled') {
+                delete key;
+            }
             if (key.totalpayments !== -1) {
                 delete key.totalpayments;
             }
@@ -146,7 +149,7 @@ switch(m.type){
         });
         process.send(JSON.stringify({
           type:'emit',
-          name:'loadedLoans',
+          name:'loadmyloans',
           socketid: m.socketid,
           payload: [{loans: loadedLoans}],
           token: m.token
@@ -276,35 +279,51 @@ switch(m.type){
         return log(`LOANS: ERROR: Loan ${m.loanId} not found in DB!`);
       } else {
         loanData = JSON.parse(JSON.stringify(loanChecker));
+        if(m.username !== owner || m.username !== loanData.username) {
+          process.send(JSON.stringify({
+            type:'emit',
+            name:'loannuked',
+            socketid: m.socketid,
+            error: 'Cannot Cancel Contract, User Privileges Invalid!',
+            payload: null,
+            token: m.token
+          }));
+          return log(`LOANS: @${m.username} Tried to Cancel a Loan Belonging to @${loanData.username}!`);
+        }
         var loanAmount = parseInt(loanData.amount);
         if(loanData.active === 0 && loanData.cancelled === 0){
-          if(loanData.username !== m.username || loanData.username !== config.owner) return log(`LOANS: @${m.username} Tried to Cancel a Loan Belonging to @${loanData.username}!`);
+          log(`userData.username`);
+          log(userData.username);
+          log(`loanData.username`);
+          log(loanData.username);
 
-        loanAmount = parseInt(loanAmount - loanData.cancelfee);
-        userData.hivebalance += loanAmount;
-        userData.activelends--;
-        await Loandata.update({completed: true, cancelled: true, state: 'cancelled'},{where:{loanId:`${m.loanId}`}});
-        await Userdata.update({hivebalance:userData.hivebalance, activelends: userData.activelends},{where:{username:m.username}});
+          if(loanData.username == userData.username) {
+            loanAmount = parseInt(loanAmount - loanData.cancelfee);
+            userData.hivebalance += loanAmount;
+            userData.activelends--;
+            await Loandata.update({completed: true, cancelled: true, state: 'cancelled'},{where:{loanId:`${m.loanId}`}});
+            await Userdata.update({hivebalance:userData.hivebalance, activelends: userData.activelends},{where:{username:m.username}});
 
-        var loanPayload = {userId: loanData.userId, loanId: loanData.loanId, username: loanData.username, amount: loanData.amount, days: loanData.days, interest: loanData.interest, completed: true, cancelled: true, cancelfee: cancelFee};
-        process.send(JSON.stringify({
-          type:'emit',
-          name:'loannuked',
-          socketid: m.socketid,
-          error: null,
-          payload: loanPayload,
-          token: m.token
-        }));
-        } else {
-        process.send(JSON.stringify({
-          type:'emit',
-          name:'loannuked',
-          socketid: m.socketid,
-          error: 'Cannot Cancel Contract!',
-          payload: null,
-          token: m.token
-        }));
-        }
+            var loanPayload = {userId: loanData.userId, loanId: loanData.loanId, username: loanData.username, amount: loanData.amount, days: loanData.days, interest: loanData.interest, completed: true, cancelled: true, cancelfee: cancelFee};
+            process.send(JSON.stringify({
+              type:'emit',
+              name:'loannuked',
+              socketid: m.socketid,
+              error: null,
+              payload: loanPayload,
+              token: m.token
+            }));
+            } else {
+            process.send(JSON.stringify({
+              type:'emit',
+              name:'loannuked',
+              socketid: m.socketid,
+              error: 'Cannot Cancel Contract!',
+              payload: null,
+              token: m.token
+            }));
+            }
+          }
       }
     }
     break;
@@ -329,18 +348,32 @@ switch(m.type){
     //END case 'infoloan'
 
     case 'myloanlist':
-    var fetchUserLoans = async() => {
+    var histvar;
+    if(!m.history) histvar = false;
+    var fetchUserLoans = async(history) => {
+      if(!history || typeof history != 'boolean') history = false;
     loanCheck = await Loandata.findAll({
             limit: 200,
-            where:{borrower:`${m.username}`},
+            where:{
+              borrower:`${m.username}`,
+              completed:`${history}`,
+            },
             order: [ [ 'createdAt', 'DESC' ]],
             raw: true
           }).then(function(entries){
 
               let cleanedloans = entries.map(function(key) {
+                if(history === true) {
+
+                } else {
+                  if (key.active == 0) {
+                      delete key;
+                  }
                   if (key.completed == 0) {
                       delete key;
                   }
+                }
+
                   return loadedLoans.push(key);
                   //return key;
               });
@@ -356,8 +389,8 @@ switch(m.type){
         payload: [{username: m.username, loandata: loadedLoans, token: m.token}]
       }));
     }
-  }
-    await fetchUserLoans();
+  };
+    await fetchUserLoans(histvar);
     break;
     //END case 'myloanlist'
 
@@ -371,9 +404,6 @@ switch(m.type){
         let stateCheked = entries.map(function(key) {
             if (key.id !== -1) {
                 delete key.id;
-            }
-            if (key.userId !== -1) {
-                delete key.userId;
             }
             if (key.username !== -1) {
                 delete key.username;
@@ -425,9 +455,6 @@ switch(m.type){
             if (key.id !== -1) {
                 delete key.id;
             }
-            if (key.userId !== -1) {
-                delete key.userId;
-            }
             if (key.username !== -1) {
                 delete key.username;
             }
@@ -474,23 +501,75 @@ switch(m.type){
 
                 async function fetchUsersSiteState(){
                   var wew = await Userdata.findAll({
-                    where:{     createdAt: {
-                      [Op.lte]: dateNow
-                    }},
+                    where:{
+                      createdAt: {
+                        [Op.lte]: dateNow
+                    }
+                  },
                     order: [[ 'createdAt', 'DESC' ]],
                     raw: true
                   }).then(function(entries){
                       let usersCheked = entries.map(function(key) {
-                          if (key.id !== -1) {
-                              delete key.id;
-                          }
-                          if (key.userId !== -1) {
-                              delete key.userId;
-                          }
-                          if (key.createdAt !== -1) {
-                              delete key.createdAt;
-                          }
-                          return key;
+/*
+"userId":13,
+"rank":"user",
+"hivebalance":0,
+"feesorder":0,
+"totalcfdtrade":0,
+"feescfdtrade":0,
+"activeloans":1,
+"closedloans":0,
+"feesloans":0,
+"totalloans":10,
+"activelends":1,
+"closedlends":0,
+"totallends":50,
+"feeslends":0,
+"deposits":0,
+"depositstotal":0,
+"withdrawals":10,
+"withdrawalstotal":17633,
+"withdrawalsfee":3596,
+"totalfees":0
+*/
+
+                        delete key.id;
+                        //delete key.userId;
+                        delete key.username;
+                        delete key.level;
+                        delete key.xp;
+                        delete key.xpmulti;
+                        delete key.siterank;
+                        delete key.disclaimer;
+                        //delete key.hivebalance;
+                        delete key.hiveprofit;
+                        //delete key.shares;
+                        delete key.shareprofit;
+                        delete key.cfdprofit;
+                        delete key.investedproft;
+                        delete key.investedpercent;
+                        delete key.address;
+                        delete key.emergencyaddress;
+                        delete key.siterank;
+                        delete key.activeorder;
+                        delete key.hbdbalance;
+                        delete key.closedorder;
+                        delete key.totalorder;
+                        delete key.activecfdtrade;
+                        delete key.closedcfdtrade;
+                        delete key.invested;
+                        delete key.totallends;
+                        //delete key.feeslends;
+                        delete key.deposits;
+                        delete key.depositstotal;
+                        delete key.withdrawals;
+                        delete key.withdrawalstotal;
+                        //delete key.withdrawalfees;
+                        //delete key.totalfees;
+                        delete key.flags;
+                        delete key.createdAt;
+                        delete key.updatedAt;
+                        return key;
                       });
                       usersCheked.forEach((item, i) => {
                         userState.push(item);
@@ -520,18 +599,18 @@ switch(m.type){
         raw: true
       }).then(async function(entries){
           stateLoanCheked = entries.map(function(key) {
-              if (key.id !== -1) {
-                  delete key.id;
-              }
-              if (key.userId !== -1) {
-                  delete key.userId;
-              }
-              if (key.nextcollect !== -1) {
-                  delete key.nextcollect;
-              }
-              if (key.createdAt !== -1) {
-                  delete key.createdAt;
-              }
+              //if (key.id !== -1) {
+              //    delete key.id;
+              //}
+              //if (key.userId !== -1) {
+              //    delete key.userId;
+              //}
+              //if (key.nextcollect !== -1) {
+              //    delete key.nextcollect;
+              //}
+              //if (key.createdAt !== -1) {
+              //    delete key.createdAt;
+              //}
               return key;
           });
           stateLoanCheked.forEach((item, i) => {

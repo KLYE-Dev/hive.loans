@@ -17,6 +17,10 @@ module.exports.fetchlastprice = async() => {
           if (key.id !== -1) {
               delete key.id;
           }
+        key.hivebtcprice = parseFloat(key.hivebtcprice);
+        key.hiveusdprice = parseFloat(key.hiveusdprice);
+        key.hbdbtcprice = parseFloat(key.hbdbtcprice);
+        key.hbdusdprice = parseFloat(key.hbdusdprice);
           if (key.createdAt !== -1) {
               delete key.createdAt;
           }
@@ -45,6 +49,10 @@ module.exports.fetchmanyprice = async(amount) => {
           if (key.id !== -1) {
               delete key.id;
           }
+          key.hivebtcprice = parseFloat(key.hivebtcprice);
+          key.hiveusdprice = parseFloat(key.hiveusdprice);
+          key.hbdbtcprice = parseFloat(key.hbdbtcprice);
+          key.hbdusdprice = parseFloat(key.hbdusdprice);
           if (key.createdAt !== -1) {
               delete key.createdAt;
           }

@@ -5,6 +5,7 @@ dotenv.config();
       version: process.env.VERSION,
       nodeenv: process.env.NODE_ENV,
       debug: process.env.DEBUG,
+      verbose: process.env.VERBOSE,
       dbSetup: process.env.DB_SETUP,
       mariaDb: process.env.MARIADB,
       dbPort: process.env.DB_PORT,
@@ -15,6 +16,7 @@ dotenv.config();
       hotwallet: process.env.HOT_WALLET,
       coldwallet: process.env.COLD_WALLET,
       demo: process.env.SITE_DEMO,
+      cfdspread: process.env.CFD_SPREAD,
       sidechainId: process.env.SIDECHAIN_ID,
       bankwif: process.env.ACTIVE_PRIVKEY,
       wif: process.env.POSTING_PRIVKEY,
@@ -24,7 +26,10 @@ dotenv.config();
       votemirror: process.env.VOTE_MIRROR,
       refunds: process.env.REFUNDS,
       stdoutblocks: process.env.STDOUT_BLOCKS,
-      cmcapikey: process.env.CMC_API_KEY
+      cmcapikey: process.env.CMC_API_KEY,
+      worldcoinkey:process.env.WORLD_COIN_API_KEY,
+      binanceapikey:process.env.BINANCE_API_KEY,
+      binanceapisec:process.env.BINANCE_API_SEC,
     };
 
 exports.config = config;

@@ -1,10 +1,18 @@
+const { config } = require("./config/index.js");
+let debug = config.debug;
+const owner = config.owner;
 const fs = require("fs");
 const spawn = require("child_process");
 const crypto = require('crypto');
 const speakeasy = require('speakeasy');
 const QRCode = require('qrcode');
-const hivejs = require('@hiveio/hive-js');
+const hive = require('@hiveio/hive-js');
 let { pgpKeygenAsync, pgpEncryptAsync, pgpDecryptAsync } = require("./snippets/pgp.js");
+const getStringByteSize = require('./snippets/getStringByteSize.js');
+const getVP = require('./snippets/GetVotingPower.js');
+const HP = require('./snippets/GetHivePower.js');
+const getPowerDownPath = require('./snippets/getPowerDownRoutes.js');
+const manaBar = require('./snippets/manaBar.js');
 const {Client,  Signature,  cryptoUtils} = require('@hiveio/dhive');
 let Price = require("./snippets/priceCheck.js");
 new Client('https://api.hive.blog');
@@ -16,18 +24,17 @@ const moment = require('moment');
 const geoip = require('geoip-lite');
 const schedule = require('node-schedule');
 const fetch = require('node-fetch');
-const { config } = require("./config/index.js");
 const DB = require('./database/models');
 const sequelize = DB.sequelize;
 const DataBase = sequelize;
 const { Op } = require("sequelize");
-const Userdata = DataBase.models.Users;
-const Loandata = DataBase.models.Loans;
-const Depositdata = DataBase.models.Deposits;
-const Withdrawdata = DataBase.models.Withdrawals;
-const Chatdata = DataBase.models.Messages;
-const Ownkeydata = DataBase.models.Ownerkeys;
-const Pricedata = DataBase.models.Pricelog;
+const UserData = DataBase.models.Users;
+const LoanData = DataBase.models.Loans;
+const DepositData = DataBase.models.Deposits;
+const WithdrawData = DataBase.models.Withdrawals;
+const ChatData = DataBase.models.Messages;
+//const OwnkeyData = DataBase.models.Ownerkeys;
+const PriceData = DataBase.models.Pricelog;
 
 log("CHAIN: Initializing Blockchain Monitoring...");
 var rpcThread = spawn.fork(__dirname + '/monitors/chainSnoop.js'); //, [], {}
@@ -45,6 +52,9 @@ log("TRADE: Initializing Share Exchange & Trading...");
 var exchangeThread = spawn.fork(__dirname + '/monitors/exchangeEngine.js');
 log("FUTURES: Initializing HIVE Futures Engine...");
 var futuresThread = spawn.fork(__dirname + '/monitors/cfdEngine.js');
+log("SEER: Initializing Seer Prediction Engine...");
+var seerThread = spawn.fork(__dirname + '/monitors/theSeer.js');
+
 
 //const oneday = 60 * 60 * 24 * 1000;
 //log(`INITTIME: One Day is ${oneday}ms`);
@@ -66,7 +76,7 @@ function simpleStringify(object){
     return [simpleObject]; // returns cleaned up JSON
 };
 //185.130.44.165
-hivejs.api.setOptions({ url: "https://api.hivekings.com" });
+hive.api.setOptions({ url: "https://api.hivekings.com" });
 
 var chatHist = [];
 var canUserTransact = []; //stores users logged in and if they are permitted to transact - stops a potential to tip and bet at the same time to overwrite balance
@@ -77,10 +87,28 @@ var userRawSockets = [];
 var socketListKeys = Object.keys(socketList);
 var usersHivePower = {};
 var founderslist = [];
+var foundersload = () => {
+  fs.readFile(__dirname + "/lists/founders.csv", function(err, data){
+    if(err) return false;
+    if(data){
+      try{
+        founderslist.push(data);
+        log(founderslist)
+        return founderslist;
+      } catch(e) {
+        log(e);
+        return false;
+      }
+    }
+  });
+};
+foundersload();
 var auditArray = [];
 var auditWalletArray = [];
-var hotWalletBalance = 0;
-var coldWalletBalance = 0;
+
+
+
+
 var maxWin = 0;
 var bankRoll = 0;
 var greedBR = 0;
@@ -89,11 +117,14 @@ var userTokens = {};
 var siteTake = 0;
 var siteEarnings;
 var newCurrentBlock = 0;
+var synced;
 var blockNum = 0;
 var dateNow = new Date().getTime();
-
+let btcprice;
 let hivebtcprice;
 let hiveprice;
+let hbdbtcprice;
+let hbdprice;
 let hivePriceData = [];
 let withdrawUSDcost = 0.25; // $0.10 USD withdraw fee
 let contractDeployUSDcost = 0.50;// $0.50 USD contract creation fee
@@ -106,9 +137,14 @@ var oldprice;
 var lastprice;
 
 var spotprice;
-var spreadpercent = 1;
+var spreadpercent = config.cfdspread;
 var longHIVEprice;
 var shortHIVEprice;
+
+var hotWalletBalance = 0;
+var coldWalletBalance = 0;
+var hotWalletData;
+var coldWalletData;
 
 var priceNonce = 0;
 
@@ -120,22 +156,127 @@ function returnTime(){
   return time;
 }
 
-//https://api.coingecko.com/api/v3/coins/hive?tickers=true&market_data=true&community_data=false&developer_data=false&sparkline=false
 
+
+
+var bncData;
+var BNCpricecheck = async(coin) => {
+if(!coin) return false;
+var bncPriceCheck = await Price.bncpricecheck(coin).then((res) => {log(res);return res;}).catch((e) => {log(e)});
+log(`BNCpricecheck:`);
+log(bncPriceCheck);
+return bncPriceCheck;
+};//END CMCpricecheck
+
+async function bnc(coin){
+  bncData = await BNCpricecheck(coin);
+  log(`bncData`);
+  log(bncData);
+}
+bnc('HIVE');
+
+
+var cmcData;
+var CMCpricecheck = async(coin) => {
+if(!coin) return false;
+var coinMarketCapPriceCheck = await Price.cmcpricecheck(coin).then((res) => {log(res);return res;}).catch((e) => {log(e)});
+log(`coinMarketCapPriceCheck:`);
+log(coinMarketCapPriceCheck);
+return coinMarketCapPriceCheck;
+};//END CMCpricecheck
+
+async function cmc(coin){
+  cmcData = await CMCpricecheck(coin);
+  log(`cmcData`);
+  log(cmcData);
+}
+cmc('hive');
+
+
+var wcData;
+
+var WCpricecheck = async(coin) => {
+  if(!coin) return false;
+  var worldCoinIndexPriceCheck = await Price.wcpricecheck(coin).then((res) => {log(res);return res;}).catch((e) => {log(e)});
+  if(debug === true){
+    log(`var WCpricecheck = async(${coin})`)
+    log(`worldCoinIndexPriceCheck:`);
+    log(worldCoinIndexPriceCheck);
+  }
+  return worldCoinIndexPriceCheck;
+};//END WCpricecheck
+
+
+async function wc(coin){
+  wcData = await WCpricecheck(coin);
+  if(debug === true){
+    log(`async function wc(${coin})`);
+    log(`wcData`);
+    log(wcData);
+  }
+  return wcData;
+};
+wc('hive');
+
+//https://api.coingecko.com/api/v3/coins/hive?tickers=true&market_data=true&community_data=false&developer_data=false&sparkline=false
+var pricecheckinit = false;
+var pricechecklast = 0;
 var pricecheck = async(coin) => {
-  if(coin == undefined) coin = "hive";
-  coin = coin.toLowerCase();
+  if(coin == undefined) {
+    coin = "hive%2Chive_dollar%2Cbitcoin"; //hive%2Chive_dollar%2Cbtc
+  } else {
+    if(coin != "hive%2Chive_dollar%2Cbitcoin") coin = coin.toLowerCase();
+  }
+
   var checkResponse = await Price.cgpricecheck(coin)
   .then(await function(res) {
     priceNonce++;
+    if(config.debug === true) log('pricecheck() res:');
+    if(debug === true) log(res);
+    var resDate = res;
     res = res[0];
-    var response = res[coin];
-    hiveprice = parseFloat((response["usd"]).toFixed(6));
-    hivebtcprice = parseFloat((response["btc"]).toFixed(8));
+    var coinNames = Object.keys(res);
+    var timeDate = resDate[1]['date'];
+    timeDate.toUTCString();
+    var response;
+    if(coinNames.length < 2) {
+       response = res[coin];
+    } else {
+      for(entry in coinNames){
+        if(debug === true) log(coinNames[entry]);
+        if(coinNames[entry] == 'bitcoin') {
+          btcprice = res[coinNames[entry]]["usd"];
+        }
+        if(coinNames[entry] == 'hive') {
+          hiveprice = res[coinNames[entry]]["usd"];
+          hivebtcprice = res[coinNames[entry]]["btc"];
+        }
+        if(coinNames[entry] == 'hive_dollar') {
+          hbdprice = res[coinNames[entry]]["btc"] * btcprice;//res[coinNames[entry]]["usd"];
+          hbdbtcprice = res[coinNames[entry]]["btc"];
+        }
+      }
+    }
+
+    if(pricecheckinit == false) {
+      log(`SOCKET: Initializing PriceCheck!`);
+      pricechecklast = hiveprice;
+      pricecheckinit = true;
+    }
+
+    PriceData.create({hivebtcprice: hivebtcprice, hiveusdprice: hiveprice, hbdbtcprice: hbdbtcprice, hbdusdprice: hbdprice, btcusdprice: btcprice, block: newCurrentBlock, synced: synced, validdate: timeDate});
+
+
     var spread = spreadpercent / 100;
     longHIVEprice = parseFloat((hiveprice + (hiveprice * spread)).toFixed(6));
     shortHIVEprice = parseFloat((hiveprice - (hiveprice * spread)).toFixed(6));
-    if(config.debug === true){
+
+    if(pricechecklast == hiveprice) {
+      return;
+    } else {
+      pricechecklast = hiveprice;
+    }
+    if(debug === true){
       log(`hiveprice:`);
       log(hiveprice);
       log(`longHIVEprice:`);
@@ -144,17 +285,8 @@ var pricecheck = async(coin) => {
       log(shortHIVEprice);
     }
 
-    if((priceNonce % 15) == true){
-      if(newCurrentBlock == 0) return;
-      log(`Saving HIVE Price at Block #${newCurrentBlock}`);
-      Pricedata.create({hiveusdprice: hiveprice, hivebtcprice: hivebtcprice, block: newCurrentBlock});
-    }
-
     var data = hiveprice;
-    var d1 = new Date();
-    //d1.toUTCString();
-    d1 = Math.floor(d1.getTime()/ 1000)
-    var labels = d1//returnTime();//.push( Date.now());  //s.push(data);
+    var labels = timeDate//returnTime();//.push( Date.now());  //s.push(data);
     hivePriceData.push(data);
     labelstack.push(labels);
     var labelssend = {labelstack};
@@ -169,7 +301,7 @@ var pricecheck = async(coin) => {
       if(socketListKeys != undefined){
         socketListKeys.forEach((item, i) => {
             //log(`sent priceupdate to ${item}`)
-            socketList[item].emit('priceupdate', {hiveusdprice: hiveprice, hiveshortprice: shortHIVEprice, hivelongprice: longHIVEprice, hivebtcprice: hivebtcprice, chart: chartShit}); ///to(socketListKeys[i])
+            socketList[item].emit('priceupdate', {hiveusdprice: hiveprice, hiveshortprice: shortHIVEprice, hivelongprice: longHIVEprice, hivebtcprice: hivebtcprice, date: timeDate}); /// chart: chartShit // to(socketListKeys[i])
         });
       }
 
@@ -200,7 +332,7 @@ var pricecheck = async(coin) => {
       if((priceNonce % 4) == true){
         if(newCurrentBlock == 0) return;
         //log(`Saving HIVE Price at Block #${newCurrentBlock}`);
-        Pricedata.create({hiveusdprice: hiveprice, hivebtcprice: hivebtcprice, block: newCurrentBlock});
+        PriceData.create({hiveusdprice: hiveprice, hivebtcprice: hivebtcprice, block: newCurrentBlock});
       }
     }).catch(priceError => {
       log(`pricefetch error: ${priceError}`)
@@ -261,7 +393,7 @@ function censor(censor) {
 
 async function founders(){
   founderslist = [];
-  var votelist = await hivejs.api.callAsync('condenser_api.list_proposal_votes', [['154'], 1000, 'by_proposal_voter', 'descending']) .then(res => {return res});
+  var votelist = await hive.api.callAsync('condenser_api.list_proposal_votes', [['154'], 1000, 'by_proposal_voter', 'descending']) .then(res => {return res});
   votelist.forEach((item, i) => {
     founderslist.push(item.voter);
   });
@@ -273,14 +405,53 @@ setTimeout(function(){
   founders();
 }, 60000);
 
-function jsonBreadCrumb(name, action, payload) {
-  log(`jsonBreadCrumb(${name}, ${action}, ${payload})`)
-
+function jsonBreadCrumb(name, action, payload, socketid) {
+  if(!name) return log(`SOCKET: ERROR: jsonBreadCrumb Missing name!`);
+  if(!action) return log(`SOCKET: ERROR: jsonBreadCrumb Missing action!`);
+  if(!payload) return log(`SOCKET: ERROR: jsonBreadCrumb Missing payload!`);
+  if(debug === true){
+    if(socketid == undefined) {
+      log(`SOCKET: jsonBreadCrumb(${name}, ${action}, ${payload}, ${socketid})`);
+    } else {
+      log(`SOCKET: jsonBreadCrumb(${name}, ${action}, ${payload})`);
+    }
+  }
+  var payloadBytes;
+  var hsPayload;
+  try{
+    payloadBytes = 0;
+    payloadBytes = getStringByteSize.getStringByteSize(payload);
+    if(debug === true) log("payload size: " + payloadBytes + " bytes");
+  } catch(e) {
+    return log(`SOCKET: ERROR: jsonBreadCrumb: ${e}`);
+  }
+  if(payloadBytes < 2048) {
+    if(!socketid){
+      if(debug === true) {
+        log(`jsonBreadCrumb(${name}, ${action}, ${payload})`);
+        log(payload);
+      }
+      hsPayload = JSON.stringify({type: 'jsonbreadcrumb', name: name, action: action, payload: payload});
+    } else {
+      if(debug === true) {
+        log(`jsonBreadCrumb(${name}, ${action}, ${payload}, ${socketid})`);
+        log(payload);
+      }
+      hsPayload = JSON.stringify({type: 'jsonbreadcrumb', name: name, action: action, payload: payload, socketid: simpleStringify(socketList[socket.id])});
+    }
+  } else {
+    return log(`SOCKET: ERROR: payloadBytes > 2048 bytes!`);
+  }
+  if(hsPayload){
+    scribeThread.send(hsPayload);
+  }
 }//END jsonBreadCrumb
 
 
+
+
 async function sendbackersupdate() {
-await Depositdata.findAll({
+await DepositData.findAll({
 limit: 100,
 where: {amount: {[Op.gte]: 100000}},
 order: [[ 'amount', 'DESC' ]],
@@ -354,58 +525,102 @@ sendbackersupdate();
 //sendbackersupdate();
 //}, 30000);
 
-async function splitOffVests(a){
-  if(a){
-    return parseFloat(a.split(' ')[0]);
+async function splitOffVests(string){
+  if(string){
+    if(debug === true) log(`SOCKET: async function splitOffVests(${string})`);
+    return parseFloat(string.split(' ')[0]);
+  } else {
+    return false;
   }
 }
 
+var getManaBarRC = async(user) => {
+  if(!user) return "No User Specified";
+  if(debug === true) log(`SOCKET: getUserWDRoutes(${user})`);
+  var userRC = await manaBar.fetchRC(user);
+  if(debug === true) log(`SOCKET: RC - ${user} Resource Credit Available: ${userRC}%`);
+  return userRC;
+};
 
+var getUserWDRoutes = async(user) => {
+  if(!user) return "No User Specified";
+  if(debug === true) log(`SOCKET: getUserWDRoutes(${user})`);
+  var userWD = await getPowerDownPath.getRoutes(user);
+  if(debug === true) log(`SOCKET: userWD: ${userWD}`);
+  return userWD;
+};
+
+var getVotePowerPercent = async(user) => {
+  if(!user) return "No User Specified";
+  if(debug === true) log(`SOCKET: getVotePowerPercent(${user})`);
+  var userVP = await getVP.fetch(user);
+  if(debug === true) log(`SOCKET: userVP: ${userVP}`);
+  return userVP;
+}
 
 var getHivePower = async(user) => {
   if(!user) return "No User Specified";
+  var userHP = await HP.getHivePower(user).then((res) => {return JSON.parse(JSON.stringify(res))}).catch((e) => log(e));
     log(`getHivePower Called!`)
-    var resultData = await hivejs.api.callAsync('condenser_api.get_accounts', [[`${user}`]]).then((res) => {return JSON.parse(JSON.stringify(res))}).catch((e) => log(e));
-    var chainProps = await hivejs.api.callAsync('condenser_api.get_dynamic_global_properties', []).then((res) => {return JSON.parse(JSON.stringify(res))}).catch((e) => log(e));
+    var resultData = await hive.api.callAsync('condenser_api.get_accounts', [[`${user}`]]).then((res) => {return JSON.parse(JSON.stringify(res))}).catch((e) => log(e));
+    var chainProps = await hive.api.callAsync('condenser_api.get_dynamic_global_properties', []).then((res) => {return JSON.parse(JSON.stringify(res))}).catch((e) => log(e));
     var hivePower = await splitOffVests(resultData[0].vesting_shares);
     var total_vesting_shares = await splitOffVests(chainProps.total_vesting_shares);
     var total_vesting_fund = await splitOffVests(chainProps.total_vesting_fund_hive);
     var hiveVested = parseFloat(((total_vesting_fund *  hivePower ) / total_vesting_shares).toFixed(3));
-    usersHivePower[user] = hiveVested;
+    var hiveDelegated = await getHiveDelegations(user).then((res) => {return JSON.parse(JSON.stringify(res))}).catch((e) => log(e));
+    var hiveHPDelegated = parseFloat(((total_vesting_fund *  hivePower ) / total_vesting_shares).toFixed(3));
+    var vp = await getVotePowerPercent(`${user}`);
+    var wd = await getUserWDRoutes(`${user}`);
+    log(`vp: ${vp}`);
+    log(`wd: ${wd}`);
+    //usersHivePower[user] = (hiveVested - hiveHPDelegated);
+    //hiveVested =- hiveHPDelegated;
+    log(`userHP`);
+    log(userHP);
     loanMax = parseFloat(hiveVested * 0.7);
     log(`${user} - ${hiveVested} HP > ${loanMax} HIVE Credit`);
+    log(`${user} - ${hiveHPDelegated} HP Delegated - ${vp}% Vote Power`)
     return hiveVested;
-}
+};//END getHivePower = async(user)
+
+var getHiveDelegations = async(user) => {
+  var vestsDelegated = 0;
+  var hiveDelegated = 0;
+  if(!user) return "No User Specified";
+  if(debug === true) log(`getHiveDelegations(${user}) Called!`);
+  log(`getHiveDelegations(${user}) Called!`);
+  var delegationData = await hive.api.callAsync('condenser_api.get_vesting_delegations', [user, '', 1000]).then((res) => {return JSON.parse(JSON.stringify(res))}).catch((e) => log(e));
+  var chainProps = await hive.api.callAsync('condenser_api.get_dynamic_global_properties', []).then((res) => {return JSON.parse(JSON.stringify(res))}).catch((e) => log(e));
+  delegationData.forEach(async(item, i) => {
+    log(item);
+    var rawVests = await splitOffVests(item.vesting_shares);
+    vestsDelegated += parseFloat(rawVests);
+  });
+  var total_vesting_shares = await splitOffVests(chainProps.total_vesting_shares);
+  var total_vesting_fund = await splitOffVests(chainProps.total_vesting_fund_hive);
+  var hiveDelegated = parseFloat(((total_vesting_fund *  vestsDelegated ) / total_vesting_shares).toFixed(3));
+  delegationData.push({hivedelegated: hiveDelegated, vestsdelegated: vestsDelegated});
+  if(debug === true) log(`User ${user} has ${hiveDelegated} Hive Delegated!`);
+  return delegationData;
+  //hive.api.getVestingDelegations(`${user}`, '', 1000, await function(err, result) {
+  //  console.log(err, result);
+  //});
+};//END getHivePower = async(user)
 
 var connectiontest = async() => {
   try {
     await sequelize.authenticate();
     log('SUCCESS: Connection to DB been Established!');
-    function siteAuditDaemon() {
-      log(`SOCKET: Site Audit in Progress!`);
-      var utpayload = JSON.stringify({type:'grabacct', username:'siteaudit'});
-      rpcThread.send(utpayload);
-      var ltpayload = JSON.stringify({type:'siteaudit'});
-      loanThread.send(ltpayload);
-      var wdpayload = JSON.stringify({type:'wdfeeaudit'});
-      userThread.send(wdpayload);
-      setTimeout(function(){
-        siteAuditDaemon()
-      }, 60000);
-    }
-
-    siteAuditDaemon();
   } catch (error) {
     log('ERROR: Unable to Connect to the Database:', error);
   }
 }
 connectiontest();
 
-var hotWalletData;
-var coldWalletData;
 
 function siteAudit() {
-  log(`SOCKET: Start Site Audit!`);
+  if(config.verbose === true) log(`SOCKET: Start Site Audit!`);
   var utpayload = JSON.stringify({type:'getacct', username:'siteaudit'});
   rpcThread.send(utpayload);
   var ltpayload = JSON.stringify({type:'siteaudit'});
@@ -414,12 +629,31 @@ function siteAudit() {
   userThread.send(wdpayload);
 }
 
+function siteAuditDaemon() {
+  log(`SOCKET: Site Audit in Progress!`);
+  var utpayload = JSON.stringify({type:'grabacct', username:'siteaudit'});
+  rpcThread.send(utpayload);
+  var ltpayload = JSON.stringify({type:'siteaudit'});
+  loanThread.send(ltpayload);
+  var wdpayload = JSON.stringify({type:'wdfeeaudit'});
+  userThread.send(wdpayload);
+  setTimeout(function(){
+    siteAuditDaemon()
+  }, 60000);
+}
+
+siteAuditDaemon();
+
+
 rpcThread.on('message', function(m) {
   try {
     m = JSON.parse(m);
-    //log(m);
+    if(debug === true){
+      log(`rpcThread.on('message' message:`);
+      log(m);
+    }
   } catch(e) {
-    log(`Chainsnoop Message Error`);
+    log(e);
   }
   switch(m.type){
     case 'emit':
@@ -433,14 +667,20 @@ rpcThread.on('message', function(m) {
         newpayload.push(item);
       });
       if (socketList[m.socketid[0].id]) socketCorrect.emit(`${name}`, newpayload[0]);
-    break;
+    break;//END case 'emit'
     case 'massemit':
     var name = m.name.toString();
     var newpayload = [];
-    log(m.payload);
+    if(debug === true) log(m.payload);
     var incomingpayload = [m.payload];
     if(incomingpayload.length > 1){
       incomingpayload.forEach((item, i) => {
+        if(item.username != -1) {
+          delete item.username;
+        }
+        if(item.username != -1) {
+          delete item.username;
+        }
         auditWalletArray.push(item);
       });
     } else {
@@ -448,10 +688,13 @@ rpcThread.on('message', function(m) {
     }
     switch(m.name){
       case 'sitewallets':
+      if(debug === true){
         log(`auditWalletArray:`);
         log(auditWalletArray);
+      }
+
         //auditArray.push({wallets: auditWalletArray});
-      break;
+      break;//END case sitewallets
     }
     var masskeys = Object.keys(socketList);
     for (var i = 0; i < masskeys.length; i++){
@@ -459,7 +702,7 @@ rpcThread.on('message', function(m) {
         socketList[masskeys[i]].emit(`${name}`, auditWalletArray);
       }
     }
-    break;
+    break;//END case 'massemit'
   }
   if (m.type === 'update'){
     usersInvest = m.users;
@@ -489,6 +732,7 @@ rpcThread.on('message', function(m) {
     }
   } else if (m.type === 'blockupdate'){
   newCurrentBlock = m.block;
+  synced = m.synced;
   /*
   var bupdkeys = Object.keys(userSockets);
   if(bupdkeys != undefined){
@@ -502,11 +746,12 @@ rpcThread.on('message', function(m) {
     socketListKeys = Object.keys(socketList);
     if(socketListKeys != undefined){
       socketListKeys.forEach((item, i) => {
-          socketList[item].emit('latestblock', {block:m.block, synced:m.synced}); ///to(socketListKeys[i])
+          socketList[item].emit('latestblock', {block:m.block, behind: m.behind, synced:m.synced}); ///to(socketListKeys[i])
       });
     }
   } else if (m.type === 'depositconfirmed'){
     if (userSockets[m.user]) {
+      jsonBreadCrumb('wallet', 'deposit', {txid: m.txid});
       userSockets[m.user].emit('depositcredit', {balance: m.balance, amount: m.amount, coin: m.coin});
     }
   } else if (m.type === 'grabacct') {
@@ -515,14 +760,17 @@ rpcThread.on('message', function(m) {
 
   }
 
-});
+});//END rpcThread.on('message',
 
 var auditWdFeeArray;
+
 userThread.on('message', function(m) {
     try{
       m = JSON.parse(m);
-      log(`userThread.on('message' message:`);
-      log(m);
+      if(debug === true) {
+        log(`userThread.on('message' message:`);
+        log(m);
+      }
     } catch(e){
       log(e)
     }
@@ -537,7 +785,7 @@ userThread.on('message', function(m) {
         incomingpayload.forEach((item, i) => {
           newpayload.push(item);
         });
-        if (socketList[m.socketid[0].id]) socketCorrect.emit(`${name}`, newpayload[0]);
+        if (socketList[m.socketid[0].id]) socketCorrect.emit(`${name}`, newpayload);
       break;
       case 'massemit':
       var name = m.name.toString();
@@ -571,21 +819,22 @@ userThread.on('message', function(m) {
 exchangeThread.on('message', function(m) {
     try{
       m = JSON.parse(m);
-      log(`loanThread.on('message' message:`);
-      log(m);
+      if(debug === true){
+        log(`exchangeThread.on('message' message:`);
+        log(m);
+      }
     } catch(e){
       log(e)
     }
-
-
-
-  });
+});//END exchangeThread.on('message'
 
 loanThread.on('message', function(m) {
     try{
       m = JSON.parse(m);
-      log(`loanThread.on('message' message:`);
-      log(m);
+      if(debug === true){
+        log(`loanThread.on('message' message:`);
+        log(m);
+      }
     } catch(e){
       log(e)
     }
@@ -608,6 +857,9 @@ loanThread.on('message', function(m) {
 
         }
         switch(m.name){
+          case 'loadmyloans':
+          jsonBreadCrumb('contracts', m.name, m.payload);
+          break;
           case 'newloanmade':
             jsonBreadCrumb('contracts', 'newloan', m.payload);
           break;//END case 'newloanmade'
@@ -617,17 +869,22 @@ loanThread.on('message', function(m) {
           default:
             jsonBreadCrumb('contracts', m.name, m.payload);
         }
-        if (socketList[m.socketid[0].id]) socketCorrect.emit(`${name}`, newpayload[0]);
+        if (socketList[m.socketid[0].id]) socketCorrect.emit(`${name}`, newpayload);
       break;
       case 'massemit':
       auditArray = [];
       var name = m.name.toString();
       switch(m.name){
+        case 'loadmyloans':
+
+        break;
         case 'siteaudit':
         if(auditWalletArray){
+          jsonBreadCrumb('security', 'audit', [m.payload]);
           m.payload.push({wallets: auditWalletArray});
           m.payload.push({wdfees: auditWdFeeArray});
-          log(auditArray);
+
+          //log(auditArray);
         }
         break;
       }
@@ -644,6 +901,11 @@ loanThread.on('message', function(m) {
       }
 
       if(auditArray != undefined){
+        try{
+          //jsonBreadCrumb('security', 'audit', [auditArray]);
+        } catch(e) {
+          //log(e)
+        }
         var masskeys = Object.keys(socketList);
         for (var i = 0; i < masskeys.length; i++){
           if (socketList[masskeys[i]]) {
@@ -662,6 +924,7 @@ loanThread.on('message', function(m) {
     }
   } else if (m.type === 'depositconfirmed'){
     if (userSockets[m.username]) {
+      jsonBreadCrumb('wallet', 'deposit', {txid: m.txid});
       userSockets[m.username].emit('depositcredit', {balance: m.balance, amount: m.amount, coin: m.coin});
     }
   } else if (m.type === 'statereply'){
@@ -669,18 +932,18 @@ loanThread.on('message', function(m) {
       userSockets[m.username].emit('statereply', {loanstates: m.loanstates, token: m.token});
     }
   }
-});
+});//END loanThread.on('message',
 
 tickerThread.on('message', function(m) {
     try{
       m = JSON.parse(m);
-      log(`tickerThread.on('message' message:`);
-      log(m);
+      if(debug === true){
+        log(`SOCKET: tickerThread.on('message' message:`);
+        log(m);
+      }
     } catch(e){
       m = JSON.parse(JSON.stringify(m));
     }
-    log(`tickerThread.on('message' message:`);
-    log(m);
     switch(m.type){
       case 'emit':
         var name = m.name.toString();
@@ -701,10 +964,10 @@ tickerThread.on('message', function(m) {
             jsonBreadCrumb('contracts', 'priceshift', m.payload);
           break;//END case 'newloanmade'
           case 'price':
-            jsonBreadCrumb('contracts', 'nukeloan', m.payload);
+            jsonBreadCrumb('price', 'update', m.payload);
           break;
         }
-        if (socketList[m.socketid[0].id]) socketCorrect.emit(`${name}`, newpayload[0]);
+        if (socketList[m.socketid[0].id]) socketCorrect.emit(`${name}`, newpayload);
       break;
 
       case 'massemit':
@@ -738,21 +1001,40 @@ tickerThread.on('message', function(m) {
       userSockets[m.username].emit('depositcredit', {balance: m.balance, amount: m.amount, coin: m.coin});
     }
   }
-});
+});//END tickerThread.on('message',
 
 //===================================================
 //Start the socket.io stuff
 //===================================================
+let pingArray = [];
 exports = module.exports = function(socket, io){
+
+  socket.on('latency', function(startTime, cb) {
+    if(socket.request.session['user']) {
+      var newUser = socket.request.session['user'];
+      var latency = parseFloat(((Date.now() - startTime) / 2).toFixed(2));
+      if(!pingArray.includes(socket.request.session['user'])) {
+        pingArray.push(newUser);
+        pingArray[newUser] = latency
+      } else {
+        pingArray[newUser] = latency
+      }
+      log(pingArray);
+    }
+    return cb(startTime, null);
+  });
+
   if (!socketList.includes(socket)) {
         socketList[socket.id] = socket;
         socketListKeys = Object.keys(socketList);
-        log(`SOCKETS: Connected: ${socketListKeys.length}`);
-        socket.emit('priceupdate', {hiveusdprice:hiveprice, hivebtcprice: hiveprice});
+        log(`SOCKET: Total Connected: ${socketListKeys.length}`);
+        socket.emit('latestblock', {block: newCurrentBlock, synced:synced});
+        socket.emit('priceupdate', {hiveusdprice: hiveprice, hiveshortprice: shortHIVEprice, hivelongprice: longHIVEprice, hivebtcprice: hivebtcprice});
       } else if (socketList.includes(socket)) {
         socketListKeys = Object.keys(socketList);
-        log(`Known Socket detected - length: ${socketList.length}`);
-        socket.emit('priceupdate', {hiveusdprice:hiveprice, hivebtcprice: hiveprice});
+        log(`SOCKET: Known Socket Detected! Total Connected ${socketList.length}`);
+        socket.emit('latestblock', {block:m.block, synced:m.synced});
+        socket.emit('priceupdate', {hiveusdprice: newCurrentBlock, hiveshortprice: shortHIVEprice, hivelongprice: longHIVEprice, hivebtcprice: hivebtcprice});
       } else {
         log(`Not on or Off list wtf`);
       }
@@ -763,7 +1045,7 @@ exports = module.exports = function(socket, io){
 /*
 var chatpunt = async() => {
   log(`chatpunt fired`)
-  var chatHist = await Chatdata.findAll({
+  var chatHist = await ChatData.findAll({
     limit: 50,
     order: [[ 'createdAt', 'DESC' ]],
     raw: true
@@ -772,16 +1054,15 @@ var chatpunt = async() => {
 }
 */
 
-
 socket.on("disconnect", function() {
   console.log('User Disconnect:', socket.request.session['user']);
   delete userSockets[socket.request.session['user']];
+  delete canUserTransact[socket.request.session['user']];
   delete userTokens[socket.request.session['user']];
   delete usersHivePower[socket.request.session['user']];
   delete socketList[socket.id];
   socketListKeys = Object.keys(socketList);
 });
-
 
 socket.on('withdrawopen', async function(req, cb) {
   await pricecheck();
@@ -790,7 +1071,7 @@ socket.on('withdrawopen', async function(req, cb) {
   var rank;
   var fee;
   var type = req.coin.toLowerCase();
-  let userCheck = await Userdata.findOne({where:{username:`${user}`}, raw:true, nest: true}).then(result => {return result}).catch(error => {console.log(error)});
+  let userCheck = await UserData.findOne({where:{username:`${user}`}, raw:true, nest: true}).then(result => {return result}).catch(error => {console.log(error)});
   if (userCheck === null) {
     return cb('Error: Failed to fetch users statistics!', null);
   } else {
@@ -829,7 +1110,7 @@ socket.on('withdrawopen', async function(req, cb) {
     return cb('No Currency Type Specified!', null);
   }
   log(`WITHDRAW: ${socket.request.session['user']} Opened Withdraw Modal`);
-  return cb(null, {balance: withdrawbalance, fee: fee, security: secbytes, rank: rank, coin:type});
+  return cb(null, {user: user, balance: withdrawbalance, fee: fee, security: secbytes, rank: rank, coin:type});
 });
 
 socket.on('withdraw', async function(req, cb) {
@@ -839,6 +1120,8 @@ socket.on('withdraw', async function(req, cb) {
   }
   log(req)
   var user = socket.request.session['user'];
+  changeToken(user);
+  log()
   var userData;
   var wData;
   var feecheck = req.fee;
@@ -851,14 +1134,14 @@ socket.on('withdraw', async function(req, cb) {
   var wduserID;
   if(user != 'klye'){
     if (req.amount < req.fee) {
-      return cb(`Must Withdraw Atleast 1 ${req.type}`, {token: userTokens[socket.request.session['user']]});
+      return cb(`Must Withdraw ${req.type} Amount > Fee`, {token: userTokens[socket.request.session['user']]});
     }
   }
   if (req.amount < 1) {
     return cb(`Must Withdraw Atleast 1 ${req.type}`, {token: userTokens[socket.request.session['user']]});
   }
   if (canUserTransact[user] == true) canUserTransact[user] = false;
-  let userCheck = await Userdata.findOne({where:{username:`${user}`}, raw:true, nest: true}).then(result => {return result}).catch(error => {console.log(error)});
+  let userCheck = await UserData.findOne({where:{username:`${user}`}, raw:true, nest: true}).then(result => {return result}).catch(error => {console.log(error)});
   if (userCheck === null) {
     canUserTransact[user] == true
     return cb('Failed to fetch users statistics!', {token: userTokens[socket.request.session['user']]});
@@ -899,6 +1182,9 @@ socket.on('withdraw', async function(req, cb) {
   }
   var saneSendAmount = req.amount;
   var sanefeecheck = feecheck;
+  var oldWithdrawCount = userData.withdrawals;
+  var oldWithdrawTotal = userData.withdrawals;
+  var oldWithdrawFeeTotal = userData.withdrawalsfee;
   feecheck = parseInt(feecheck * 1000);
   req.amount = parseInt(req.amount * 1000);
 
@@ -910,15 +1196,18 @@ socket.on('withdraw', async function(req, cb) {
 
     if (userData.hivebalance >= req.amount) {
       userData.hivebalance -= req.amount;
+      userData.withdrawals++;
+      userData.withdrawalsfee += feecheck;
+      userData.withdrawalstotal += req.amount;
       req.amount = parseInt(req.amount - feecheck);
       saneSendAmount = parseFloat((saneSendAmount - sanefeecheck).toFixed(8));
     } //END if balance > amount
 
     sequelize.transaction().then(async function(t) {
-      await Userdata.update({hivebalance: userData.hivebalance},{where:{id:`${wduserID}`}})
+      await UserData.update({hivebalance: userData.hivebalance, withdrawals: userData.withdrawals, withdrawalsfee: userData.withdrawalsfee, withdrawalstotal: userData.withdrawalstotal},{where:{id:`${wduserID}`}})
       .then( async function() {
         async function sendTransfer() {
-          hivejs.broadcast.transfer(config.bankwif, config.appName, req.account, parseFloat(req.amount / 1000).toFixed(3) + " " + cointype, req.memo, async function (fuckeduptransfer, senttransfer) {
+          hive.broadcast.transfer(config.bankwif, config.appName, req.account, parseFloat(req.amount / 1000).toFixed(3) + " " + cointype, req.memo, async function (fuckeduptransfer, senttransfer) {
             if (fuckeduptransfer) {
               console.log("Refund Fucked Up: " + fuckeduptransfer);
               t.rollback();
@@ -927,9 +1216,11 @@ socket.on('withdraw', async function(req, cb) {
             if (senttransfer) {
               log(senttransfer);
               log(`Withdraw Transfer to ${user} of ${parseFloat(req.amount / 1000).toFixed(3)} ${cointype} Sent!`);
-              await Withdrawdata.create({userId: userData.id, coin: cointype, username: user, sentto: req.account, amount: req.amount, txid: senttransfer.id, confirmed: true});
+
+              await WithdrawData.create({userId: userData.id, coin: cointype, username: user, sentto: req.account, amount: (req.amount + feecheck), txid: senttransfer.id, fee: feecheck, confirmed: true});
               canUserTransact[user] = true;
               t.commit();
+              jsonBreadCrumb('wallet', 'withdraw', {userId: userData.id, coin: cointype, username: user, txid: senttransfer.id, fee: feecheck});
               return cb(null, {balance: userData.hivebalance, token: userTokens[socket.request.session['user']]});
             }
           }); //end refund transfer
@@ -952,13 +1243,14 @@ socket.on('withdraw', async function(req, cb) {
       userData.hbdbalance -= req.amount;
       req.amount = parseInt(req.amount - feecheck);
       saneSendAmount = parseFloat((saneSendAmount - sanefeecheck).toFixed(8));
+      userData.withdrawals++;
     } //END if balance > amount
 
     sequelize.transaction().then(async function(t) {
-      await Userdata.update({hbdbalance: userData.hbdbalance},{where:{id:`${wduserID}`}})
+      await UserData.update({hbdbalance: userData.hbdbalance, withdrawals: userData.withdrawals},{where:{id:`${wduserID}`}})
       .then( async function() {
         async function sendTransfer() {
-          hivejs.broadcast.transfer(config.bankwif, config.appName, req.account, parseFloat(req.amount / 1000) + " " + cointype, req.memo, async function (fuckeduptransfer, senttransfer) {
+          hive.broadcast.transfer(config.bankwif, config.appName, req.account, parseFloat(req.amount / 1000) + " " + cointype, req.memo, async function (fuckeduptransfer, senttransfer) {
             if (fuckeduptransfer) {
               console.log("Refund Fucked Up: " + fuckeduptransfer);
               t.rollback();
@@ -967,7 +1259,7 @@ socket.on('withdraw', async function(req, cb) {
             if (senttransfer) {
               log(senttransfer);
               log(`Withdraw Transfer to ${user} of ${req.amount} ${cointype} Sent!`);
-              await Withdrawdata.create({userId: userData.id, coin: cointype, username: user, sentto: req.account, amount: req.amount, txid: senttransfer.id, confirmed: true});                    canUserTransact[user] = true;
+              await WithdrawData.create({userId: userData.id, coin: cointype, username: user, sentto: req.account, amount: req.amount, txid: senttransfer.id, confirmed: true});                    canUserTransact[user] = true;
               t.commit();
               return cb(null, {balance: userData.hbdbalance, token: userTokens[socket.request.session['user']]});
             }
@@ -1003,6 +1295,7 @@ socket.on("loginopen", function(req, cb) {
 
 socket.on("login", async function(req, cb) {
   log(req);
+  if (typeof canUserTransact[req.username] !== undefinded && canUserTransact[req.username] == true) canUserTransact[req.username] = false;
   if (typeof cb !== 'function') return socket.emit('muppet', 'You fucking muppet, you need a callback for this call');
   if (typeof req.username !== 'string') return cb('Username must be a string', null);
   if (typeof req.password !== 'string') return cb('Password must be a string', null);
@@ -1013,7 +1306,7 @@ socket.on("login", async function(req, cb) {
   var login = {username: req.username};
 
   let loginData;
-  let userNameCheck = await Userdata.findOne({where:{username:login.username}, raw:true, nest: true}).then(result => {return result}).catch(error => {console.log(error)});
+  let userNameCheck = await UserData.findOne({where:{username:login.username}, raw:true, nest: true}).then(result => {return result}).catch(error => {console.log(error)});
   if (userNameCheck === null) {
     return cb('Login Failure - Please Check Your Username & Password!', null);
   } else {
@@ -1039,7 +1332,7 @@ socket.on("login", async function(req, cb) {
         socket.emit("adminlogin", userident);
       }
 
-      var chatHist = await Chatdata.findAll({
+      var chatHist = await ChatData.findAll({
         limit: 50,
         order: [[ 'createdAt', 'DESC' ]],
         raw: true
@@ -1057,18 +1350,25 @@ socket.on("login", async function(req, cb) {
 
 socket.on("openskclink", async function(data, cb) {
   var datasave;
+  if(!data.username) return cb('Login Username Undefined', null);
+  if(!data.password) return cb('Login Password Undefined', null);
+  if(!data.agree) return cb('Disclaimer Agreement Undefined', null);
+  if(!data.date) return cb('Login Date Undefined', null);
+  if(!data.sec) return cb('Login Security ID Undefined', null);
+
   var user = data.username.toLowerCase();
+  if (typeof canUserTransact[user] !== undefinded && canUserTransact[user] == true) canUserTransact[user] = false;
+  var usersocketcheck = socket.request.session['user'];
+  var agree = data.agree;
+
+  log(usersocketcheck);
+  log(user);
+
+  if(user != usersocketcheck) return cb('Invalid User Login Request', null);
 
   if (user == "hive.loans"){
     log(`Idiot tried to log in`);
     return cb(`You don't have proper e-peen for this account.`, null);
-  }
-
-  if(canUserTransact.includes(user) == false){
-    canUserTransact.push(user);
-    canUserTransact[user] = true;
-  } else {
-    canUserTransact[user] = true;
   }
 
   var encryptMsg = data.password;
@@ -1079,7 +1379,7 @@ socket.on("openskclink", async function(data, cb) {
   var clientIp = socket.handshake.headers['x-forwarded-for'];
   var req = data;
 
-  hivejs.api.getAccounts([user], async function(err, result) {
+  hive.api.getAccounts([user], async function(err, result) {
     if (err) {
       canUserTransact[user] = true;
       console.error(err);
@@ -1092,13 +1392,20 @@ socket.on("openskclink", async function(data, cb) {
       result = result[0][0];
       pubPostingKey = result;
 
-      recoveredPubKey = Signature.fromString(encryptMsg).recover(cryptoUtils.sha256(`#Signed Hive.Loans Identity Verification`));
+      recoveredPubKey = Signature.fromString(encryptMsg).recover(cryptoUtils.sha256(`#Signed Hive.Loans @${user} Identity Verification - disclaimerAgree: ${data.agree} - Date: ${data.date} - SecKey: ${data.sec}`));
 
       if (pubPostingKey == recoveredPubKey.toString()) {
         log(`LOGIN: User Logged In`)
         if (typeof data['2fa'] !== 'undefined') {
           if (typeof req['2fa'] === 'undefined') return cb('Specify 2FA Passcode', null);
           if (!is2FACorrect(req['2fa'], data['2fa'])) return cb('2FA Incorrect', null);
+        }
+        if(canUserTransact.includes(user) == false){
+          canUserTransact.push(user);
+          canUserTransact[user] = true;
+        } else {
+          changeToken(user);
+          canUserTransact[user] = true;
         }
         try {
           var geoLocate = geoip.lookup(clientIp);
@@ -1111,7 +1418,8 @@ socket.on("openskclink", async function(data, cb) {
         }
         log(`LOGIN: Client Verified HIVE ID.. Checking if User Exists!`);
         let loginData;
-        let userNameCheck = await Userdata.findOne({where:{username:user}, raw:true, nest: true}).then(result => {return result}).catch(error => {console.log(error)});
+
+        let userNameCheck = await UserData.findOne({where:{username:user}, raw:true, nest: true}).then(result => {return result}).catch(error => {console.log(error)});
         if (userNameCheck === null) {
           var noobrank = 'user';
           var founderslist = await founders();
@@ -1123,6 +1431,8 @@ socket.on("openskclink", async function(data, cb) {
           if (backerlist.includes(user)){
             noobrank = 'backer';
           }
+
+
           var newUserArray = {
             username: user,
             rank: noobrank,
@@ -1141,11 +1451,11 @@ socket.on("openskclink", async function(data, cb) {
           let loginData;
           let uid;
           sequelize.transaction().then(async function(t) {
-            await Userdata.create(newUserArray)
+            await UserData.create(newUserArray)
             .then(async function() {
               t.commit();
               log(`SOCKET: User ${user} Registered!`);
-              let userNameCheck = await Userdata.findOne({where:{username:user}, raw:true, nest: true}).then(result => {return result}).catch(error => {console.log(error)});
+              let userNameCheck = await UserData.findOne({where:{username:user}, raw:true, nest: true}).then(result => {return result}).catch(error => {console.log(error)});
               if (userNameCheck === null) {
                 log(`Registration Failure - Unable to Locate Newly Registered Account: ${user}`);
               } else {
@@ -1153,16 +1463,21 @@ socket.on("openskclink", async function(data, cb) {
                 uid = loginData.id;
                 if(typeof loginData.userId !== 'number'){
                   log(`loginData.userId is undefined! Updating now!`);
-                  await Userdata.update({userId:uid},{where:{id:uid}});
+                  await UserData.update({userId:uid},{where:{id:uid}});
                 }
                 if(typeof loginData.rank !== 'string'){
-                  await Userdata.update({rank:'user'},{where:{id:uid}});
+                  await UserData.update({rank:'user'},{where:{id:uid}});
                 }
                 var newAddyHash = crypto.randomBytes(16).toString('hex');
                 if(loginData.address === '0'){
                   log(`loginData.address is undefined! Updating now!`);
 
-                  await Userdata.update({address:newAddyHash},{where:{id:uid}});
+                  await UserData.update({address:newAddyHash},{where:{id:uid}});
+                }
+                if(loginData.disclaimer == true){
+                    //jsonBreadCrumb('accounts', 'acceptdisclaimer', {agree: data.agree}, simpleStringify(socketid));
+                } else if (loginData.disclaimer == false){
+                    jsonBreadCrumb('accounts', 'acceptdisclaimer', {agree: data.agree}, simpleStringify(socketid));
                 }
 
                 var token = crypto.randomBytes(64).toString('base64');
@@ -1178,8 +1493,28 @@ socket.on("openskclink", async function(data, cb) {
                 userSockets[login.username] = socket;
                 userRawSockets[socket.id] = socket;
 
-                var chatHist = await Chatdata.findAll({
-                  limit: 50,
+                var getLoginHivePower = await getHivePower(user).then(result => {return result}).catch(error => log(error));
+                var getLoginHiveDelegation = await getHiveDelegations(user).then(result => {return result}).catch(error => log(error));
+                var getActualHiveDelegated = getLoginHiveDelegation[getthedelegation.length - 1]['hivedelegated'];
+                var totalDelegation = function() {
+                  getLoginHiveDelegation.forEach((item, i) => {
+                    log(item);
+                      log(item.vesting_shares);
+                  });
+                }
+
+                log(`getLoginHivePower:`);
+                log(getLoginHivePower);
+
+                log(`getLoginHiveDelegation:`);
+                log(getLoginHiveDelegation);
+
+                log(`getActualHiveDelegated:`);
+                log(getActualHiveDelegated);
+
+
+                var chatHist = await ChatData.findAll({
+                  limit: 100,
                   order: [[ 'createdAt', 'DESC' ]],
                   raw: true
                 });
@@ -1226,17 +1561,22 @@ socket.on("openskclink", async function(data, cb) {
             log(e);
             newloginData = userNameCheck;
           }
-
+          if(newloginData.disclaimer == true){
+              //jsonBreadCrumb('accounts', 'acceptdisclaimer', {agree: data.agree}, simpleStringify(socketid));
+          } else if (newloginData.disclaimer == false){
+              jsonBreadCrumb('accounts', 'acceptdisclaimer', {id: newloginData.id, agree: agree, socketid: simpleStringify(socket.id)});
+              await UserData.update({disclaimer:agree},{where:{id:newloginData.id}});
+          }
           if(typeof newloginData.userId !== 'number'){
-            await Userdata.update({userId:newloginData.id},{where:{id:newloginData.id}});
+            await UserData.update({userId:newloginData.id},{where:{id:newloginData.id}});
           }
           if(typeof newloginData.rank !== 'string'){
-            await Userdata.update({rank:'user'},{where:{id:newloginData.id}});
+            await UserData.update({rank:'user'},{where:{id:newloginData.id}});
           }
           if(newloginData.address === '0'){
             log(`loginData.address is undefined! Updating now!`);
             var newAddyHash = crypto.randomBytes(16).toString('hex');
-            await Userdata.update({address:newAddyHash},{where:{id:newloginData.id}});
+            await UserData.update({address:newAddyHash},{where:{id:newloginData.id}});
           }
           var token = crypto.randomBytes(64).toString('base64');
           var chattoken = crypto.randomBytes(64).toString('base64');
@@ -1251,9 +1591,26 @@ socket.on("openskclink", async function(data, cb) {
           userSockets[login.username] = socket;
 
           var getLoginHivePower = await getHivePower(user).then(result => {return result}).catch(error => log(error));
+          var getLoginHiveDelegation = await getHiveDelegations(user).then(result => {return result}).catch(error => log(error));
+          var getActualHiveDelegated = getLoginHiveDelegation[getLoginHiveDelegation.length - 1]['hivedelegated'];
+          var totalDelegation = function() {
+            getLoginHiveDelegation.forEach((item, i) => {
+              log(item);
+                log(item.vesting_shares);
+            });
+          }
 
-          var chatHist = await Chatdata.findAll({
-            limit: 50,
+          log(`getLoginHivePower:`);
+          log(getLoginHivePower);
+
+          log(`getLoginHiveDelegation:`);
+          log(getLoginHiveDelegation);
+
+          log(`getActualHiveDelegated:`);
+          log(getActualHiveDelegated);
+
+          var chatHist = await ChatData.findAll({
+            limit: 100,
             order: [[ 'createdAt', 'DESC' ]],
             raw: true
           });
@@ -1335,7 +1692,8 @@ socket.on("loanmenu", function(data, cb) {
     return cb(null, {
       menu: menu,
       user: data.username,
-      loanId: data.loanId
+      loanId: data.loanId,
+      state: data.state
     });
   }
   if (socket.request.session['moderator'] === 1) {
@@ -1343,28 +1701,36 @@ socket.on("loanmenu", function(data, cb) {
     return cb(null, {
       menu: menu,
       user: data.username,
-      loanId: data.loanId
+      loanId: data.loanId,
+      state: data.state
     });
   } else {
     menu = "user";
     return cb(null, {
       menu: menu,
       user: data.username,
-      loanId: data.loanId
+      loanId: data.loanId,
+      state: data.state
     });
   }
 }); //END chatmenu
 
 socket.on('getuserdata', async function(req, cb){
+  if(!req) return cb('Request Data was Undefined!', null);
+  if(!req.username) return cb('Request UserName was Undefined!', null);
   log(`socket.on('getuserdata'`);
+  log(req)
   var user = socket.request.session['user'];
+  if(user !== owner) {
+    if(req.username != user) return cb('Requesting User Lacks Privileges to Fetch Data', null);
+  }
   let userData;
-  let userNameCheck = await Userdata.findOne({where:{username:`${user}`}, raw:true, nest: true}).then(result => {return result}).catch(error => {console.log(error)});
+  let userNameCheck = await UserData.findOne({where:{username:`${user}`}, raw:true, nest: true}).then(result => {return result}).catch(error => {console.log(error)});
   if (userNameCheck === null) {
     return cb('User was not found in DB', null);
   } else {
-    userData = JSON.parse(JSON.stringify(userNameCheck));
-    return cb(null, {data: JSON.stringify(userData)});
+    userData = userNameCheck;
+    return cb(null, {data: userNameCheck});
   }
 });
 
@@ -1382,14 +1748,23 @@ socket.on('changenode', function(req) {
 });
 
 socket.on('createloan', async function(req, cb){
-  log(`socket.on('createloan',`)
-  log(req);
+  if(debug === true) {
+    log(`socket.on('createloan',`);
+    log(req);
+  }
+  if(!req.amount && typeof req.amount != 'number' || req.amount < 0) return cb('Amount Variable Undefined, Invalid or a Non-Number Type', {token: req.token});
+  if(!req.days && typeof req.days != 'number' || req.days < 7 || req.days > 91) return cb('Days Variable Undefined, Invalid or a Non-Number Type', {token: req.token});
+  if(!req.interest && typeof req.interest != 'number' || req.interest < 0) return cb('Fee Variable Undefined, Invalid or a Non-Number Type', {token: req.token});
+  if(!req.funded) req.funded = 0;
+  if(req.funded == 0) req.funded = false;
+  if(req.funded == 0) req.funded = false;
   var sitefee;
   var user = socket.request.session['user'];
   var amount = parseInt(req.amount * 1000);
   var days = req.days;
   var fee = req.interest;
   var interest = req.interest;
+  var funded = req.funded;
   if (typeof cb !== 'function') return socket.emit('muppet', {message:'You fucking muppet, you need a callback for this call', token: req.token});
   if (typeof amount != 'number') return cb('Amount Must be a Number!', {token: req.token});
   if (amount < 0) return cb('Amount Must be a Positive Number!', {token: req.token});
@@ -1402,7 +1777,7 @@ socket.on('createloan', async function(req, cb){
   if (days < 7) return cb('Duration Must be 7 or over!', {token: req.token});
   if (days > 91) return cb('Duration Must less than 91!', {token: req.token});
   let userData;
-  let userNameCheck = await Userdata.findOne({where:{username:user}, raw:true, nest: true}).then(result => {return result}).catch(error => {console.log(error)});
+  let userNameCheck = await UserData.findOne({where:{username:user}, raw:true, nest: true}).then(result => {return result}).catch(error => {console.log(error)});
   if (userNameCheck === null) {
     return cb('User was not found in DB', {token: req.token});
   } else {
@@ -1418,9 +1793,10 @@ socket.on('createloan', async function(req, cb){
       if (fee > 100 ) return cb('GODMODE: Fee Must be a under 100%!', {token: req.token});
       break;
     }
+    if(funded == false);
     if(amount <= userData.hivebalance){
       log(`LENDING: ${user} creating a new loan - ${amount / 1000} HIVE at ${interest}% for ${days} days!`);
-      var ltpayload = JSON.stringify({type:'newloan', userId: userData.id, username: userData.username, amount: amount, days: days, interest: interest, token: req.token, socketid: socket.id});
+      var ltpayload = JSON.stringify({type:'newloan', userId: userData.id, username: userData.username, amount: amount, funded: funded, days: days, interest: interest, token: req.token, socketid: socket.id});
       loanThread.send(ltpayload);
 
 
@@ -1451,7 +1827,7 @@ socket.on('acceptloan', async function(req, cb) {
   }
   var userCheckRecovery = async(user) => {
     log(`userCheckRecovery(${user})`);
-  await hivejs.api.getAccounts([user], async function(err, result) {
+  await hive.api.getAccounts([user], async function(err, result) {
      if(err){console.log(err)}
      if(result) {
        result = JSON.parse(JSON.stringify(result));
@@ -1468,7 +1844,7 @@ socket.on('acceptloan', async function(req, cb) {
            log(`socket.on('acceptloan', async function(req, cb){`)
              log(req);
              let loanData;
-             let loanCheck = await Loandata.findOne({where:{loanId:loanId}, raw:true, nest: true}).then(result => {return result}).catch(error => {console.log(error)});
+             let loanCheck = await LoanData.findOne({where:{loanId:loanId}, raw:true, nest: true}).then(result => {return result}).catch(error => {console.log(error)});
              if (loanCheck === null) {
                return cb("Loan ID was not Found!", {token: req.token});
              } else if (typeof loanCheck !== undefined){
@@ -1518,7 +1894,7 @@ socket.on('acceptloan', async function(req, cb) {
 
   socket.on('siteaudit', async function(req, cb){
     var user = socket.request.session['user'];
-    if (user != config.OWNER_ACCOUNT) return cb("Invalid Permissions to Request Audit!", {token: req.token});
+    if (user != owner) return cb("Invalid Permissions to Request Audit!", {token: req.token});
     siteAudit();
     return cb(null, {token: req.token});
   });
@@ -1564,7 +1940,7 @@ socket.on('acceptloan', async function(req, cb) {
         //if (!testToken(socket, req.token)) return cb('incorrect token', {token: req.token});
         var ltpayload = JSON.stringify({type:'cancelloan', username: user, loanId: loanId, token: req.token, socketid: simpleStringify(socketList[socket.id])});
         loanThread.send(ltpayload);
-      });//END socket.on createloan
+      });//END socket.on cancelloan
 
       socket.on("getmyactiveloans", function(req, cb) {
         var user = socket.request.session['user'];
@@ -1578,7 +1954,7 @@ socket.on('acceptloan', async function(req, cb) {
         //log(`socket.on("getmyloanlists"`)
         var user = socket.request.session['user'];
         let loanData;
-        let loanCheck = await Loandata.findOne({where:{loanId:`${req.loanId}`}, raw:true, nest: true}).then(result => {return result}).catch(error => {console.log(error)});
+        let loanCheck = await LoanData.findOne({where:{loanId:`${req.loanId}`}, raw:true, nest: true}).then(result => {return result}).catch(error => {console.log(error)});
         if (loanCheck === null) {
           log(`LOANS: ERROR: Loan ${req.loanId} not found in DB!`);
           return cb(`Loan ${req.loanId} not found in DB!`, {token: req.token});
@@ -1603,7 +1979,7 @@ socket.on('acceptloan', async function(req, cb) {
         if (typeof paymentAmt != 'number') return cb('Amount Must be a Positive Number!', {token: req.token});
         if (paymentAmt < 0) return cb('Amount Must be a Positive Number!', {token: req.token});
 
-        let loanCheck = await Loandata.findOne({where:{loanId:`${req.loanId}`}, raw:true, nest: true}).then(result => {return result}).catch(error => {console.log(error)});
+        let loanCheck = await LoanData.findOne({where:{loanId:`${req.loanId}`}, raw:true, nest: true}).then(result => {return result}).catch(error => {console.log(error)});
         if (loanCheck === null) {
           log(`LOANS: ERROR: Loan ${req.loanId} not found in DB!`);
           return cb(`Loan ${req.loanId} not found in DB!`, {token: req.token});
@@ -1624,7 +2000,7 @@ socket.on('acceptloan', async function(req, cb) {
           var totalrepay =  loanData.amount + (loanData.amount * newinterest);
           var outstandingDebt = (totalrepay - loanData.collected);
 
-          let userCheck = await Userdata.findOne({where:{username:`${user}`}, raw:true, nest: true}).then(result => {return result}).catch(error => {console.log(error)});
+          let userCheck = await UserData.findOne({where:{username:`${user}`}, raw:true, nest: true}).then(result => {return result}).catch(error => {console.log(error)});
           if (userCheck === null) {
             log(`LOANS: ERROR: Borrower ${req.loanId} not found in DB!`);
             return cb(`Borrower not found in DB!`, {token: req.token});
@@ -1634,27 +2010,27 @@ socket.on('acceptloan', async function(req, cb) {
             if(uData.hivebalance >=  paymentAmt){
               uData.hivebalance -= paymentAmt;
               loanData.collected += paymentAmt;
-              await Userdata.update({hivebalance: uData.hivebalance},{where:{username:`${user}`}});
+              await UserData.update({hivebalance: uData.hivebalance},{where:{username:`${user}`}});
 
             } else {
               log('Error: Not Enough HIVE Balance!');
               return cb('Not Enough HIVE Balance!', {token: req.token});
             }
             if (paymentAmt == outstandingDebt) {
-              await Loandata.update({collected: loanData.collected, currentpayments: (loanData.currentpayments + 1), totalpayments: (loanData.totalpayments + 1), active: false, completed: true},{where:{loanId:`${req.loanId}`}});
+              await LoanData.update({collected: loanData.collected, currentpayments: (loanData.currentpayments + 1), totalpayments: (loanData.totalpayments + 1), active: false, completed: true},{where:{loanId:`${req.loanId}`}});
               log(`LOANS: Lending Contract #${req.loanId} Completed! Returning user ${user}'s Ownership Keys to them! IMPLEMENT THIS`);
               contractFinished = true;
             } else if (paymentAmt < outstandingDebt) {
-              await Loandata.update({collected: loanData.collected, currentpayments: (loanData.currentpayments + 1), totalpayments: (loanData.totalpayments + 1), active: true, completed: false},{where:{loanId:`${req.loanId}`}});
+              await LoanData.update({collected: loanData.collected, currentpayments: (loanData.currentpayments + 1), totalpayments: (loanData.totalpayments + 1), active: true, completed: false},{where:{loanId:`${req.loanId}`}});
               log(`LOANS: Lending Contract #${req.loanId} Updated!`);
             } else if (paymentAmt > outstandingDebt) {
-              await Loandata.update({collected: loanData.collected, currentpayments: (loanData.currentpayments + 1), totalpayments: (loanData.totalpayments + 1), active: false, completed: true},{where:{loanId:`${req.loanId}`}});
+              await LoanData.update({collected: loanData.collected, currentpayments: (loanData.currentpayments + 1), totalpayments: (loanData.totalpayments + 1), active: false, completed: true},{where:{loanId:`${req.loanId}`}});
               overpay = (paymentAmt - outstandingDebt);
               log(`LOANS: Lending Contract #${req.loanId} Completed! Returning user ${user}'s Ownership Keys to them! OVERPAID BY: ${(overpay / 1000)} HIVE`);
               contractFinished = true;
             }
             var lenderData;
-            let lenderCheck = await Userdata.findOne({where:{username:`${loanData.username}`}, raw:true, nest: true}).then(result => {return result}).catch(error => {console.log(error)});
+            let lenderCheck = await UserData.findOne({where:{username:`${loanData.username}`}, raw:true, nest: true}).then(result => {return result}).catch(error => {console.log(error)});
             if (lenderCheck === null) {
               log(`LOANS: ERROR: Lender ${req.loanId} not found in DB!`);
               return cb(`Lender not found in DB!`, {token: req.token});
@@ -1667,9 +2043,9 @@ socket.on('acceptloan', async function(req, cb) {
                   lenderData.activelends--;
                   lenderData.closedlends++;
                 }
-                await Userdata.update({hivebalance: lenderData.hivebalance, hiveprofit: lenderData.hiveprofit, activelends: lenderData.activelends, closedlends: lenderData.closedlends, totallends: lenderData.totallends},{where:{username:`${loanData.username}`}});
+                await UserData.update({hivebalance: lenderData.hivebalance, hiveprofit: lenderData.hiveprofit, activelends: lenderData.activelends, closedlends: lenderData.closedlends, totallends: lenderData.totallends},{where:{username:`${loanData.username}`}});
               } else {
-                await Userdata.update({hivebalance: lenderData.hivebalance, hiveprofit: lenderData.hiveprofit,  currentpayments: (lenderData.currentpayments + 1), totalpayments: (loanData.totalpayments + 1), active: true, completed: false},{where:{username:`${loanData.username}`}});
+                await UserData.update({hivebalance: lenderData.hivebalance, hiveprofit: lenderData.hiveprofit,  currentpayments: (lenderData.currentpayments + 1), totalpayments: (loanData.totalpayments + 1), active: true, completed: false},{where:{username:`${loanData.username}`}});
               }
               return cb(null, {username: req.username, loanId: req.loanId, loandata: loanData, token: req.token});
             }
@@ -1681,7 +2057,7 @@ socket.on('acceptloan', async function(req, cb) {
       socket.on("walletdata", function(req, cb) {
         var user = socket.request.session['user'];
         var username = req.username;
-        if (user != config.owner){
+        if (user != owner){
           if(user != username) return cb('You Cannot Look Up That Wallet!', null);
         }
         var ltpayload = JSON.stringify({type:'walletdata', username: username, socketid: simpleStringify(socketList[socket.id])});
@@ -1692,6 +2068,10 @@ socket.on('acceptloan', async function(req, cb) {
 
       socket.on("wallethistory", function(req, cb) {
         var user = socket.request.session['user'];
+        var username = req.name;
+        if (user != owner){
+          if(user != username) return cb('You Cannot Look Up That Wallet!', null);
+        }
         var payload = JSON.stringify({type:'wallethistory', username: user, socketid: simpleStringify(socketList[socket.id])});
         userThread.send(payload);
         log(`Fetching user ${user} wallet history`)
@@ -1700,17 +2080,49 @@ socket.on('acceptloan', async function(req, cb) {
       });
 
       socket.on("loadaallshares", function(req, cb) {
+        return;
         var user = socket.request.session['user'];
         var payload = JSON.stringify({type:'wallethistory', username: user, socketid: simpleStringify(socketList[socket.id])});
         exchangeThread.send(payload);
-        log(`Fetching user ${user} wallet history`)
+        log(`Fetching user ${user} share holdings`)
         return cb(null, 'Fetching Share Exchange');
         //return cb(null, 'Fetching Users Loans');
       });
 
-      socket.on("loadmyloans", function(req, cb) {
+      socket.on("loadaallexchange", function(req, cb) {
+        return;
         var user = socket.request.session['user'];
-        var payload = JSON.stringify({type:'loadmyloans', username: user, socketid: simpleStringify(socketList[socket.id])});
+        var payload = JSON.stringify({type:'wallethistory', username: user, socketid: simpleStringify(socketList[socket.id])});
+        exchangeThread.send(payload);
+        log(`Fetching user ${user} share holdings`)
+        return cb(null, 'Fetching Share Exchange');
+        //return cb(null, 'Fetching Users Loans');
+      });
+
+
+      socket.on("loadmyfutures", function(req, cb) {
+        var user = socket.request.session['user'];
+        //var payload = JSON.stringify({type:'loadmyloans', username: user, socketid: simpleStringify(socketList[socket.id])});
+        //loanThread.send(payload);
+        var spread = spreadpercent / 100;
+        longHIVEprice = parseFloat((hiveprice + (hiveprice * spread)).toFixed(6));
+        shortHIVEprice = parseFloat((hiveprice - (hiveprice * spread)).toFixed(6));
+        return cb(null, {hiveusdprice:hiveprice, hiveshortprice: shortHIVEprice, hivelongprice: longHIVEprice});
+        log(`Fetching HIVE Spot Prices`)
+        //return cb(null, 'Fetching Users Loans');
+      });
+
+      socket.on("loadmyloans", function(req, cb) {
+        if(debug === true) log(`socket.on("loadmyloans",`); log(req);
+        var history;
+        if(!req.history) history = false;
+        if(req.history == true) {
+          history = true;
+        } else {
+          history = false;
+        }
+        var user = socket.request.session['user'];
+        var payload = JSON.stringify({type:'loadmyloans', username: user, history: history, socketid: simpleStringify(socketList[socket.id])});
         loanThread.send(payload);
         return cb(null, 'Loading Your Lending Contracts');
         log(`Fetching users loans`)
@@ -1718,8 +2130,16 @@ socket.on('acceptloan', async function(req, cb) {
       });
 
       socket.on("loadallloans", function(req, cb) {
+        if(debug === true) log(`socket.on("loadallloans",`); log(req);
+        var history;
+        if(!req.history) history = false;
+        if(req.history == true) {
+          history = true;
+        } else {
+          history = false;
+        }
         var user = socket.request.session['user'];
-        var ltpayload = JSON.stringify({type:'loadallloans', username: user, socketid: simpleStringify(socketList[socket.id])});
+        var ltpayload = JSON.stringify({type:'loadallloans', username: user, history: history, socketid: simpleStringify(socketList[socket.id])});
         loanThread.send(ltpayload);
         return cb(null, 'Loading All Lending Contracts');
         log(`Fetching all loans`)
@@ -1776,7 +2196,7 @@ socket.on('acceptloan', async function(req, cb) {
           if (m === null) {
             return cb(null, true);
           }
-          Chatdata.create(m);
+          ChatData.create(m);
           io.emit('chatmessage', m);
         }
         return cb(null, true);
@@ -1892,8 +2312,11 @@ socket.on('acceptloan', async function(req, cb) {
 
     //create a random base64 token
     function changeToken(user){
+      if(debug === false) log(`changeToken(${user})`);
       var token = crypto.randomBytes(64).toString('base64');
+      if(debug === false) log(`old userTokens[user] = ${userTokens[user]}`);
       if (userTokens[user]) userTokens[user] = token;
+      if(debug === false) log(`new userTokens[user] = ${userTokens[user]}`);
       return token;
     }
     //create salt and hash password

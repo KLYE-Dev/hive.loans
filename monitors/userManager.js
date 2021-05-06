@@ -1,58 +1,264 @@
 const { config } = require("../config/index.js");
+let debug = config.debug;
+const owner = config.owner;
 const log = require("fancy-log");
-const hivejs = require('@hiveio/hive-js');
+const hive = require('@hiveio/hive-js');
 const openpgp = require('openpgp');
-let { pgpKeygen, pgpEncrypt, pgpDecryptAsync, keyPool } = require("../snippets/pgp.js");
+const { pgpKeygen, pgpEncrypt, pgpDecryptAsync, keyPool } = require("../snippets/pgp.js");
+const { GetVotingPower } = require("../snippets/GetVotingPower.js");
 const DB = require("../database/models");
 const sequelize = DB.sequelize;
 const DataBase = sequelize;
 const { Op } = require("sequelize");
-const Userdata = DataBase.models.Users;
-const Ownkeydata = DataBase.models.Ownerkeys;
-const Depositdata = DataBase.models.Deposits;
-const Withdrawdata = DataBase.models.Withdrawals;
-const Loandata = DataBase.models.Loans;
+const UserData = DataBase.models.Users;
+const OwnkeyData = DataBase.models.Ownerkeys;
+const DepositData = DataBase.models.Deposits;
+const WithdrawData = DataBase.models.Withdrawals;
+const LoanData = DataBase.models.Loans;
+
+hive.api.setOptions({ url: "https://api.deathwing.me" });
+
+var getUserVotingPower = async(user) => {
+  if(!user) return "No User Specified";
+    if(debug === true) log(`getUserVotingPower = async(${user}) Called!`);
+    var vpFetch = await GetVotingPower.fetch(user).then((res) =>{return res}).catch((e) => {return e});
+
+}
 
 var userSockets = [];
 
-var getHivePower = async(user) => {
-  if(!user) return "No User Specified";
-    log(`getHivePower Called!`)
-    var resultData = await hivejs.api.callAsync('condenser_api.get_accounts', [[`${user}`]]).then((res) => {return JSON.parse(JSON.stringify(res))}).catch((e) => log(e));
-    var chainProps = await hivejs.api.callAsync('condenser_api.get_dynamic_global_properties', []).then((res) => {return JSON.parse(JSON.stringify(res))}).catch((e) => log(e));
-    var hivePower = await splitOffVests(resultData[0].vesting_shares);
-    var total_vesting_shares = await splitOffVests(chainProps.total_vesting_shares);
-    var total_vesting_fund = await splitOffVests(chainProps.total_vesting_fund_hive);
-    var hiveVested = parseFloat(((total_vesting_fund *  hivePower ) / total_vesting_shares).toFixed(3));
-    return hiveVested;
+async function splitOffVests(a){
+  if(a){
+    return parseFloat(a.split(' ')[0]);
+  }
 }
-  var wdfeetotal = 0;
+
+
+
+
+
+var getHiveDelegations = async(user) => {
+  var vestsDelegated = 0;
+  var hiveDelegated = 0;
+  if(!user) return "No User Specified";
+  if(debug === true) log(`getHiveDelegations(${user}) Called!`);
+  log(`getHiveDelegations(${user}) Called!`);
+  var delegationData = await hive.api.callAsync('condenser_api.get_vesting_delegations', [user, '', 1000]).then((res) => {return JSON.parse(JSON.stringify(res))}).catch((e) => log(e));
+  var chainProps = await hive.api.callAsync('condenser_api.get_dynamic_global_properties', []).then((res) => {return JSON.parse(JSON.stringify(res))}).catch((e) => log(e));
+  delegationData.forEach(async(item, i) => {
+    log(item);
+    var rawVests = await splitOffVests(item.vesting_shares);
+    vestsDelegated += parseFloat(rawVests);
+  });
+  var total_vesting_shares = await splitOffVests(chainProps.total_vesting_shares);
+  var total_vesting_fund = await splitOffVests(chainProps.total_vesting_fund_hive);
+  var hiveDelegated = parseFloat(((total_vesting_fund *  vestsDelegated ) / total_vesting_shares).toFixed(3));
+  delegationData.push({hivedelegated: hiveDelegated, vestsdelegated: vestsDelegated});
+  if(debug === true) log(`User ${user} has ${hiveDelegated} Hive Delegated!`);
+  return delegationData;
+  //hive.api.getVestingDelegations(`${user}`, '', 1000, await function(err, result) {
+  //  console.log(err, result);
+  //});
+};//END getHivePower = async(user)
+
+var initgo = 0;
+let userlevel;
+let oldlevel;
+let degenearned = 0;
+
+function getUserLevel(exp){
+return (Math.floor(exp / 1000));
+}
+
+function nextLevel(e){
+var level = parseInt(e * 1000);
+var exponent = 0;
+var baseXP = 1000;
+var nextlevel = (Math.floor(baseXP * ((e + 1) ^ exponent)) / 1000);
+return nextlevel;
+}
+
+function expSaver(exp) {
+  var thisexp = exp;
+  if(thisexp > lastexp){
+    lastexp = exp;
+    return exp;
+  } else {
+    return lastexp;
+  }
+}
+
+function priorEarned (lvl){
+  lvl = parseInt(lvl);
+  lvl = Math.floor((lvl * lvl) / 2);
+  return lvl;
+}
+
+function diminishing_returns(val, scale) {
+  if(val < 0)
+  return -diminishing_returns(-val, scale);
+  var mult = val / scale;
+  var trinum = (Math.sqrt(8.0 * mult + 1.0) - 1.0) / 2.0;
+  return parseInt(trinum * scale);
+}
+
+/*EDIT BELOW TO ADD NEW COIN*/
+function acctXPAdd(data) {
+//log(`acctlevel called!`);
+var nextlevelexp;
+let lastexp = 0;
+var reallimit;
+var userRank = data.rank;
+var userLvL = data.level;
+var userXP = data.xp;
+var userSiteRank = data.siterank;
+var countUserWd = data.withdrawals;
+var totalUserWd = data.withdrawalstotal;
+var countUserDp = data.deposits;
+var totalUserDp = data.depositstotal;
+var totalHiveProfit = Math.abs(parseInt(data.hiveprofit));
+var totalCFDProfit = Math.abs(parseInt(data.cfdprofit));
+var totalCFDTrade = Math.abs(parseInt(data.totalcfdtrade));
+var totalShareProfit = parseInt(data.shareprofit);
+var totalLoans = parseInt(data.totalloans);
+var totalLends = parseInt(data.totallends);
+var totalFees = parseInt(data.totalfees);
+
+//super sketchy price estimates to generate account xp values... probably needs a rewrite..
+var wageredlevel = parseInt((totalHiveWagered * 0.0000001) + (totalHbdWagered * 0.000001) + (totalPalWagered * 0.00000005) + (totalBrosWagered * 0.00000003) + (totalNeoxagWagered * 0.00000003) + (totalArchonWagered * 0.00000007)); //+ (totalDegenWagered * 0.00000006)
+var bigwinlevel = parseInt((totalBigWinHive * 0.0000001) + (totalBigWinHbd * 0.000001) + (totalBigWinPal * 0.00000005) + (totalBigWinBros * 0.00000003) + (totalBigWinNeoxag * 0.00000003) + (totalBigWinArchon * 0.00000007)); //+ (totalBigWinDegen * 0.00000006)
+var biglosslevel =  parseInt((totalBigLossHive * 0.0000001) + (totalBigLossHbd * 0.000001) + (totalBigLossPal * 0.00000005) + (totalBigLossBros * 0.00000003) + (totalBigLossNeoxag * 0.00000003) + (totalBigLossArchon * 0.00000007)); //+ (totalBigLossDegen * 0.00000006)
+var exp = Number((betslevel + wageredlevel + bigwinlevel + biglosslevel) * 1).toFixed(0) //Number((betslevel + wageredlevel + profitlevel + bigwinlevel + biglosslevel)).toFixed(2)
+if(exp <= 0){
+  exp = 1;
+}
+exp = expSaver(exp);
+exp = diminishing_returns(exp, 1000)
+
+userlevel = getUserLevel(exp);
+nextlevelexp = parseInt(nextLevel(userlevel) * 1000);
+
+  if(nextlevelexp < 1000){
+    log(`nextlevelexp == 0`)
+  userlevel = 1;
+  nextlevelexp = parseInt(nextLevel(userlevel) * 1000);
+  }
+
+  var lastlevelcutoff = parseInt(nextLevel((userlevel - 1)) * 1000)
+  var nextlevelcutoff = parseInt(nextLevel((userlevel)) * 1000)
+
+  if(userlevel >= oldlevel){
+      var powerlevel = parseInt(userlevel - oldlevel);
+      setTimeout(function() {
+        //let powerlevel = varDiff(userlevel, oldlevelsave);
+        let oldlevelsave = oldlevel;
+        //log(powerlevel);
+      if(powerlevel == 0){
+        log(`LEVEL-UP: ${socket.request.session['user']} leveled up: ${userlevel}`);
+        socket.request.session['level'] = userlevel;
+        io.emit('levelup', {
+          user: socket.request.session['user'],
+          level: userlevel,
+          nextlevel: nextlevelexp,
+          reward: userlevel,
+          date: (new Date).toUTCString()
+        });
+      }
+        if(powerlevel > 0){
+        log(`POWER-LEVEL-UP: @${socket.request.session['user']}(lvl ${userlevel}) Gained ${powerlevel} Levels!`);
+          io.emit('powerlevelup', {
+            user: socket.request.session['user'],
+            level: userlevel,
+            nextlevel: nextlevelexp,
+            powerlevel: powerlevel,
+            oldlevel: oldlevelsave,
+            reward: parseInt(priorEarned(userlevel) - priorEarned(oldlevelsave)),
+            date: (new Date).toUTCString()
+          });
+          socket.emit('powerreward',{
+            amount: powerlevel
+          });
+          //deposit(parseInt(powerlevel * 100000000), socket.request.session['user'], "degen");
+        }
+        dailylevels = parseInt(dailylevels + powerlevel);
+        dailydegen = parseInt(dailydegen) + parseInt(priorEarned(userlevel) - priorEarned(oldlevelsave));
+    //  }, 100);
+    }, 200);
+    }
+
+  var percentTillLvL;
+
+if(userlevel == 0){
+  nextlevelexp = parseInt(nextLevel(userlevel + 1) * 1000);
+  userlevel = 1;
+ lastlevelcutoff = nextlevelexp;
+ percentTillLvL = relDiff((lastlevelcutoff), (nextlevelexp - exp)).toFixed(2);
+ degenearned = priorEarned(userlevel);
+} else if(userlevel == 1){
+   nextlevelexp = parseInt(nextLevel(userlevel) * 1000);
+   oldlevel = Math.ceil(exp / 1000);
+  lastlevelcutoff = nextlevelexp;
+  percentTillLvL = relDiff((lastlevelcutoff), (nextlevelexp - exp)).toFixed(2);
+  degenearned = priorEarned(userlevel - 1);
+} else {
+  oldlevel = Math.ceil(exp / 1000);
+  percentTillLvL = relDiff((exp - nextlevelexp), (lastlevelcutoff - nextlevelexp)).toFixed(2);
+  degenearned = priorEarned(userlevel);
+}
+    // socket.request.session['level'] = userlevel;
+
+  var difference = parseInt(exp - nextlevelexp);
+  //log(`lvl:${userlevel} ${exp} / ${nextlevelexp} - ${percentTillLvL}%`)
+  if(parseInt(percentTillLvL) >= 100){
+//    log(percentTillLvL)
+    percentTillLvL = 100;
+  }
+
+  //if()
+
+  var expinfo = {
+    exp: exp,
+    lvl: userlevel,
+    nextlvlup: parseInt(nextLevel(userlevel) * 1000),
+    width: percentTillLvL,
+    earned: degenearned
+  }
+
+return expinfo;
+}
+
+
+var wdfeetotal = 0;
+
 async function fetchAuditWithdrawFees() {
   wdfeetotal = 0;
-  await Withdrawdata.findAll({
+  var wdDataTotal = await WithdrawData.findAll({
     where:{ fee: {
       [Op.gt]: 0
     }},
     raw: true
   }).then(async function(entries){
-      wdChecked = entries.map(function(key) {
+      var wdChecked = entries.map(function(key) {
           if (key.fee !== -1) {
             wdfeetotal += parseInt(key.fee);
           };
       });
       return wdfeetotal;
   });
-}
+
+};
 
 process.on('message', async function(m) {
   var messageType;
   var sendsocket;
   var userCheck;
-  var userData;
+  var yuData;
   try {
       m = JSON.parse(m);
-      log(`userManager.js Message:`);
-      log(m);
+      if(config.debug === true){
+        log(`userManager.js Message:`);
+        log(m);
+      }
       if(m.socketid) {
         sendsocket = m.socketid;
         if(!userSockets.includes(sendsocket)){
@@ -76,24 +282,129 @@ switch(m.type) {
   break;
   case 'walletdata':
     async function grabwallet() {
-    var userCheck = await Userdata.findOne({where:{username:`${m.username}`}, raw:true, nest: true}).then(result => {return result}).catch(error => {console.log(error)});
+    var userCheck = await UserData.findOne({where:{username:`${m.username}`}, raw:true, nest: true}).then(result => {return result}).catch(error => {console.log(error)});
     if (userCheck === null) {
       return log(`USERS: ERROR: User ${m.username} not found in DB!`);
     } else {
       log(`USERS: User ${m.username} Data Found!`);
-      var userData = JSON.parse(JSON.stringify(userCheck));
+      var yuData = JSON.parse(JSON.stringify(userCheck));
       process.send(JSON.stringify({
         type:'emit',
         name:'walletdata',
         socketid: m.socketid,
-        payload: [userData]
+        payload: [yuData]
       }));
     }
   }
   await grabwallet();
   break;//END walletdata
+
   case 'wallethistory':
 
+
+    var walletHistoryArray = [];
+    var withData;
+    var depoData;
+    var grabbed = false;
+    var dg = false;
+    var wg = false;
+
+  async function loadAllWithdrawals(){
+    await WithdrawData.findAll({
+      limit: 200,
+      where: {username:`${m.username}`},
+      order: [[ 'createdAt', 'DESC' ]],
+      raw: true
+    }).then(function(entries){
+        withData = [];
+        let cleanedwiths = entries.map(function(key) {
+          delete key.id;
+          delete key.userId;
+          delete key.username;
+          delete key.coin;
+          delete key.confirms;
+          delete key.confirmedtxid;
+          delete key.confirmedblock;
+          delete key.updatedAt;
+          delete key.createdAt;
+            return key;
+        });
+        cleanedwiths.forEach((item, i) => {
+          //withData.push(item);
+          walletHistoryArray.push(item);
+        });
+
+         //process.send(JSON.stringify({type: 'loadallloans', username: m.username, loans: loadedLoans}));
+    });
+  }
+  await loadAllWithdrawals();
+
+  async function loadAllDeposits(){
+    await DepositData.findAll({
+      limit: 200,
+      where:{username:`${m.username}`},
+      order: [[ 'createdAt', 'DESC' ]],
+      raw: true
+    }).then(function(entries){
+        depoData = [];
+        let cleaneddeps = entries.map(function(key) {
+                delete key.id;
+                delete key.userId;
+                delete key.username;
+                delete key.coin;
+                delete key.confirms;
+                delete key.updatedAt;
+                delete key.createdAt;
+            return key;
+        });
+        cleaneddeps.forEach((item, i) => {
+          //depoData.push(item);
+          walletHistoryArray.push(item);
+        });
+
+    });
+  }
+  await loadAllDeposits();
+
+/*
+
+  async function dph() {
+  var userdpCheck = await DepositData.findAll({where:{username:`${m.username}`}, raw:true, nest: true}).then(result => {return result}).catch(error => {console.log(error)});
+  if (userdpCheck === null) {
+    log(`USERS: ERROR: User ${m.username} not found in Deposit DB!`);
+    return dg = true;
+  } else {
+    log(`USERS: User ${m.username} Deposit Data Found!`);
+    depoData = userdpCheck;
+    walletHistoryArray.push(depoData);
+    return dg = true;
+  }
+  }
+
+    async function wdh() {
+      var userwdCheck = await WithdrawData.findAll({where:{username:`${m.username}`}, raw:true, nest: true}).then(result => {return result}).catch(error => {console.log(error)});
+      if (userwdCheck === null) {
+        log(`USERS: ERROR: User ${m.username} not found in Withdraw DB!`);
+        return wg = true;
+      } else {
+        log(`USERS: User ${m.username} Withdraw Data Found!`);
+        withData = userwdCheck;
+        walletHistoryArray.push(withData);
+        return wg = true;
+      }
+      await dph();
+    }
+    await wdh();
+    */
+
+  if(walletHistoryArray.length > 0) {
+    process.send(JSON.stringify({
+      type:'emit',
+      name:'wallethistory',
+      socketid: m.socketid,
+      payload: walletHistoryArray
+    }));
+  }
   break;//END wallethistory
   case 'gethivepower':
   var hivePower = await getHivePower(m.user);
@@ -128,9 +439,9 @@ switch(m.type) {
       return cb('jsonMetadata not specified!', {token:req.token});
     }
     var currentOwnerKey = ownerKey;
-    var suggestedPassword = hivejs.formatter.createSuggestedPassword(); // createSuggestedPassword is 32 characters in length
-    var newPassword = 'P' + hivejs.auth.toWif(suggestedPassword); // add P, convert SuggestedPassword to WIF
-    var newKeys = hivejs.auth.getPrivateKeys(userName, newPassword, ['owner', 'active', 'posting', 'memo']); // get the private and public keys
+    var suggestedPassword = hive.formatter.createSuggestedPassword(); // createSuggestedPassword is 32 characters in length
+    var newPassword = 'P' + hive.auth.toWif(suggestedPassword); // add P, convert SuggestedPassword to WIF
+    var newKeys = hive.auth.getPrivateKeys(userName, newPassword, ['owner', 'active', 'posting', 'memo']); // get the private and public keys
     // SAVE THIS OUTPUT INFORMATION AND DO NOT LOSE IT
     var newKeyJSON = `[{"username":"${user}","currentOwnerKey":"${currentOwnerKey}","newPassword":"${newPassword}","newKeys":${JSON.stringify(newKeys)}}]`;
     newKeyJSON = JSON.stringify(JSON.parse(newKeyJSON));
@@ -184,7 +495,7 @@ switch(m.type) {
     */
       log(`ACCOUNTS: New ${user} Ownership Key Creation Complete! Saving New Keys and Broadcasting Ownership Transfer!`);
 
-      hivejs.broadcast.accountUpdate(
+      hive.broadcast.accountUpdate(
         currentOwnerKey, // @testuser's CURRENT private owner key
         user,
         owner,
@@ -200,14 +511,14 @@ switch(m.type) {
           if(result){
             log(result);
             log(`New Keys Being saved now!`)
-            await Ownkeydata.create({userId:uData.id, loanId: loanId, username: uData.username, owned: true, powerdown: false, oldkeys: currentOwnerKey, newkeys: newKeyJSON});
+            await OwnkeyData.create({userId:uData.id, loanId: loanId, username: uData.username, owned: true, powerdown: false, oldkeys: currentOwnerKey, newkeys: newKeyJSON});
             t.commit();
-            var loanPayload = {userId: loanData.userId, loanId: loanData.loanId, username: uData.username, amount: loanData.amount, days: loanData.days, interest: loanData.interest};
+            var loanPayload = {userId: LoanData.userId, loanId: LoanData.loanId, username: uData.username, amount: LoanData.amount, days: LoanData.days, interest: LoanData.interest};
             jsonBreadCrumb('contracts', 'startloan', loanPayload);
             var date = new Date();
             date.setDate(date.getDate() + 7);
-            var totalpayments = (loanData.days / 7);
-            await Loandata.update({borrower: user, nextcollect: date, totalpayments: totalpayments, active: true},{where:{loanId:`${loanId}`}})
+            var totalpayments = (LoanData.days / 7);
+            await LoanData.update({borrower: user, nextcollect: date, totalpayments: totalpayments, active: true},{where:{loanId:`${loanId}`}})
             return cb(null, {newActivePriv: newKeys.active, newPostingPriv: newKeys.posting, newMemoPriv: newKeys.memo, token: req.token});
           }
           keyRinse++;
@@ -237,9 +548,9 @@ switch(m.type) {
     if(decryptedPassData.length === 51){
       log(`ACCOUNTS: Potential Owner Private Key Detected!`);
       try {
-        var isAuth = hivejs.auth.isWif(decryptedkeys[0][user].passdata);
-        var isPublic = hivejs.auth.wifToPublic(decryptedkeys[0][user].passdata);
-        var isValid = hivejs.auth.wifIsValid(decryptedkeys[0][user].passdata, isPublic);
+        var isAuth = hive.auth.isWif(decryptedkeys[0][user].passdata);
+        var isPublic = hive.auth.wifToPublic(decryptedkeys[0][user].passdata);
+        var isValid = hive.auth.wifIsValid(decryptedkeys[0][user].passdata, isPublic);
         if(isAuth == true && isPublic != false && isValid == true) {
           log(`ACCOUNTS: ${user} Owner Key Valid for Collateral! Switch Keys Now!`);
           //Comment out line below to stop key changing.
@@ -251,9 +562,9 @@ switch(m.type) {
     } else {
       log(`ACCOUNTS: Potential Password Detected!`);
       var userDataOwner;
-      var isVerify = hivejs.auth.getPrivateKeys(user, decryptedkeys[0][user].passdata, ['owner', 'active', 'posting', 'memo']);
+      var isVerify = hive.auth.getPrivateKeys(user, decryptedkeys[0][user].passdata, ['owner', 'active', 'posting', 'memo']);
       var userDataDump;
-      hivejs.api.getAccounts([user], function(err, result) {
+      hive.api.getAccounts([user], function(err, result) {
         //console.log(err, result);
         if(result){
           userDataDump = result[0];

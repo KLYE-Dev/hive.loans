@@ -3,6 +3,7 @@
 ***************************************************************************/
 let userLocalCheck = window.localStorage.getItem("user");
 let tokenLocalcheck = window.localStorage.getItem("token");
+var particlesStart;
 $(document).ready(function() {
   try {
     userLocalCheck = window.localStorage.getItem("user");
@@ -13,8 +14,27 @@ $(document).ready(function() {
   $('#jumboMove').click();
 
 
+
+  socket.emit('latency', Date.now(), function(startTime, cb) {
+      var latency = ((Date.now() - startTime) / 2).toFixed(2);
+      if(!oldLatency) oldLatency = latency;
+      $("#ping").html(latency);
+      if(latency < oldLatency) {
+        flashwin($("#ping"));
+      } else if (latency > oldLatency) {
+        flashlose($("#ping"));
+      } else if(latency == oldLatency) {
+
+      }
+
+  });
+
   // ParticlesJS Config.
-  particlesJS("particles-js", {
+
+particlesStart = function() {
+  $('#particles-js').css({'background-position':'right','background-repeat':' no-repeat','background-size':'100% !important','background':'rgb(64,64,64)','background':'linear-gradient(0deg, rgba(64,64,64,1) 0%, rgba(0,0,0,1) 100%)','background-image':'none'});
+
+   particlesJS("particles-js", {
     "particles": {
       "number": {
         "value": 100,
@@ -33,7 +53,7 @@ $(document).ready(function() {
            "color": "#444444"
          },
          "image": {
-           "src": "https://hive.loans/img/logo-hive.png",
+           "src": "/img/logo-hive.png",
             "width": 110,
             "height": 100
           }
@@ -125,9 +145,192 @@ $(document).ready(function() {
     },
     "retina_detect": false
   });
+}
+  particlesStart();
 });
 
-//Logout button
+
+var bgclick = 0;
+$("#particles-js").on('click',function(){
+  bgclick++;
+  if(bgclick === 42){
+    window.pJSDom[0].pJS.fn.vendors.destroypJS();
+    window["pJSDom"] = [];
+    showSuccess('Nyan Nyan Nyan Nyan NyanNyanNyan Nyan Nyan');
+    $('#chatClose').click();
+    $('#jumboClose').click();
+    nyannyan.play();
+    $('#particles-js').css({'background-position':'right','background-repeat':' no-repeat','background-size':'60% !important','background-color':'#043564 !important','background-image':'url("http://127.0.0.1/img/nyan.gif")'});
+   // /$('#particles-js').css({'background-image':'/img/nyan.gif'});
+   particlesJS("particles-js", {
+     "particles": {
+       "number": {
+         "value": 100,
+         "density": {
+           "enable": false,
+           "value_area": 800
+         }
+       },
+       "color": {
+         "value": "#ffffff"
+       },
+       "shape": {
+         "type": "star",
+         "stroke": {
+           "width": 0,
+           "color": "#000000"
+         },
+         "polygon": {
+           "nb_sides": 5
+         }
+       },
+       "opacity": {
+         "value": 0.5,
+         "random": false,
+         "anim": {
+           "enable": false,
+           "speed": 1,
+           "opacity_min": 0.1,
+           "sync": false
+         }
+       },
+       "size": {
+         "value": 4,
+         "random": true,
+         "anim": {
+           "enable": false,
+           "speed": 40,
+           "size_min": 0.1,
+           "sync": false
+         }
+       },
+       "line_linked": {
+         "enable": false,
+         "distance": 150,
+         "color": "#ffffff",
+         "opacity": 0.4,
+         "width": 1
+       },
+       "move": {
+         "enable": true,
+         "speed": 14,
+         "direction": "left",
+         "random": false,
+         "straight": true,
+         "out_mode": "out",
+         "bounce": false,
+         "attract": {
+           "enable": false,
+           "rotateX": 600,
+           "rotateY": 1200
+         }
+       }
+     },
+     "interactivity": {
+       "detect_on": "canvas",
+       "events": {
+         "onhover": {
+           "enable": false,
+           "mode": "grab"
+         },
+         "onclick": {
+           "enable": true,
+           "mode": "repulse"
+         },
+         "resize": true
+       },
+       "modes": {
+         "grab": {
+           "distance": 200,
+           "line_linked": {
+             "opacity": 1
+           }
+         },
+         "bubble": {
+           "distance": 400,
+           "size": 40,
+           "duration": 2,
+           "opacity": 8,
+           "speed": 3
+         },
+         "repulse": {
+           "distance": 200,
+           "duration": 0.4
+         },
+         "push": {
+           "particles_nb": 4
+         },
+         "remove": {
+           "particles_nb": 2
+         }
+       }
+     },
+     "retina_detect": false
+   });
+ } else if(bgclick === 43){
+       nyannyan.pause();
+     window.pJSDom[0].pJS.fn.vendors.destroypJS();
+     window["pJSDom"] = [];
+     particlesStart();
+ }
+//http://vincentgarreau.com/particles.js/assets/img/kbLd9vb_new.gif
+});
+
+
+function heartbeat(){
+  hbeats++;
+  if((hbeats % 4) == 1) {
+    $('#pingheart').html('<i class="fas fa-fw fa-heart"></i>');
+    //$('#pingheart').css({'font-size':'small'});
+    flashwin($('#pingheart'));
+  } else if((hbeats % 3) == 1) {
+    $('#pingheart').html('<i class="fas fa-fw fa-heartbeat"></i>');
+        flashwin($('#pingheart'));
+    //$('#pingheart').css({'font-size':'revert'});
+    //$('#pingheart').animate({'font-size':'normal'}, 500);
+  } else {
+    //$('#pingheart').css({'font-size':'large'});
+  }
+  if(hbeats >= 4) hbeats = 0;
+}
+
+var hbeats = 0;
+//var heartbeating = setInterval(heartbeat, 1000);
+
+function stopHeart() {
+  console.log(`stop heart`)
+  clearInterval(heartbeating);
+}
+
+
+
+var latency = 0;
+var oldLatency;
+var pingsend = setInterval(function() {
+  var pingdead = setInterval(function() {
+    $('#pingheart').html('<i class="fas fa-fw fa-heart-broken" style="color:red;" title="Connection to Server has Been Lost!"></i>');
+  }, 9000);
+    socket.emit('latency', Date.now(), function(startTime, cb) {
+      if(startTime) clearInterval(pingdead);
+        latency = ((Date.now() - startTime) / 2).toFixed(2);
+        if(typeof oldLatency == undefined) oldLatency = latency;
+        $("#ping").html(latency);
+        if(latency < oldLatency) {
+          //flashwin($("#ping"));
+          oldLatency = latency;
+        } else if (latency > oldLatency) {
+          //flashlose($("#ping"));
+          oldLatency = latency;
+        } else if(latency == oldLatency) {
+          oldLatency = latency;
+        } else if(latency > 1000) {
+          $('#pingheart').html('<i class="fas fa-fw fa-heart-broken" style="color:red;" title="Connection to Server is Unstable"></i>');
+        }
+
+    });
+  }, 3000);
+
+//Logut button
 $("#logout").on('click',function(){
 	socket.close();
   socket.open();
@@ -227,11 +430,33 @@ $("#betAmount").keyup( function (e) {
 
 });
 
+function openMainLoanTab() {
+  socket.emit('loadmyloans', {token: token}, function(err, data){
+    if(err) showErr(err);
+    if(data) {
+      usersLoanDataFetch = data;
+      //showSuccess(data);
+    }
+  });
+}
+
 function openLendingTab() {
     socket.emit('loadmyloans', {token: token}, function(err, data){
       if(err) showErr(err);
       if(data) {
+        usersLoanDataFetch = data;
         //showSuccess(data);
+      }
+    });
+}
+
+function futuresPrice() {
+    socket.emit('loadmyfutures', {token: token}, function(err, data){
+      if(err) showErr(err);
+      if(data) {
+        console.log(data);
+        $('#longSpotPrice').val(data.hivelongprice);
+        $('#shortSpotPrice').val(data.hiveshortprice);
       }
     });
 }
@@ -254,9 +479,28 @@ function openAllLoansTab() {
     });
 }
 
-function derp() {
-  console.log(`derp called`);
-  createNewLendingContract(parseInt($("#newamount").val()), parseInt($("#newdays").val()), parseInt($("#newfee").val()));
+function createNewMainBorrow() {
+  if(debug === true) console.log(`createNewMainBorrow`);
+  if(typeof $("#borrowCreateAmount").val() == undefined) showErr('Amount is not Specified!');
+  if(typeof $("#borrowCreateDuration").val() == undefined) showErr('Duration is not Specified!');
+  if(typeof $("#borrowCreateInterest").val() == undefined) showErr('Interest is not Specified!');
+  createNewLendingContract(parseInt($("#borrowCreateAmount").val()), parseInt($("#borrowCreateDuration").val()), parseInt($("#borrowCreateInterest").val()), false);
+}
+
+function createNewMainLoan() {
+  if(debug === true) console.log(`createNewMainLoan`);
+  if(typeof $("#loanCreateAmount").val() == undefined) showErr('Amount is not Specified!');
+  if(typeof $("#loanCreateDuration").val() == undefined) showErr('Duration is not Specified!');
+  if(typeof $("#loanCreateInterest").val() == undefined) showErr('Interest is not Specified!');
+  createNewLendingContract(parseInt($("#loanCreateAmount").val()), parseInt($("#loanCreateDuration").val()), parseInt($("#loanCreateInterest").val()), true);
+}
+
+function createNewLendCont() {
+  if(debug === true) console.log(`createNewLendCont`);
+  if(typeof $("#newamount").val() == undefined) showErr('Amount is not Specified!');
+  if(typeof $("#newdays").val() == undefined) showErr('Duration is not Specified!');
+  if(typeof $("#newfee").val() == undefined) showErr('Preview Failed to Calculate!');
+  createNewLendingContract(parseInt($("#newamount").val()), parseInt($("#newdays").val()), parseInt($("#newfee").val()), true);
 }
 
 function loginPush(username, token) {
@@ -337,7 +581,9 @@ var contractMenu = function(ele, contractID, data) {
                   name: '💀Cancel Contract',
                   fun: function () {
                     if(data.state != 'accepted'){
-                      cancelContract(loanId, data.state);
+                      console.log(`data`);
+                      console.log(data);
+                      cancelContract(loanId, data.state)
                     } else {
                       showErr(`ERROR: Cannot Cancel Active Loans!`);
                     }
@@ -407,6 +653,8 @@ var contractMenu = function(ele, contractID, data) {
                   name: '💀Cancel Contract',
                   fun: function () {
                     if(user == deployuser ){
+                      console.log(`data`);
+                      console.log(data);
                       cancelContract(loanId, data.state)
                     } else if(data.state != 'accepted') {
                       showErr(`Cannot Cancel Active Contracts!`);
@@ -1225,6 +1473,18 @@ $("#trollslot").keypress(function(event){
         });
     }
 });
+
+$("#longMarginTotal").keypress(function(){
+  if($("#longMarginTotal").val() < 1){
+    $("#longMarginTotal").val(1);
+  } else if ($("#longMarginTotal").val() > 10) {
+    $("#longMarginTotal").val(10);
+  } else {
+    $("#longMarginTotal").val($("#longMarginTotal").val().toFixed(0));
+  }
+});
+
+
 
 function copyStringToClipboard (str) {
    var el = document.createElement('textarea');

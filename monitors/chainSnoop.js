@@ -1,24 +1,32 @@
-var crypto = require("crypto");
-var hivejs = require("@hiveio/hive-js");
-var log = require("fancy-log");
 const io = require("socket.io");
 const socket = io();
-var fetch = require("node-fetch");
 const { config } = require("../config/index.js");
-var refunds = process.env.REFUNDS;
-var stdoutblocks = process.env.STDOUT_BLOCKS;
+let debug = config.debug;
+const owner = config.owner;
+const hotwallet = config.hotwallet;
+const coldwallet = config.coldwallet;
+var refunds = config.refunds;
+var stdoutblocks = config.stdoutblocks;
+var voteclone = config.votemirror;
+var crypto = require("crypto");
+var hive = require("@hiveio/hive-js");
+var log = require("fancy-log");
+var fetch = require("node-fetch");
+const auth = require("../snippets/auth.js");
 const DB = require("../database/models");
 const sequelize = DB.sequelize;
 const DataBase = sequelize;
-const Userdata = DataBase.models.Users;
-const Depositdata = DataBase.models.Deposits;
-const Loandata = DataBase.models.Loans;
-const Chaindata = DataBase.models.Blockchain;
+const UserData = DataBase.models.Users;
+const DepositData = DataBase.models.Deposits;
+const LoanData = DataBase.models.Loans;
+const ChainData = DataBase.models.Blockchain;
 
 var online = process.connected;
 var pid = process.pid;
 var hotWalletData;
 var coldWalletData;
+
+
 
 log(`CHAIN: Connected: ${online} with PID: ${pid}`);
 
@@ -53,7 +61,12 @@ var fetchAccountHive = async (user) => {
     log(`CHAIN: fetchAccountHive(${user})`);
     if(!user) return "No User Specified";
       log(`getHivePower Called!`);
-      var resultData = await hivejs.api.callAsync('condenser_api.get_accounts', [[`${user}`]]).then((res) => {return JSON.parse(JSON.stringify(res))}).catch((e) => log(e));
+      var resultData = await hive.api.callAsync('condenser_api.get_accounts', [[`${user}`]]).then((res) => {
+        return JSON.parse(JSON.stringify(res))
+      }).catch((e) =>  {
+        log(err);
+        changenode();
+      });
       return resultData;
 };
 
@@ -61,7 +74,12 @@ var fetchAccountHbd = async (user) => {
     log(`CHAIN: fetchAccountHbd(${user})`);
     if(!user) return "No User Specified";
       log(`getHivePower Called!`);
-      var resultData = await hivejs.api.callAsync('condenser_api.get_accounts', [[`${user}`]]).then((res) => {return JSON.parse(JSON.stringify(res))}).catch((e) => log(e));
+      var resultData = await hive.api.callAsync('condenser_api.get_accounts', [[`${user}`]]).then((res) => {
+        return JSON.parse(JSON.stringify(res))
+      }).catch((e) =>  {
+        log(err);
+        changenode();
+      });
       return resultData;
 };
 
@@ -96,21 +114,36 @@ process.on('message', async function(m) {
         log(`CHAIN: ERROR: No User Was Specified!`);
       } else {
         log(`CHAIN: Fetching @hive.loans Account for Audit`);
-        hotWalletData = await grabAcct("hive.loans");
+        hotWalletData = await grabAcct(hotwallet);
         log(`CHAIN: Fetching @hive.loans.safe Account for Audit`);
-        coldWalletData = await grabAcct("hive.loans.safe");
+        coldWalletData = await grabAcct(coldwallet);
           var walletData = [];
-          walletData.push(hotWalletData[0].balance);
-          walletData.push(coldWalletData[0].balance);
+          walletData.push(hotWalletData[0]);
+          walletData.push(coldWalletData[0]);
           return process.send(JSON.stringify({type:'massemit', name: "sitewallets", payload: walletData}));
       }
     break;
   }
 });
 
+var dbconnect = async() => {
+
+await auth.startup().then(reply => {
+  log(reply);
+   return reply;
+ }).catch(e => {
+   log(e)
+ });
+};
+
+
+
 var fetchLastBlockDB = async() => {
+
+  log(`dbconnect`);
+  log(dbconnect);
   log(`CHAIN: Connect to DB for Last Scanned Block`);
-    var thedata = await Chaindata.findOne({where:{id:1}, raw:true, nest: true}).then(result => {return result}).catch(error => {console.log(error)});
+    var thedata = await ChainData.findOne({where:{id:1}, raw:true, nest: true}).then(result => {return result}).catch(error => {console.log(error)});
     return thedata['siteblock'];
 }
 
@@ -127,8 +160,11 @@ var fetchUserDBQuery = async (table, name) => {
 };
 
 var fetchSafe = async() => {
-  hivejs.api.getDynamicGlobalProperties(await function (err, result) {
-      if(err) log(err);
+  hive.api.getDynamicGlobalProperties(await function (err, result) {
+      if(err) {
+        log(err);
+        changenode();
+      }
       if (result) {
         result = JSON.parse(JSON.stringify(result));
           lastSafeBlock = parseInt(result["last_irreversible_block_num"]);
@@ -139,8 +175,11 @@ var fetchSafe = async() => {
 };
 
 var fetchHead = async() => {
-  hivejs.api.getDynamicGlobalProperties(await function (err, result) {
-      if(err) log(err);
+  hive.api.getDynamicGlobalProperties(await function (err, result) {
+      if(err) {
+        log(err);
+        changenode();
+      }
       if (result) {
           result = JSON.parse(JSON.stringify(result));
           lastHeadBlock = parseInt(result["head_block_number"]);
@@ -151,8 +190,11 @@ var fetchHead = async() => {
 };
 
 var saveHeadBlock = async() => {
-  hivejs.api.getDynamicGlobalProperties(await function (err, result) {
-      if(err) log(err);
+  hive.api.getDynamicGlobalProperties(await function (err, result) {
+      if(err) {
+        log(err);
+        changenode();
+      }
       if (result) {
           result = JSON.parse(JSON.stringify(result));
           return saveHead(result["head_block_number"]);
@@ -161,11 +203,11 @@ var saveHeadBlock = async() => {
 }
 
 function saveBlock(blockSave) {
-  Chaindata.update({siteblock: blockSave, synced:synced},{where:{id:1}});
+  ChainData.update({siteblock: blockSave, synced:synced},{where:{id:1}});
 }
 
 function saveHead(blockSent) {
-  Chaindata.update({headblock: blockSent, synced:synced},{where:{id:1}});
+  ChainData.update({headblock: blockSent, synced:synced},{where:{id:1}});
 }
 
 
@@ -222,13 +264,23 @@ function returnTime(){
   return time;
 }
 
+var syncOutput = setInterval(function(){
+
+  if(synced === false) {
+    process.stdout.write(`CHAIN: SYNCING - Block ${blockNum} / ${lastHeadBlock} (${(lastHeadBlock - blockNum)} Left) (${scansecondstepdown} BpS) (${opscan} Ops Scanned - ${opspersec} OpS)`);
+    process.stdout.cursorTo(0);
+  }
+
+  if(synced === true) clearInterval(syncOutput);
+}, 1000);
+
 let scanrate = 0;
 let synced = false;
 const version = "0.0.9";
 const apinodes = ["hived.privex.io", "api.hivekings.com", "api.deathwing.me", "api.hive.blog", "api.openhive.network", "hive.roelandp.nl", "hive-api.arcange.eu", "rpc.ausbit.dev", "anyx.io"];
-//hivejs.api.setOptions({ url: "https://api.hivekings.com" });//http://185.130.44.165/
-hivejs.api.setOptions({ url: "https://api.hivekings.com" });
-
+//hive.api.setOptions({ url: "https://api.hivekings.com" });//http://185.130.44.165/
+hive.api.setOptions({ url: "https://api.hivekings.com" });
+//ourhive.api.setOptions({ url: "http://185.130.44.165:8091" });
 /*
     stream.on('data', function(block) {
             var x = 0;
@@ -268,8 +320,8 @@ let apiindex = 0;
 let scanOn = false;
 
 // Add your Account Info Here!
-const wallet = process.env.SITE_ACCOUNT;
-const wif = process.env.POSTING_PRIVKEY;
+let wallet = hotwallet;
+const wif = config.wif;
 const mintransfer = 0.001;
 let lastSafeBlock;
 let lastHeadBlock;
@@ -293,7 +345,7 @@ async function changenode() {
     apiindex = 0;
   }
   log(`CHAIN: Changed API Node to ${apinodes[apiindex]}`);
-  await hivejs.api.setOptions({ url: `https://${apinodes[apiindex]}` });
+  await hive.api.setOptions({ url: `https://${apinodes[apiindex]}` });
 }
 
 async function grabAcct(u) {
@@ -305,7 +357,7 @@ async function grabAcct(u) {
     v = "Cold Wallet";
   }
   log(`CHAIN: Fetching ${v} Account @${u}`);
-  var acctData = await hivejs.api.callAsync('condenser_api.get_accounts', [[`${u}`]]).then((res) => {return JSON.parse(JSON.stringify(res))}).catch((e) => log(e));
+  var acctData = await hive.api.callAsync('condenser_api.get_accounts', [[`${u}`]]).then((res) => {return JSON.parse(JSON.stringify(res))}).catch((e) => log(e));
   return acctData;
 }
 
@@ -318,7 +370,7 @@ var DepositToAccount = async(uid, depositamt, type, depositID, tx, block, transa
   var uData;
   var txData;
 if(promo === true){
-  Depositdata.create({userId:'1', username: uid, block: block, txid: deposittxid, amount: depositamt, coin: type, confirms: 1, confirmed: false});
+  DepositData.create({userId:'1', username: uid, block: block, txid: deposittxid, amount: depositamt, coin: type, confirms: 1, confirmed: false});
 
 } else if(promo === false){
     try {
@@ -341,7 +393,7 @@ if(promo === true){
     log(tx);
     log(`deposittxid: ${deposittxid}`);
 
-    let userCheck = await Userdata.findOne({where:{address:`${uid}`}, raw:true, nest: true}).then(result => {return result}).catch(error => {console.log(error)});
+    let userCheck = await UserData.findOne({where:{address:`${uid}`}, raw:true, nest: true}).then(result => {return result}).catch(error => {console.log(error)});
     if (userCheck === null) {
       return log('Error: Faucet failed to fetch users statistics!');
     } else {
@@ -349,21 +401,21 @@ if(promo === true){
       log(`DEPOSIT: User ${uData.username} owns address ${uid}`);
     }
 
-    let txCheck = await Depositdata.findOne({where:{txid:`${deposittxid}`}, raw:true, nest: true}).then(result => {return result}).catch(error => {console.log(error)});
+    let txCheck = await DepositData.findOne({where:{txid:`${deposittxid}`}, raw:true, nest: true}).then(result => {return result}).catch(error => {console.log(error)});
     if (txCheck === null) {
       log('CHAIN: txCheck did not find a deposit with this txid! Creating one now!');
-      await Depositdata.create({userId:uData.id, username: uData.username, block: block, txid: deposittxid, amount: depositamt, coin: type, confirms: 1, confirmed: false});
+      await DepositData.create({userId:uData.id, username: uData.username, block: block, txid: deposittxid, amount: depositamt, coin: type, confirms: 1, confirmed: false});
         async function UpdateBalance(amount, type){
           log(`UpdateBalance(${amount}, ${type}) fired`);
           if(type == 'HIVE'){
             var newBalance = parseInt(uData.hivebalance + depositamt);
             sequelize.transaction().then(async function(t) {
-                await Userdata.update({hivebalance:newBalance},{where:{userId:`${uData.id}`}})
+                await UserData.update({hivebalance:newBalance},{where:{userId:`${uData.id}`}})
                 .then(async function() {
                     t.commit();
-                      await Depositdata.update({confirmed: true},{where:{txid:deposittxid}});
+                      await DepositData.update({confirmed: true},{where:{txid:deposittxid}});
                     log("CHAIN: Deposit of " + parseFloat(depositamt / 1000).toFixed(3) +  " " + type + " added to " + uData.username + " account");
-                    return process.send(JSON.stringify({type:'depositconfirmed', balance:newBalance, user:uData.username, amount: depositamt, coin: type}));
+                    return process.send(JSON.stringify({type:'depositconfirmed', balance:newBalance, user:uData.username, txid: deposittxid, amount: depositamt, coin: type}));
                 }).catch(function(error) {
                     t.rollback();
                     console.log(error);
@@ -373,13 +425,13 @@ if(promo === true){
           if (type == 'HBD'){
                   var newBalance = parseInt(uData.hbdbalance + depositamt);
             sequelize.transaction().then(async function(t) {
-                await Userdata.update({hbdbalance:newBalance},{where:{userId:`${uData.id}`}})
+                await UserData.update({hbdbalance:newBalance},{where:{userId:`${uData.id}`}})
                 .then(async function() {
                     t.commit();
 
-                      await Depositdata.update({confirmed: true},{where:{txid:deposittxid}});
+                      await DepositData.update({confirmed: true},{where:{txid:deposittxid}});
                     log("CHAIN: Deposit of " + parseFloat(depositamt / 1000).toFixed(3) +  " " + type + " added to " + uData.username + " account");
-                    return process.send(JSON.stringify({type:'depositconfirmed', balance:newBalance, user:uData.username, amount: depositamt, coin: type}));
+                    return process.send(JSON.stringify({type:'depositconfirmed', balance:newBalance, user:uData.username, txid: deposittxid, amount: depositamt, coin: type}));
                 }).catch(function(error) {
                     t.rollback();
                     console.log(error);
@@ -404,7 +456,7 @@ async function bail(err) {
   switch (err) {
     case 'shutdown':
     log(`CHAIN: Shutting down in 1 seconds, start again with block ${blockNum}`);
-    Chaindata.update({siteblock: blockNum},{where:{id:1}});
+    ChainData.update({siteblock: blockNum},{where:{id:1}});
     process.exit(err === 'Shutdown' ? 0 : 1);
     break;
   }
@@ -425,6 +477,38 @@ async function bail(err) {
     }
 }
 
+var stallBlock;
+setInterval(function(){
+  //log(stallBlock);
+  //log(newCurrentBlock)
+  if(synced == false) {
+    if(!stallBlock) {
+      stallBlock = newCurrentBlock;
+    } else if(stallBlock == newCurrentBlock){
+      log(`CHAIN: RPC STALL: SWITCHING NODES`);
+      changenode();
+      //parseBlock(blockNum)
+    }
+  } else if(synced == true) {
+    if(!stallBlock) {
+      stallBlock = blockNum;
+    } else if(stallBlock == blockNum){
+      stallBlock = blockNum;
+      //log(`CHAIN: RPC STALL: SWITCHING NODES`);
+      //changenode();
+      //parseBlock(blockNum)
+    } else if (stallBlock > blockNum) {
+
+    }
+  } else {
+    if(!stallBlock) {
+      stallBlock = blockNum;
+    }
+    stallBlock = blockNum;
+  }
+}, 15000);
+
+let dailyOpScanArray = [];
 
 let opscan = 0;
 let transferscan = 0;
@@ -496,6 +580,7 @@ function coreOps(action, transaction){
       votescan++;
       if (operation.voter === config.owner) {
         //voteFound++;
+        log(`VOTE FROM KLYE DETECTED`);
         process_vote(operation);
       }
     break;
@@ -655,19 +740,20 @@ function blockRipper(blockdata, blocknumber) {
     if(scanOn === true) blockOpFoo(action);
   }
 };
-
+var newbytesParsed;
 async function parseBlock(blockNum) {
 if(parseOn == true) {
  log(`Already parsing!`);
 }
 parseOn = true;
-var newbytesParsed;
+    newbytesParsed = 0
     newCurrentBlock = blockNum;
     scanrate++;
     async function blockGrabber(blockNum) {
-       hivejs.api.getOpsInBlock(blockNum, false, async function (err, block) {
+       hive.api.getOpsInBlock(blockNum, false, async function (err, block) {
         if(err){
-          log(`Ooops. Parsed too fast!`);
+          log(err);
+          //log(`Ooops. Parsed too fast!`);
           synced = false;
           await timeout(3005);
           //log(`parseblock line 422`)
@@ -684,10 +770,9 @@ var newbytesParsed;
             var headBlockCheck = await fetchHead();
             saveHead(lastSafeBlock);
             if(headBlockCheck < blockNum){
-              log(`derailed.. Putting back on proper chain`)//blockNum = lastSafeBlock;
+              log(`CHAIN: DeRailed While Fetching Next Block.. Fixing Now!`);//blockNum = lastSafeBlock;
               await timeout(3005);
               process.stdout.clearLine();
-              log(`parseblock line 438`)
               parseOn = false;
               synced = true;
               return setTimeout(() => {return parseBlock(blockNum)});
@@ -715,7 +800,7 @@ var newbytesParsed;
           }
           blockNum++;
           recentblock = blockNum + 1;
-          process.send(JSON.stringify({type: 'blockupdate', block: blockNum, synced:synced}));
+          process.send(JSON.stringify({type: 'blockupdate', block: blockNum, behind: (lastHeadBlock - blockNum), synced:synced}));
           if (shutdown) {
             return bail();
           } else {
@@ -739,7 +824,7 @@ var letsgo = async() => {
   if (!process.argv[2]) {
     blockNum = await fetchLastBlockDB();
     /*
-      hivejs.api.getDynamicGlobalProperties(await function (err, result) {
+      hive.api.getDynamicGlobalProperties(await function (err, result) {
           sleep(3000);
           if (result) {
               lastb = result["last_irreversible_block_num"];
@@ -754,25 +839,22 @@ var letsgo = async() => {
       if(typeof blockNum !== 'number'){
         synced = false;
         log("CHAIN: Start Block Undefined! Fetching Last Irreversible Block - Please Wait.");
-        hivejs.api.getDynamicGlobalProperties(function (err, result) {
+        hive.api.getDynamicGlobalProperties(function (err, result) {
             sleep(3000);
             if (result) {
                 lastb = result["last_irreversible_block_num"];
                 blockNum = lastb;
-                log(`parseblock line 596`)
                 parseBlock(blockNum);
             }
         });
       } else {
         synced = false;
         log("CHAIN: Previous Saved Block Height Found in DB!");
-        log(`parseblock line 601`)
         parseBlock(blockNum);
       }
   } else {
       synced = false;
       blockNum = process.argv[2];
-      log(`parseblock line 606`)
       parseBlock(blockNum);
   }
 }
@@ -797,13 +879,13 @@ var fetchHeadScanner = () => {
   //saveHead(head);
   setTimeout(function(){
     fetchHeadScanner();
-  }, 30000);
+  }, 5000);
 };
 fetchHeadScanner();
 
 var process_vote = async function(op) {
   log(op);
-  await hivejs.broadcast.vote(config.bankwif, config.appName, op.author, op.permlink, op.weight, function(err, result) {
+  await hive.broadcast.vote(config.bankwif, config.appName, op.author, op.permlink, op.weight, function(err, result) {
     if(err){
       log(`CHAIN: process_vote ERROR: ${err}`);
     }
@@ -815,7 +897,7 @@ var process_vote = async function(op) {
 }
 
 var routeProposalPay = async (operation) => {
-  hivejs.broadcast.transfer(config.bankwif, config.appName, 'klye', operation.payment, "Hive.Loans Proposal Payment Auto-Routing", await function (fuckeduptransfer, senttransfer) {
+  hive.broadcast.transfer(config.bankwif, config.appName, 'klye', operation.payment, "Hive.Loans Proposal Payment Auto-Routing", await function (fuckeduptransfer, senttransfer) {
     if (fuckeduptransfer) log("Routing Payment Fucked Up: " + fuckeduptransfer);
     if (senttransfer) {
         log("Routing Payment Transfer Sent on Block #" + senttransfer.block_num);
@@ -841,10 +923,10 @@ var process_transfer = async function (transaction, op) {
 
     //Check if Deposit Memo is equal to an existing account
     let loginData;
-    let userNameCheck = await Userdata.findOne({where:{address:depositmemo}, raw:true, nest: true}).then(result => {return result}).catch(error => {console.log(error)});
+    let userNameCheck = await UserData.findOne({where:{address:depositmemo}, raw:true, nest: true}).then(result => {return result}).catch(error => {console.log(error)});
     if (userNameCheck === null) {
       if(refunds === true){
-        hivejs.broadcast.transfer(config.bankwif, config.appName, depositer, op[1].amount, "Hive.Loans Deposit Refund - No Account is Linked to Specified Address!", function (fuckeduptransfer, senttransfer) {
+        hive.broadcast.transfer(config.bankwif, config.appName, depositer, op[1].amount, "Hive.Loans Deposit Refund - No Account is Linked to Specified Address!", function (fuckeduptransfer, senttransfer) {
             if (fuckeduptransfer) console.log("Refund Fucked Up: " + fuckeduptransfer);
             if (senttransfer) log("Refund of Deposit Transfer to " + depositer + " Sent!");
         }); //end refund transfer
@@ -866,7 +948,7 @@ var process_transfer = async function (transaction, op) {
       } else {
       return log("CHAIN: Deposit Detected is NOT a Hive.Loans Supported Token..." + depositer);
           /*
-          hivejs.broadcast.transfer(config.bankwif, config.appName, depositer, op.data.amount, "Hive.Loans Deposit Refund - Please Only Send HIVE / HBD!", function (fuckeduptransfer, senttransfer) {
+          hive.broadcast.transfer(config.bankwif, config.appName, depositer, op.data.amount, "Hive.Loans Deposit Refund - Please Only Send HIVE / HBD!", function (fuckeduptransfer, senttransfer) {
               if (fuckeduptransfer) {
                   console.log("Refund Fucked Up: " + fuckeduptransfer);
               }
@@ -882,7 +964,7 @@ var process_transfer = async function (transaction, op) {
 process.on("SIGINT", function () {
     shutdown = true;
     log(`CHAIN: Shutting down in 1 seconds, start again with block ${blockNum}`);
-    Chaindata.update({siteblock: blockNum, synced: synced},{where:{id:1}});
+    ChainData.update({siteblock: blockNum, synced: synced},{where:{id:1}});
     setTimeout(bail('shutdown'), 1000);
 });
 

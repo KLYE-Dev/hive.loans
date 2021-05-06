@@ -2,7 +2,7 @@ function keychainSend(from, to, amount, memo, coin){
   hive_keychain.requestTransfer(from, to, amount, memo, coin.toUpperCase(), function(response) {
       console.log(response);
       if (response.success == true) {
-          showSuccess('Deposit Transfer Success! It Will Arrive Soon');
+          showSuccess(`Deposit Transfer Success! ${response.result.id}`);
           $('#depositView').click();
           bootbox.hideAll();
       } else {
@@ -11,7 +11,72 @@ function keychainSend(from, to, amount, memo, coin){
       }
   }, true);
 }
+function checkExchangeWarning(){
+  if (showCFDWarning !== true){
+    $('#cfdWarning').fadeOut();
+  } else {
+    $('#cfdWarning').fadeIn();
+  }
+}
 
+function checkCFDWarning(){
+  if (showCFDWarning !== true){
+    $('#cfdWarning').fadeOut();
+  } else {
+    $('#cfdWarning').fadeIn();
+  }
+}
+
+var processState = async(data, history) => {
+  if(!data) return false;
+  if(!history) history = false;
+  var loans = data.loans;
+  var ourloans = [];
+ untappeddata.loans.map(function(key) {
+   if(key.borrower == uUsername && key.completed == 0 && key.active == 1){
+     if (key.cancelled !== -1) {
+         delete key.cancelled;
+     }
+     if (key.id !== -1) {
+         delete key.id;
+     }
+     if (key.active !== -1) {
+         delete key.active;
+     }
+     if (key.createdAt !== -1) {
+         delete key.createdAt;
+     }
+       ourloans.push(key);
+   }
+  });
+  if(!data.loans) {data.loans = []};
+  if(!ourloans) {ourloans = []};
+  return CreateTableFromJSON(`'${JSON.stringify(ourloans)}'`, 'popuploans', 'popupActiveloans', 'popupActiveTable', 'popupActiveHead');
+};
+
+function checkTVWarning(){
+  if (showTVWarning !== true){
+    $('#tradingviewfooter').fadeOut();
+  } else {
+    $('#tradingviewfooter').fadeIn();
+  }
+}
+
+$('#mandepinfo').fadeOut();
+var shmdftoggle = false
+function shmdf() {
+  console.log(`shmdf() - ${shmdftoggle}`)
+  if(shmdftoggle == true) {
+    shmdftoggle = false;
+    $('#showHideManDep').html('Show');
+    $('#mandepinfo').fadeOut();
+  } else {
+    shmdftoggle = true;
+    $('#showHideManDep').html('Hide');
+    $('#mandepinfo').fadeIn();
+  }
+
+}
 
 function wdnow(coin, fee, security) {
       console.log('withdrawit!');
@@ -51,11 +116,11 @@ function calctotal(fee, coin){
   if (thetotal <= balance) {
       flashwin($("#wdtotal"))
       $("#wdtotal").html(`You'll receive ${thetotal.toFixed(3)} ${coin}`);
-      $("#wdbuttontex").html(`Withdraw`);
+      $("#wdbuttontex").html(`WITHDRAW <span class="wdtype">HIVE</span> <span id="wdlogo"><i class="fab fa-fw fa-hive" style="color:#E31337;"></i></span>`);
       $('#withdrawit').attr("disabled", false);
   } else {
       flashlose($("#wdtotal"))
-      $("#wdtotal").html(`Insufficient Funds!`);
+      $("#wdtotal").html(`Insufficient <i class="fab fa-fw fa-hive" style="color:#E31337;"></i>`);
       $("#wdbuttontex").html(`Error`);
       $('#withdrawit').attr("disabled", true);
   }
@@ -76,15 +141,29 @@ function calctotal(fee, coin){
       chart.update();
   }
 
+  var exchageHistoryShow = false;
+  function exchangeHistorySwitch() {
+    console.log(`exchangeHistorySwitch Called! exchageHistoryShow: ${exchageHistoryShow}`);
+    if(exchageHistoryShow == false){
+      $('#openExchangeHistoryType').text(`Open Orders`);
+      $('#centerExchangeTable').html(`Your Closed Past <span class="exchangetype">HLSHARE</span> Orders`);
+      exchageHistoryShow = true;
+    } else {
+      $('#openExchangeHistoryType').text(`Your Current Open <span class="exchangetype">HLSHARE</span> Orders`);
+      $('#centerExchangeTable').html(``);
+      exchageHistoryShow = false;
+    }
+  }
+
   var cfdHistoryShow = false;
   function cfdHistorySwitch() {
     console.log(`cfdHistorySwitch Called! cfdHistoryShow: ${cfdHistoryShow}`);
     if(cfdHistoryShow == false){
-      $('#openFutureHistoryType').html(`Open Positions`);
+      $('#openFutureHistoryType').text(`Open Positions`);
       $('#centerFuturesTable').html(`Your Closed Past <span class="cfdtype">HIVE</span> Positions`);
       cfdHistoryShow = true;
     } else {
-      $('#openFutureHistoryType').html(`Position History`);
+      $('#openFutureHistoryType').text(`Position History`);
       $('#centerFuturesTable').html(`Your Current Open <span class="cfdtype">HIVE</span> Positions`);
       cfdHistoryShow = false;
     }
@@ -238,6 +317,41 @@ function calctotal(fee, coin){
       }
     };
 
+var tickerCurrency = function() {
+  if(tickercurrency == 'usd'){
+    $('#pricecheckcurrencypre').html('<i class="fab fa-bitcoin" style="color:#f2a900;"></i>');
+    tickercurrency = 'btc';
+    console.log(`tickerCurrency: ${tickercurrency}`);
+    $('#footerprice').html(lastHiveBTCPrice.toFixed(8));
+    $('#footerprice').val(lastHiveBTCPrice.toFixed(8));
+    $('#pricetype').html(tickercurrency.toUpperCase());
+  } else if(tickercurrency == 'btc'){
+    $('#pricecheckcurrencypre').html('$');
+    tickercurrency = 'usd';
+    console.log(`tickerCurrency: ${tickercurrency}`);
+    $('#footerprice').html(lastHivePrice.toFixed(6));
+    $('#footerprice').val(lastHivePrice.toFixed(6));
+    $('#pricetype').html(tickercurrency.toUpperCase());
+  }
+}
+
+var btcCurrency = function() {
+    $('#pricecheckcurrencypre').html('<i class="fab fa-bitcoin" style="color:#f2a900;"></i>');
+    tickercurrency = 'btc';
+    console.log(`tickerCurrency: ${tickercurrency}`);
+    $('#footerprice').html(lastHiveBTCPrice.toFixed(8));
+    $('#footerprice').val(lastHiveBTCPrice.toFixed(8));
+    $('#pricetype').html(tickercurrency.toUpperCase());
+}
+
+var usdCurrency = function() {
+    $('#pricecheckcurrencypre').html('$');
+    tickercurrency = 'usd';
+    console.log(`tickerCurrency: ${tickercurrency}`);
+    $('#footerprice').html(lastHivePrice.toFixed(6));
+    $('#footerprice').val(lastHivePrice.toFixed(6));
+    $('#pricetype').html(tickercurrency.toUpperCase());
+}
 
 var showErr = function (text) {
     alertify.closeAll();
@@ -268,7 +382,7 @@ function getSiteStats() {
       $("#sitestatsBal").html(`<b>HIVE Balance</b>:<br>${statsBal}<br>`);
     }
   /*
-  <div style="font-size:1.5em;width:100%;"><span id="sitestatssMove" title="Click and Drag to Move Window"><i class="fas fa-arrows-alt"></i></span><span id="sitestatsName" style="display: inline-block">Site Statistics</span><span id="refreshSiteStats" style-"float:right" title="Click to Refresh" onClick="getSiteStats();"><i class="fas fa-sync"></i></span></div><hr>
+  <div style="font-size:1.5em;width:100%;"><span id="sitestatssMove" title="Click and Drag to Move Window"><i class="fas fa-arrows-alt"></i></span><span id="sitestatsName" style="display: inline-block">Site Statistics</span><span id="refreshSiteStats" style-"float:right" title="Click to Refresh" onClick="getSiteStats();"><i class="fas fa-sync"></i></span></div><hr class="allgrayeverythang">
   <span id="sitestatsWrapper">
   <span id="sitestatsBal"><b>Available HIVE Pool</b>:<br>Loading<br></span>
   <span id="siteLoaned"><b>HIVE Loaned Out</b>:<br>Loading<br></span><br>
@@ -300,16 +414,16 @@ async function getAcct() {
       var statsHBDBal = result.hbd_balance;
       var recoverAcct = result.recovery_account;
       var hivePower = parseInt(result.vesting_shares);
-      $("#userouthivebalance").html(`${statsBalTop}`);
-      $("#userouthbdbalance").html(`${statsHBDBal}`);
-      $("#statsName").html(`@${statsName}`);
+      $("#userouthivebalance").text(`${statsBalTop}`);
+      $("#userouthbdbalance").text(`${statsHBDBal}`);
+      $("#statsName").text(`@${statsName}`);
       $("#statsBal").html(`<b>HIVE Balance</b>:<br>${statsBal}<br>`);
       $("#lendingBalance").html(`${statsBal} HIVE`);
       $("#statsBalTop").html(`<b>${statsBalTop} ${statsHBDBal}</b>`);
       $("#statHBDsBal").html(`<b>HBD Balance</b>:<br>${statsHBDBal}<br>`);
-      $("#recoverAcct").html(`<b>Recovery Account</b>:<br><span id="recName">${recoverAcct}</span><br>`);
+      $("#recoverAcct").html(`<b>Recovery Account</b>:<span id="recName">${recoverAcct}</span><br>`);
       $("#profileRecoverAcct").html(`<span id="precacct">${recoverAcct}</span>`);
-      $("#showRecAcct").html(`@${recoverAcct}`);
+      $("#showRecAcct").text(`@${recoverAcct}`);
       await hive.api.getDynamicGlobalProperties( await function(err, result) {
         if(err){console.log(err)}
         total_vesting_shares = parseInt(result.total_vesting_shares);
@@ -333,7 +447,7 @@ async function getAcct() {
           $("#loanEnabled").css({"color":"lawngreen"});
           $("#prawarn").css({"color":"white"});
           $("#showRecAcct").css({"color":"lawngreen"});
-          $("#prawarn").html(`✔️`);
+          $("#prawarn").text(`✔️`);
           $("#loanEnabled").html(`Your Account is Cleared to Accept Lending Contracts! ✔️<br>`);
           $("#recAlert").html(`<sub><b style="color:lawngreen;">Recovery Account Valid!</b><br><code onclick="showLoans()">You're ready to borrow! Remember to follow the site guidelines while lending..</code></sub>`);
         }
@@ -380,19 +494,19 @@ async function getAcct() {
           $("#loanEnabled").css({"color":"lawngreen"});
           $("#prawarn").css({"color":"white"});
           $("#showRecAcct").css({"color":"lawngreen"});
-          $("#prawarn").html(`Compatible Recovery Account!`);
+          $("#prawarn").text(`Compatible Recovery Account!`);
           $("#loanEnabled").html(`Your Account is Cleared to Accept Lending Contracts! ✔️<br>`);
           $("#recAlert").html(`<sub><b style="color:black;">Recovery Account Valid!</b><br>You're ready to borrow! Remember to follow the site guidelines while lending.<br><sub>( Attempts to cheat the system have fees )</sub></sub>`);
         }
       });
-      $("#statsName").html(`@${statsName}`);
+      $("#statsName").text(`@${statsName}`);
       $("#statsBal").html(`<b>HIVE Balance</b>:<br>${statsBal}<br>`);
       $("#statsBalTop").html(`<b>${statsBalTop} ${statsHBDBal}</b>`);
-      $("#lendingBalance").html(`${statsBal} HIVE`);
+      $("#lendingBalance").text(`${statsBal} HIVE`);
       $("#statHBDsBal").html(`<b>HBD Balance</b>:<br>${statsHBDBal}<br>`);
-      $("#recoverAcct").html(`<b>Recovery Account</b>:<br><span id="recName">${recoverAcct}</span><br>`);
+      $("#recoverAcct").html(`<b>Recovery Account</b>:<span id="recName">${recoverAcct}</span><br>`);
       $("#profileRecoverAcct").html(`<span id="precacct">${recoverAcct}</span>`);
-      $("#showRecAcct").html(`@${recoverAcct}`);
+      $("#showRecAcct").text(`@${recoverAcct}`);
   });
   }
 }
@@ -490,10 +604,14 @@ function navbarBlitz(data) {
     $("#faq").addClass("hidden");
     $("#wallet").addClass("hidden");
     $("#profile").addClass("hidden");
-    $("#loansmenu").addClass("hidden");
     $("#futures").addClass("hidden");
     $("#login").addClass('hidden');
     $("#logout").addClass('hidden');
+    $("#bugs").addClass('hidden');
+    $("#loansmenu").addClass("hidden");
+    $("#joinmenu").addClass("hidden");
+    $("#profilemenu").addClass('hidden');
+    $("#futuresmenu").addClass('hidden');
     $("#jumbotron").css({'height':`'${($("#jumbotron").height() + 5)}%'`});
     return true;
   } else if ((screenWidth / $('.navbar').width()) > 3 ) {
@@ -508,10 +626,14 @@ function navbarBlitz(data) {
       $("#faq").removeClass("hidden");
       $("#wallet").removeClass("hidden");
       $("#profile").removeClass("hidden");
-      $("#loansmenu").removeClass("hidden");
       $("#futures").removeClass("hidden");
       //$("#login").addClass('hidden').fadein('fast');
       $("#logout").removeClass('hidden');
+      $("#bugs").removeClass('hidden');
+      $("#loansmenu").removeClass("hidden");
+      $("#joinmenu").removeClass("hidden");
+      $("#profilemenu").removeClass('hidden');
+      $("#futuresmenu").removeClass('hidden');
       $("#jumbotron").css({'height':`'${($("#jumbotron").height() - 5)}%'`});
     }, 900)
     return true;
@@ -621,41 +743,6 @@ function CountDownTimer(dt, id) {
 }
 */
 
-
-/*
-var pricecheck = async() => {
-  if(!hiveprice) oldhiveusdprice = 0;
-  try {
-    fetch('https://api.coingecko.com/api/v3/simple/price?ids=hive&vs_currencies=usd&include_market_cap=false')
-    .then(res => res.json()).then(json => {
-      response = json["hive"];
-      response = response["usd"];
-      hiveprice = response;
-      if(oldhiveusdprice > hiveprice) {
-        $('#pricecheck').html(`1 HIVE = $${hiveprice} <code><span id="pricetype">USD</span></code>`);
-        flashlose($('#pricecheck'));
-      } else if (oldhiveusdprice < hiveprice ){
-        $('#pricecheck').html(`1 HIVE = $${hiveprice} <code><span id="pricetype">USD</span></code>`);
-        flashwin($('#pricecheck'));
-      } else if (oldhiveusdprice ==  hiveprice){
-        $('#pricecheck').html(`1 HIVE = $${hiveprice} <code><span id="pricetype">USD</span></code>`);
-      } else {
-        $('#pricecheck').html(`1 HIVE = $${hiveprice} <code><span id="pricetype">USD</span></code>`);
-      }
-      if(hiveprice) oldhiveusdprice = hiveprice;
-      return hiveprice;
-    }).catch(function (error) {
-      console.log(error)
-      showErr("Error: " + error);
-    });
-  } catch(e) {
-    console.log(`pricefetch error: ${e}`)
-  }
-};
-
-pricecheck();
-*/
-
 //========================================================================
 
 function minTwoDigits(n) {
@@ -752,10 +839,142 @@ var getUserData = () => {
   })
 }
 
+function loanCreateInterestWrangler(){
+  if(!usersDataFetch.rank) return;
+  var feemax;
+  var feemin;
+  switch(usersDataFetch.rank){
+    case 'user':
+    feemin = 10;
+    feemax = 30;
+    break;
+    case 'founder':
+    feemin = 10;
+    feemax = 30;
+    break;
+    case 'backer':
+    feemin = 10;
+    feemax = 35;
+    break;
+    case 'benefactor':
+    feemin = 10;
+    feemax = 30;
+    break;
+    case 'owner':
+    feemin = 0;
+    feemax = 1000;
+    break;
+    default:
+    feemin = 10;
+    feemax = 30;
+  }
+  setTimeout(function(){
+    if($("#loanCreateInterest").val() <= feemin) {
+     $("#loanCreateInterest").val(feemin.toFixed(0));
+      return $("#loanCreateInterest").keyup();
+    } else if ($("#loanCreateInterest").val() >= feemax) {
+       $("#loanCreateInterest").val(feemax.toFixed(0));
+      return $("#loanCreateInterest").keyup();
+    } else {
+      var isAmt = $("#loanCreateInterest").val();
+      isAmt = parseInt(isAmt);
+      $("#loanCreateInterest").val(isAmt);
+      return $("#loanCreateInterest").keyup();
+    }
+  },666);
+
+}
+
+function createMainLoanPreview() {
+  var newAmount;
+  var newDays;
+  var newFee;
+  newAmount = parseFloat($('#loanCreateAmount').val());
+  newDays = parseInt($('#loanCreateDuration').val());
+  newFee =  parseInt($('#loanCreateInterest').val());
+  console.log(newAmount);
+  console.log(newDays);
+  console.log(newFee);
+  if ((newDays % 7) !== true){
+    $('#loanCreateDuration').css({'color':'red'});
+  } else {
+    $('#loanCreateDuration').css({'color':'white'});
+  }
+  if(newAmount < 1){
+  //  $('#newLendAmount').val(1);
+  }
+  if(newAmount > $('#statsBal').val()){
+  //  $('#createLoanWarning').val(`Deposit More HIVE to Afford Loan Creation of This Size!`);
+  }
+  if(newFee < 10){
+    //$('#newLendFee').val(10);
+  }
+  if(newFee > 10){
+    //$('#newLendFee').val(30);
+  }
+
+  var feerank;
+  switch(usersDataFetch.rank){
+    case 'user':
+    feerank = 1;
+    break;
+    case 'founder':
+    feerank = 0.5;
+    break;
+    case 'backer':
+    feerank = 1;
+    break;
+    case 'benefactor':
+    feerank = 0;
+    break;
+    case 'owner':
+    feerank = 1;
+    break;
+    default:
+    feerank = 1;
+  }
+  console.log(`feerank:`);
+  console.log(feerank);
+  newFee = (newFee / 100);
+  var feedown = ((newAmount / feerank) / 100);
+  console.log(`feedown: ${feedown}`);
+  var preview = (newAmount * newFee);
+  var deployfee = (preview * 0.01);
+  console.log(`deployfee: ${deployfee}`);
+
+  var cancelfee = ((preview * (newFee / 10) * feerank));
+  console.log(`cancelfee: ${cancelfee}`);
+  var commission = (preview / 10);
+  var dailypreview = (preview / newDays);
+  var daysrepays = (newDays / 7);
+  var weeklyrepay = (dailypreview * 7);
+  preview = ((newAmount * newFee) + newAmount);
+  if (daysrepays == 1) weeklyrepay = preview;
+  var previewparse = parseFloat(preview);
+  previewparse = previewparse.toString();
+   console.log(previewparse)
+  if(previewparse != 'NaN' ) {
+    $('#loanCreateFeedbackReturn').html(`${preview.toFixed(3)} <i class='fab fa-fw fa-hive hivered' style></i> <i class="fas fa-fw fa-info-circle" title="( minus a ${commission.toFixed(3)} HIVE site commission fee (10%) )"></i> over ${newDays} Days`);
+    $('#loanCreateFeedbackDaily').html(`${(weeklyrepay).toFixed(3)} <i class='fab fa-fw fa-hive hivered' style></i>`);
+    //$('#loanCreateFeedbackCommission').html(``)
+    $('#difee').val(`${commission.toFixed(3)} <i class='fab fa-fw fa-hive hivered' style></i>`);
+    $('#difee').html(`${commission.toFixed(3)} <i class='fab fa-fw fa-hive hivered' style></i>`);
+    $('#clfee').val(`${cancelfee.toFixed(3)} <i class='fab fa-fw fa-hive hivered' style></i>`);
+    $('#clfee').html(`${cancelfee.toFixed(3)} <i class='fab fa-fw fa-hive hivered' style></i>`);
+    $('#dlfee').val(`${deployfee.toFixed(3)} <i class='fab fa-fw fa-hive hivered' style></i>`);
+    $('#dlfee').html(`${deployfee.toFixed(3)} <i class='fab fa-fw fa-hive hivered' style></i>`);
+  } else {
+    //$('#loanCreateFeedback').html(`<center>Fill in Above Inputs</center>`);
+  }
+}
+
 function createLoanPreview() {
-  var newAmount = parseInt($('#newLendAmount').val());
-  var newDays = parseInt($('#newLendDays').val());
-  var newFee =  parseInt($('#newLendFee').val());
+  var newAmount;
+  var newDays;
+  var newFee;
+  newAmount = parseInt($('#newLendAmount').val());
+  newDays = parseInt($('#newLendDays').val());
+  newFee =  parseInt($('#newLendFee').val());
   if ((newDays % 7) !== true){
     $('#newLendDays').css({'color':'red'});
   } else {
@@ -816,6 +1035,7 @@ function createLoanPreview() {
 }
 
 function cancelContract(contractID, state) {
+  console.log(`cancelContract(${contractID}, ${state});`);
   console.log(`contractID`);
   console.log(contractID);
   if(contractID === undefined){
@@ -824,7 +1044,10 @@ function cancelContract(contractID, state) {
   if(state === undefined){
     return showErr(`ERROR: Variable state is Undefined!`);
   }
-  if(state !== 'deployed') return showErr(`Cannot Cancel Active Contract!`);
+  if(state == 'accepted') return showErr(`Cannot Cancel Active Contract!`);
+  if(state == 'finished') return showErr(`Cannot Cancel Finished Contract!`);
+  if(state == 'cancelled') return showErr(`Cannot Cancel Cancelled Contract!`);
+  if(state == 'deployed') showSuccess(`Attempting to Cancel Deployed Contract`);
   socket.emit('cancelloan', {loanId: contractID, token: token}, function(err, data){
       if(err) {
         showErr(err);
@@ -924,145 +1147,158 @@ var totalCustodial = 0;
 function siteAuditData() {
   console.log(`siteAuditData Fired!`);
   if(typeof siteAudit[0] != undefined && typeof siteAudit[1] != undefined && typeof siteAudit[2] != undefined){
-    console.log(`siteAudit:`);
-    console.log(siteAudit);
-    theDATA = siteAudit[0];
-    theWALLET = siteAudit[1].wallets;
-    theWDFEES = siteAudit[2].wdfees;
-    hotWalletBalance = parseFloat(theWALLET[0]);
-    coldWalletBalance = parseFloat(theWALLET[1]);
-    newUpdateDate = theDATA.date;
-    siteAccts = theDATA.usersstate;
-    siteLoans = theDATA.loansstate;
-    siteActiveLoans = 0;
-    siteActiveLends = 0;
-    usersBal = 0;
-    siteAccts = siteAccts.length;
-    siteAcctsActive = 0;
-    siteAcctsDormant = 0;
-    siteAcctsOwned = 0;
-    siteLoans = siteLoans.length;
-    siteActive = 0;
-    siteAvailable = 0;
-    siteCompleted = 0;
-    siteCancelled = 0;
-    siteActiveLoans = 0;
-    siteActiveLends = 0;
-    siteTotalCollected = 0;
-    siteDeployFee = 0;
-    siteCancelFee = 0;
-    siteFineFee = 0;
-    siteCommissionFee = 0;
-    siteTotalFee = 0;
-    siteTotalActive = 0;
-    siteTotalAllTime = 0;
-    var userIndex = [];
-    for(i = 0; i < siteAccts; i++){
-      var userIs = theDATA.usersstate[i].username;
-      userIndex.push(theDATA.usersstate[i].username)
-      userIndex[theDATA.usersstate[i].username] = theDATA.usersstate[i];
-      var userActiveDate = new Date(theDATA.usersstate[i].updatedAt);
-      var dateNow = new Date();
-      dateNow.setDate(dateNow.getDate() - 30);
-      if(dateNow > userActiveDate){
-        siteAcctsDormant++;
-      } else {
-        siteAcctsActive++;
+    try {
+      console.log(`siteAudit:`);
+      console.log(siteAudit);
+      theDATA = siteAudit[0];
+      console.log(`theDATA:`);
+      console.log(theDATA);
+      theWALLET = siteAudit[1].wallets;
+      theWDFEES = siteAudit[2].wdfees;
+      hotWalletBalance = parseFloat(theWALLET[0]);
+      coldWalletBalance = parseFloat(theWALLET[1]);
+      newUpdateDate = theDATA.date;
+      siteAccts = theDATA.usersstate;
+      console.log(`siteAccts:`);
+      console.log(siteAccts);
+      siteLoans = theDATA.loansstate;
+      console.log(`siteLoans:`);
+      console.log(siteLoans);
+      siteActiveLoans = 0;
+      siteActiveLends = 0;
+      usersBal = 0;
+      siteAccts = siteAccts.length;
+      siteAcctsActive = 0;
+      siteAcctsDormant = 0;
+      siteAcctsOwned = 0;
+      siteLoans = siteLoans.length;
+      siteActive = 0;
+      siteAvailable = 0;
+      siteCompleted = 0;
+      siteCancelled = 0;
+      siteActiveLoans = 0;
+      siteActiveLends = 0;
+      siteTotalCollected = 0;
+      siteDeployFee = 0;
+      siteCancelFee = 0;
+      siteFineFee = 0;
+      siteCommissionFee = 0;
+      siteTotalFee = 0;
+      siteTotalActive = 0;
+      siteTotalAllTime = 0;
+      var userIndex = [];
+      for(i in siteAccts){
+        console.log(`theDATA[siteAccts[i]]:`);
+        console.log(theDATA[siteAccts[i]]);
+        var userID = theDATA[siteAccts[i]].userId;
+        userIndex.push(userID);
+        userIndex[userID] = theDATA.usersstate[i];
+        var userActiveDate = new Date(theDATA.usersstate[i].updatedAt);
+        var dateNow = new Date();
+        dateNow.setDate(dateNow.getDate() - 30);
+        if(dateNow > userActiveDate){
+          siteAcctsDormant++;
+        } else {
+          siteAcctsActive++;
+        }
+        usersBal += (theDATA.usersstate[i].hivebalance / 1000);
+        siteActiveLoans += theDATA.usersstate[i].activeloans;
+        siteActiveLends += theDATA.usersstate[i].activelends;
+        siteAcctsOwned += theDATA.usersstate[i].activeloans;
       }
-      usersBal += (theDATA.usersstate[i].hivebalance / 1000);
-      siteActiveLoans += theDATA.usersstate[i].activeloans;
-      siteActiveLends += theDATA.usersstate[i].activelends;
-      siteAcctsOwned += theDATA.usersstate[i].activeloans;
-    }
+      console.log(userIndex);
+      console.log(userIndex[userID]);
+      for(k in siteLoans){
+        var interestPercentage = siteLoans[k]['interest'] / 100;
+        var rankModifier = 0;
+        var loanUser = siteLoans[k].userId;
+        console.log(`loanUser: ${loanUser}`);
+        var userState = userIndex[loanUser];
+        console.log(`userState: ${userState}`);
+        var userRank = userState.rank;
+          switch(userRank){
+            case 'user':
+              rankModifier = 1;
+            break;
+            case 'founder':
+              rankModifier = 0.5;
+            break;
+            case 'backer':
+              rankModifier = 1;
+            break;
+            case 'benefactor':
+              rankModifier = 0;
+            break;
+            case 'owner':
+              rankModifier = 0;
+            break;
+          }
 
-    for(k = 0; k < siteLoans; k++){
-      var interestPercentage = theDATA.loansstate[k]['interest'] / 100;
-      var rankModifier = 0;
-      var loanUser = theDATA.loansstate[k].username;
-      console.log(`loanUser: ${loanUser}`);
-      var userState = userIndex[loanUser];
-      console.log(`userState: ${userState}`);
-      var userRank = userState.rank;
-        switch(userRank){
-          case 'user':
-            rankModifier = 1;
+        siteCommissionFee += (((interestPercentage * (siteLoans[k].amount / 1000))) * rankModifier);
+        siteDeployFee += parseFloat((siteLoans[k].deployfee / 1000).toFixed(3));
+        siteFineFee += parseFloat((siteLoans[k].fine / 1000).toFixed(3));
+        switch(siteLoans[k].state){
+          case "finished":
+            siteCompleted++;
+            siteTotalCollected += (siteLoans[k].collected / 1000);
+            //siteTotalActive -= parseFloat((theDATA.loansstate[k].amount / 1000).toFixed(3));
+            siteTotalAllTime += parseFloat((siteLoans[k].amount / 1000).toFixed(3));
           break;
-          case 'founder':
-            rankModifier = 0.5;
+          case "deployed":
+            siteAvailable++;
+            siteTotalActive += parseFloat((siteLoans[k].amount / 1000).toFixed(3));
+            siteTotalCollected += parseFloat((siteLoans[k].collected / 1000).toFixed(3));
+            siteTotalAllTime += parseFloat((siteLoans[k].amount / 1000).toFixed(3));
           break;
-          case 'backer':
-            rankModifier = 1;
+          case "cancelled":
+            siteCancelled++;
+            siteCancelFee += parseFloat((siteLoans[k].cancelfee / 1000).toFixed(3));
+            //siteTotalActive -= parseFloat((theDATA.loansstate[k].amount / 1000).toFixed(3));
           break;
-          case 'benefactor':
-            rankModifier = 0;
-          break;
-          case 'owner':
-            rankModifier = 0;
+          case "accepted":
+            siteActive++;
+            siteTotalActive += parseFloat((siteLoans[k].amount / 1000).toFixed(3));
+            siteTotalCollected += parseFloat((siteLoans[k].collected / 1000).toFixed(3));
+            siteTotalAllTime += parseFloat((siteLoans[k].amount / 1000).toFixed(3));
           break;
         }
-
-      siteCommissionFee += (((interestPercentage * (theDATA.loansstate[k].amount / 1000))) * rankModifier);
-      siteDeployFee += parseFloat((theDATA.loansstate[k].deployfee / 1000).toFixed(3));
-      siteFineFee += parseFloat((theDATA.loansstate[k].fine / 1000).toFixed(3));
-      switch(theDATA.loansstate[k].state){
-        case "finished":
-          siteCompleted++;
-          siteTotalCollected += (theDATA.loansstate[k].collected / 1000);
-          //siteTotalActive -= parseFloat((theDATA.loansstate[k].amount / 1000).toFixed(3));
-          siteTotalAllTime += parseFloat((theDATA.loansstate[k].amount / 1000).toFixed(3));
-        break;
-        case "deployed":
-          siteAvailable++;
-          siteTotalActive += parseFloat((theDATA.loansstate[k].amount / 1000).toFixed(3));
-          siteTotalCollected += parseFloat((theDATA.loansstate[k].collected / 1000).toFixed(3));
-          siteTotalAllTime += parseFloat((theDATA.loansstate[k].amount / 1000).toFixed(3));
-        break;
-        case "cancelled":
-          siteCancelled++;
-          siteCancelFee += parseFloat((theDATA.loansstate[k].cancelfee / 1000).toFixed(3));
-          //siteTotalActive -= parseFloat((theDATA.loansstate[k].amount / 1000).toFixed(3));
-        break;
-        case "accepted":
-          siteActive++;
-          siteTotalActive += parseFloat((theDATA.loansstate[k].amount / 1000).toFixed(3));
-          siteTotalCollected += parseFloat((theDATA.loansstate[k].collected / 1000).toFixed(3));
-          siteTotalAllTime += parseFloat((theDATA.loansstate[k].amount / 1000).toFixed(3));
-        break;
       }
-    }
 
-    siteTotalFee = parseFloat(siteDeployFee) + parseFloat(siteCancelFee) + parseFloat(siteFineFee) + parseFloat(siteCommissionFee) + parseFloat(theWDFEES);
-    totalCustodial = hotWalletBalance + coldWalletBalance;
-    var totalNeededCustodial = siteTotalActive + usersBal;
-    var totalExtra = totalCustodial - totalNeededCustodial;
-    $('#audit-hot').val(hotWalletBalance.toFixed(3));
-    $('#audit-cold').val(coldWalletBalance.toFixed(3));
-    $('#audit-extras').val(totalExtra.toFixed(3));
-    if(totalExtra < 0){
-      var alert = `<i class="fa fa-exclamation-triangle sexyblackoutline" style="color:gold;" title="AUDIT FAILED! Value is Less Than Expected!" aria-hidden="true"></i>`;
-      $('#audit-extras').css({"color":"red"});
-    }
-    $('#audit-lockedtotal').val(siteTotalActive.toFixed(3));
-    $('#audit-sitebal').val(totalCustodial.toFixed(3));
-    $('#audit-accounts').val(siteAccts);
-    $('#audit-activeaccts').val(siteAcctsActive);
-    $('#audit-dormant').val(siteAcctsDormant);
-    $('#audit-collateral').val(siteAcctsOwned);
-    $('#audit-update').val(newUpdateDate);
-    $('#audit-userbal').val(usersBal.toFixed(3));
-    $('#audit-active').val(siteActive);
-    $('#audit-available').val(siteAvailable);
-    $('#audit-completed').val(siteCompleted);
-    $('#audit-cancelled').val(siteCancelled);
-    $('#audit-loantotal').val(siteTotalActive.toFixed(3));
-    $('#audit-returntotal').val(siteTotalCollected.toFixed(3));
-    $('#audit-createfee').val(siteDeployFee.toFixed(3));
-    $('#audit-interestfee').val(siteCommissionFee.toFixed(3));
-    $('#audit-cancelfee').val(siteCancelFee.toFixed(3));
-    $('#audit-withdrawfee').val(theWDFEES[0].toFixed(3));
-    $('#audit-finesfee').val(siteFineFee.toFixed(3));
-    $('#audit-totalfee').val(siteTotalFee.toFixed(3));
+      siteTotalFee = parseFloat(siteDeployFee) + parseFloat(siteCancelFee) + parseFloat(siteFineFee) + parseFloat(siteCommissionFee) + parseFloat(theWDFEES);
+      totalCustodial = hotWalletBalance + coldWalletBalance;
+      var totalNeededCustodial = siteTotalActive + usersBal;
+      var totalExtra = totalCustodial - totalNeededCustodial;
+      $('#audit-hot').val(hotWalletBalance.toFixed(3));
+      $('#audit-cold').val(coldWalletBalance.toFixed(3));
+      $('#audit-extras').val(totalExtra.toFixed(3));
+      if(totalExtra < 0){
+        var alert = `<i class="fa fa-exclamation-triangle sexyblackoutline" style="color:gold;" title="AUDIT FAILED! Value is Less Than Expected!" aria-hidden="true"></i>`;
+        $('#audit-extras').css({"color":"red"});
+      }
+      $('#audit-lockedtotal').val(siteTotalActive.toFixed(3));
+      $('#audit-sitebal').val(totalCustodial.toFixed(3));
+      $('#audit-accounts').val(siteAccts);
+      $('#audit-activeaccts').val(siteAcctsActive);
+      $('#audit-dormant').val(siteAcctsDormant);
+      $('#audit-collateral').val(siteAcctsOwned);
+      $('#audit-update').val(newUpdateDate);
+      $('#audit-userbal').val(usersBal.toFixed(3));
+      $('#audit-active').val(siteActive);
+      $('#audit-available').val(siteAvailable);
+      $('#audit-completed').val(siteCompleted);
+      $('#audit-cancelled').val(siteCancelled);
+      $('#audit-loantotal').val(siteTotalActive.toFixed(3));
+      $('#audit-returntotal').val(siteTotalCollected.toFixed(3));
+      $('#audit-createfee').val((siteDeployFee / 1000).toFixed(3));
+      $('#audit-interestfee').val((siteCommissionFee / 1000).toFixed(3));
+      $('#audit-cancelfee').val((siteCancelFee / 1000).toFixed(3));
+      $('#audit-withdrawfee').val((theWDFEES[0] / 1000).toFixed(3));
+      $('#audit-finesfee').val((siteFineFee / 1000).toFixed(3));
+      $('#audit-totalfee').val((siteTotalFee / 1000).toFixed(3));
 
+    } catch(e) {
+      showErr(e);
+    }
   } else {
     console.log(`siteAudit Data Undefined!`);
   }
@@ -1118,14 +1354,20 @@ function infoContract(data) {
       $('#loadloaninfo').html(`${hyperdatatable}`);
 }
 
-function createNewLendingContract(amount, days, fee) {
-  console.log(`createNewLendingContract(${amount}, ${days}, ${fee})`);
+function createNewLendingContract(amount, days, fee, borrower) {
+  if(!amount && typeof amount != 'number' || amount < 0) return showErr('Amount Variable Undefined, Invalid or a Non-Number Type');
+  if(!days && typeof days != 'number' || days < 7 || days > 91) return showErr('Days Variable Undefined, Invalid or a Non-Number Type');
+  if(!fee && typeof fee != 'number' || fee < 0) return showErr('Fee Variable Undefined, Invalid or a Non-Number Type');
+  if(!borrower && typeof borrower != 'boolean') return showErr('Borrower Variable Undefined, Invalid or a Non-Boolean Type');
+  console.log(`createNewLendingContract(${amount}, ${days}, ${fee}, looking for / borrower: ${borrower})`);
   $('#createLoanWarning').css({'color':'lawngreen'});
   $('#createLoanWarning').val(`Attempting to Create Lending Contract...`);
+
   socket.emit('createloan', {
     amount: amount,
     days: days,
     interest: fee,
+    funded: borrower,
     token: token
   }, function(err, data){
     if(err){
@@ -1167,7 +1409,7 @@ async function encrypt(contractID, pgp){
 console.log(`function encrypt(${contractID}, ${pgp})`);
   $("#surrenderKeysTable").hide();
   $("#afterSurrenderButtonClick").removeClass('hidden');
-  $("#afterSurrenderButtonClick").html(`Awaiting Account Key Manager Response...`)
+  $("#afterSurrenderButtonClick").text(`Awaiting Account Key Manager Response...`)
   const { data: encrypted } = await openpgp.encrypt({
       message: openpgp.message.fromText(`[{"${uUsername}":{"passdata":"${$('#masterAcctPass').val()}"}}]`),                 // input as Message object
       publicKeys: (await openpgp.key.readArmored(pgp)).keys});
@@ -1267,28 +1509,28 @@ var formatChatMessage = function(message, prepend){
 var alertChatMessage = function(message) {
     var date = message.date
     $("#trollbox").append('<div class="chatList"><span class="chatTime"><a href="#" title="' + date + '"><i class="far fa-clock" style="color:grey; text-decoration: none !important;"></i></a></span> <span class="chatAlert sexyoutline" style="color:lightblue;" title="System"><i class="fas fa-fw fa-robot"></i></span> <span class="pchat" style="color: white"></span></div>'); //<b>System</b>
-    $(".pchat").eq(-1).html(message.message);
+    $(".pchat").eq(-1).text(message.message);
     scrollToTop($("#trollbox"));
 };
 
 var contractChatMessage = function(message) {
     var date = message.date
     $("#trollbox").append('<div class="chatList"><span class="chatTime"><a href="#" title="' + date + '"><i class="far fa-clock" style="color:grey; text-decoration: none !important;"></i></a></span> <span class="chatAlert sexyoutline" style="color:grey;" title="System"><i class="fas fa-fw fa-robot"></i></span> <span class="pchat" style="color: white"></span></div>'); //<b>System</b>
-    $(".pchat").eq(-1).html(message.message);
+    $(".pchat").eq(-1).text(message.message);
     scrollToTop($("#trollbox"));
 };
 
 var enterChatMessage = function(message) {
     var date = message.date
     $("#trollbox").append('<div class="chatList"><span class="chatTime"><a href="#" title="' + date + '"><i class="far fa-clock" style="color:grey; text-decoration: none !important;"></i></a></span> <span class="chatAlert sexyoutline" style="color:grey;" title="System"><i class="fas fa-fw fa-robot"></i></span> <span class="pchat" style="color: white"></span></div>'); //<b>System</b>
-    $(".pchat").eq(-1).html(message.message);
+    $(".pchat").eq(-1).text(message.message);
     scrollToTop($("#trollbox"));
 };
 
 var leaveChatMessage = function(message) {
     var date = message.date
     $("#trollbox").append('<div class="chatList"><span class="chatTime"><a href="#" title="' + date + '"><i class="far fa-clock" style="color:grey; text-decoration: none !important;"></i></a></span> <span class="chatAlert sexyoutline" style="color:grey;" title="System"><i class="fas fa-fw fa-robot"></i></span><span class="pchat" style="color: white"></span></div>'); //<b>System</b>
-    $(".pchat").eq(-1).html(message.message);
+    $(".pchat").eq(-1).text(message.message);
     scrollToTop($("#trollbox"));
 };
 
@@ -1313,10 +1555,12 @@ async function splitOffVests(a){
 
 var getHivePower = async(user) => {
   if(!user) return "No User Specified";
-    console.log(`getHivePower Called!`)
+    console.log(`getHivePower = async(${user})`)
     var resultData = await hive.api.callAsync('condenser_api.get_accounts', [[`${user}`]]).then((res) => {return JSON.parse(JSON.stringify(res))}).catch((e) => console.log(e));
     var chainProps = await hive.api.callAsync('condenser_api.get_dynamic_global_properties', []).then((res) => {return JSON.parse(JSON.stringify(res))}).catch((e) => console.log(e));
     var hivePower = await splitOffVests(resultData[0].vesting_shares);
+    console.log(`resultData`);
+    console.log(resultData);
     var total_vesting_shares = await splitOffVests(chainProps.total_vesting_shares);
     var total_vesting_fund = await splitOffVests(chainProps.total_vesting_fund_hive);
     var hiveVested = parseFloat(((total_vesting_fund *  hivePower ) / total_vesting_shares).toFixed(3));
@@ -1326,10 +1570,129 @@ var getHivePower = async(user) => {
     return hpdata;
 }
 
-var getUserAccount = async(user) => {
+var getHiveDelegations = async(user) => {
+  var vestsDelegated = 0;
+  var hiveDelegated = 0;
   if(!user) return "No User Specified";
-    console.log(`getUserAccount Called!`)
+  if(debug === true) console.log(`getHiveDelegations(${user}) Called!`);
+  console.log(`getHiveDelegations(${user}) Called!`);
+  var delegationData = await hive.api.callAsync('condenser_api.get_vesting_delegations', [user, '', 1000]).then((res) => {return JSON.parse(JSON.stringify(res))}).catch((e) => log(e));
+  var chainProps = await hive.api.callAsync('condenser_api.get_dynamic_global_properties', []).then((res) => {return JSON.parse(JSON.stringify(res))}).catch((e) => log(e));
+  userDelegations = [];
+  delegationData.forEach(async(item, i) => {
+    console.log(item);
+    userDelegations.push(item);
+    var rawVests = await splitOffVests(item.vesting_shares);
+    vestsDelegated += parseFloat(rawVests);
+  });
+  var total_vesting_shares = await splitOffVests(chainProps.total_vesting_shares);
+  var total_vesting_fund = await splitOffVests(chainProps.total_vesting_fund_hive);
+  var hiveDelegated = parseFloat(((total_vesting_fund *  vestsDelegated ) / total_vesting_shares).toFixed(3));
+  delegationData.push({hivedelegated: hiveDelegated, vestsdelegated: vestsDelegated});
+  console.log(`User ${user} has ${hiveDelegated} Hive Delegated!`);
+  return delegationData;
+  //hive.api.getVestingDelegations(`${user}`, '', 1000, await function(err, result) {
+  //  console.log(err, result);
+  //});
+};//END getHivePower = async(user)
+
+function disclaimerOK(){
+  if(document.getElementById('disclaimerCheck').checked){
+    $('#sitealertpanel').fadeOut();
+    disclaimerAgree = true;
+    //localStorage.setItem("disclaimertick", true)
+    showLogin();
+  } else {
+    flashlose($('#discoflasher'));
+  }
+}
+
+function checkSavedData() {
+    if (localStorage.getItem("loginUserName") != undefined) {
+        var savedusername = localStorage.getItem("loginUserName");
+        if(savedusername == undefined) return;
+        $('#usernameinput').val(savedusername);
+        $('#usernameinput').text(savedusername);
+        //$('span#saveUser').css({"color":"red"});
+        $('span#saveUser').html(`<span class="fa-stack fa-1x saveLogin" onclick="loginUserName($('#usernameinput').val());" style=""<span class="input-group-text"><span class="fa-stack fa-1x" style="position: absolute; margin-top: -5px; margin-left: -10px;" title="Click this to save your username"><i class="far fa-save fa-stack-1x"></i><i class="fas fa-slash fa-stack-1x" style="color:red;"></i></span></span></span>`);
+        $('span#saveUser').on("click", function() {
+            localStorage.removeItem("loginUserName");
+            showSuccess('User Deleted!');
+            $('#usernameinput').val("");
+$           ('#usernameinput').text("");
+            checkSavedData();
+        });
+    } else {
+      //$('span#saveUser').css({"color":"white"});
+      $('span#saveUser').html(`<span class="fa-stack fa-1x saveLogin" onclick="loginUserName($('#usernameinput').val());" style=""<span class="input-group-text"><span class="fa-stack fa-1x" style="position: absolute; margin-top: -5px; margin-left: -10px;" title="Click this to save your username"><i class="far fa-save fa-stack-1x"></i><i class="fas fa-slash fa-stack-1x hidden" style="color:red;"></i></span></span></span>`);
+        $('#saveUser').on('click', function() {
+            console.log($(`#usernameinput`).val());
+            if ($(`#usernameinput`).val() != "") {
+                var usersave = $(`#usernameinput`).val().toString();
+                try {
+                    localStorage.setItem("loginUserName", usersave);
+                    showSuccess(`Username Saved!`);
+                } catch (e) {
+                    showErr(`Save Failed!`);
+                }
+                checkSavedData();
+            } else {
+                showErr('Please Specify Username Before Saving!');
+                flashlose($(`#usernameinput`));
+            }
+        });
+    }
+}
+
+function loginUserName() {
+    if (localStorage.getItem("loginUserName") != undefined) {
+        var savedusername = localStorage.getItem("loginUserName");
+        $('#usernameinput').val(savedusername);
+        $('#usernameinput').text(savedusername);
+        //$('span#saveUser').css({"color":"red"});
+        $('span#saveUser').html(`<span class="fa-stack fa-1x saveLogin" onclick="loginUserName($('#usernameinput').val());" style=""<span class="input-group-text"><span class="fa-stack fa-1x" style="position: absolute; margin-top: -5px; margin-left: -10px;" title="Click this to save your username"><i class="far fa-save fa-stack-1x"></i><i class="fas fa-slash fa-stack-1x " style="color:red;"></i></span></span></span>`);
+        $('span#saveUser').on("click", function() {
+            localStorage.removeItem("loginUserName");
+            showSuccess('User Deleted!');
+            $('#usernameinput').val("");
+            $('#usernameinput').text("")
+            checkSavedData();
+        });
+    } else {
+      //$('span#saveUser').css({"color":"white"});
+      $('span#saveUser').html(`<span class="fa-stack fa-1x saveLogin" onclick="loginUserName($('#usernameinput').val());" style=""<span class="input-group-text"><span class="fa-stack fa-1x" style="position: absolute; margin-top: -5px; margin-left: -10px;" title="Click this to save your username"><i class="far fa-save fa-stack-1x"></i><i class="fas fa-slash fa-stack-1x hidden" style="color:red;"></i></span></span></span>`);
+        $('#saveUser').on('click', function() {
+            console.log($(`#usernameinput`).val());
+            if ($(`#usernameinput`).val() != "") {
+                var usersave = $(`#usernameinput`).val().toString();
+                try {
+                    localStorage.setItem("loginUserName", usersave);
+                    showSuccess(`Username Saved!`);
+                } catch (e) {
+                    showErr(`Save Failed!`);
+                }
+                checkSavedData();
+            } else {
+                showErr('Please Specify Username Before Saving!');
+                flashlose($(`#usernameinput`));
+            }
+        });
+    }
+}
+
+var getUserAccount = async(user) => {
+  var uDr;
+  if(debug === true) console.log(`getUserAccount(${user}) Called`);
+  if(!user) return showErr("No User Specified");
+
+    await socket.emit('getuserdata', {username: user}, function(err, data){
+      if(err) return showErr(err);
+      if(debug === true) console.log(data)
+      uDr = data;
+    });
+
     var resultData = await hive.api.callAsync('condenser_api.get_accounts', [[`${user}`]]).then((res) => {return JSON.parse(JSON.stringify(res))}).catch((e) => console.log(e));
+    resultData.push(uDr);
     return resultData;
 }
 
@@ -1337,7 +1700,7 @@ var getUserSiteBalance = async() => {
   if(!user) return "No User Specified";
     console.log(`getUserSiteBalance Called!`)
     await socket.emit('getuserdata', {username: uUsername}, function(err, data){
-      if(err) showErr(err);
+      if(err) return showErr(err);
         return data;
     });
 }
@@ -1365,6 +1728,10 @@ function between(value, start, end){
   } else if (value > end){
     return 30;
   }
+}
+
+function loanWalletLink() {
+showLeftSideWallet();
 }
 
 /*
@@ -1406,8 +1773,11 @@ function CreateTableFromJSON(data, name, elementid, tablename, tableheadname) {
     // CREATE DYNAMIC TABLE.
     var table = document.createElement("table");
     table.setAttribute("id", tablename);
-    table.classList.add("robotable");
-    table.classList.add("table");
+    if(tablename !== "withdrawhistory") {
+      table.classList.add("robotable");
+      table.classList.add("table");
+    }
+
     var header = table.createTHead();
     header.setAttribute("id", tableheadname);
 
@@ -1425,77 +1795,92 @@ function CreateTableFromJSON(data, name, elementid, tablename, tableheadname) {
             th.setAttribute("id", col[i]);
 
             switch(col[i]){
+              case "sentto":
+              $(th).text("Sent to / from");
+              break;
               case "loanId":
-              $(th).html("Loan ID");
+              $(th).text("Loan ID");
+              break;
+              case "confirmedblock":
+              $(th).text("Confirmation Block");
+              break;
+              case "confirmedtxid":
+              $(th).text("Confirmed TXID");
               break;
               case "active":
-              $(th).html("Active");
+              $(th).text("Active");
               break;
               case "currentpayments":
-              $(th).html("Current Payments");
+              $(th).text("Current Payments");
               break;
               case "totalpayments":
-              $(th).html("Payments");
+              $(th).text("Payments");
               break;
               case "id":
-              $(th).html("#");
+              $(th).text("#");
               break;
               case "interest":
-              $(th).html("Interest");
+              $(th).text("Interest");
               break;
               case "collected":
-              $(th).html("Collected");
+              $(th).text("Collected");
               break;
               case "borrower":
-              $(th).html("Borrower");
+              $(th).text("Borrower");
               break;
               case "block":
-              $(th).html("Block");
+              $(th).text("Block");
               break;
               case "username":
-              $(th).html("Lender");
+                switch(tablename){
+                  case "withdrawhistory":
+                  $(th).text("Sender");
+                  break;
+                  default:
+                  $(th).text("Lender");
+                }
               break;
               case "days":
-              $(th).html("Duration");
+              $(th).text("Duration");
               break;
               case "cancelled":
-              $(th).html("Cancelled");
+              $(th).text("Cancelled");
               break;
               case "completed":
-              $(th).html("Completed");
+              $(th).text("Completed");
               break;
               case "state":
-              $(th).html("State");
+              $(th).text("State");
               break;
               case "fine":
-              $(th).html("Fine");
+              $(th).text("Fine");
               break;
               case "amount":
-              $(th).html("Amount");
+              $(th).text("Amount");
               break;
               case "txid":
-              $(th).html("TXID");
+              $(th).text("TXID");
               break;
               case "deployfee":
-              $(th).html("Deploy Fee");
+              $(th).text("Deploy Fee");
               break;
               case "cancelfee":
-              $(th).html("Cancel Fee");
+              $(th).text("Cancel Fee");
               break;
               case "startblock":
-              $(th).html("Genesis Block");
+              $(th).text("Genesis Block");
               break;
               case "endblock":
-              $(th).html("Apoptosis Block");
+              $(th).text("Apoptosis Block");
               break;
               case "endtxid":
-              $(th).html("Completion TXID");
+              $(th).text("Completion TXID");
               break;
               case "payblocks":
-              $(th).html("Payouts");
+              $(th).text("Payouts");
               break;
               case "createdAt":
-              $(th).html("Created");
+              $(th).text("Created");
               break;
             }
         }
@@ -1514,10 +1899,11 @@ function CreateTableFromJSON(data, name, elementid, tablename, tableheadname) {
             tr.setAttribute("id", `row-${[i]}`);
             var wew = [];
             wew.push(JSON.stringify(data[i]));
-            tr.setAttribute("onclick", "infoContract(" + JSON.stringify(wew) + "); $(\".iw-contextMenu\").contextMenu(\"destroy\"); $(\".iw-cm-menu\").contextMenu(\"destroy\"); contractMenu($(this), \"" + wew[0][i].loanId + "\", " + JSON.stringify(wew) + ");");  /*`#row-${[i]}`*/                         //acceptContract('${thisID}');  //$(this).css({'background':'rgba(255,255,255,0.2)','color':'lightgreen'}).delay(50).animate({'background':'rgba(255,255,255,0.1)','color':'white'}, 150);";
-            tr.setAttribute("onmouseover", "$(this).css({\"background\":\"rgba(255,255,255,0.05)\"});");
-            tr.setAttribute("onmouseout", "$(this).css({\"background\":\"rgba(255,255,255,0)\"});");
-
+            if(name !== "withdrawhistory") {
+              tr.setAttribute("onclick", "infoContract(" + JSON.stringify(wew) + "); $(\".iw-contextMenu\").contextMenu(\"destroy\"); $(\".iw-cm-menu\").contextMenu(\"destroy\"); contractMenu($(this), \"" + wew[0][i].loanId + "\", " + JSON.stringify(wew) + ");");  /*`#row-${[i]}`*/                         //acceptContract('${thisID}');  //$(this).css({'background':'rgba(255,255,255,0.2)','color':'lightgreen'}).delay(50).animate({'background':'rgba(255,255,255,0.1)','color':'white'}, 150);";
+              tr.setAttribute("onmouseover", "$(this).css({\"background\":\"rgba(255,255,255,0.05)\"});");
+              tr.setAttribute("onmouseout", "$(this).css({\"background\":\"rgba(255,255,255,0)\"});");
+            }
             var thisID;
             for (var j = 0; j < col.length; j++) {
                 if (data[i][col[j]] == undefined) {
@@ -1527,6 +1913,48 @@ function CreateTableFromJSON(data, name, elementid, tablename, tableheadname) {
                 }
 
                 switch(name){
+                  case "withdrawhistory":
+                    switch(col[j]){
+                      case "id":
+                        delete col[i];
+                      break;
+                      case "amount":
+                      if (data[i][col[j]] == undefined) {
+                          data[i][col[j]] = "Non Integer";
+                      } else {
+                          data[i][col[j]] = (data[i][col[j]] / 1000).toFixed(3) +  " <i class=\"fab fa-fw fa-hive hivered\"></i>";
+                      }
+                      break;
+                      case "block":
+                        data[i][col[j]]  = data[i][col[j]];
+                      break;
+                      case "coin":
+                      if(data[i][col[j]] == "HIVE") {
+                        data[i][col[j]] = "<i class=\"fab fa-fw fa-hive hivered\" title=\"HIVE\"></i>"
+                      }
+                      break;
+                      case "confirmed":
+                        if(data[i][col[j]] === 0) data[i][col[j]] = "❌";
+                        if(data[i][col[j]] === 1) data[i][col[j]] = "✔️";
+                      break;
+                      case "confirmedblock":
+                      if (data[i][col[j]] == undefined) {
+                          data[i][col[j]] = "<code>none</code>";
+                      }  else {
+                        data[i][col[j]] = `<a href="https://hiveblocks.com/b/${data[i][col[j]]}" class="histuserlink" style="color:white !important;" target="_blank" title="Click to View This Block on HiveBlocks.com in a New Window">${data[i][col[j]]}</a>`;
+                      }
+                      break;
+                      case "confirmedtxid":
+                      if (data[i][col[j]] == undefined) {
+                          data[i][col[j]] = "<code>none</code>";
+                      } else  {
+                          var txstring = data[i][col[j]].toString();
+                          var newtx = txstring.substring(0, 10) + "..";
+                          data[i][col[j]] = "<a href=\"https://hiveblocks.com/tx/" + txstring + "\" class=\"histuserlink\" style=\"color:white !important;\" target=\"_blank\" title=\"Click to View This TX on HiveBlocks.com in a New Window\">" + newtx + "</a>";
+                      }
+                      break;
+                    }
+                  break;
                   case "backers":
                     switch(col[j]){
                       case "amount":
@@ -1869,6 +2297,7 @@ function CreateTableFromJSON(data, name, elementid, tablename, tableheadname) {
                   if (data[i][col[j]] == undefined) {
                       data[i][col[j]] = "<code>none</code>";
                   } else {
+                    data[i][col[j]]
                     switch(data[i][col[j]]){
                       case "finished":
                       data[i][col[j]] = `<i class="fas fa-fw fa-file-invoice-dollar" style="color:lawngreen;" title="Completed"></i>`;
@@ -1981,13 +2410,13 @@ var hiveloanslogo = `<span style="color:white;">
 ██╔══██║██║░╚████╔╝░██╔══╝░░░░░██║░░░░░██║░░██║██╔══██║██║╚████║░╚═══██╗
 ██║░░██║██║░░╚██╔╝░░███████╗██╗███████╗╚█████╔╝██║░░██║██║░╚███║██████╔╝
 ╚═╝░░╚═╝╚═╝░░░╚═╝░░░╚══════╝╚═╝╚══════╝░╚════╝░╚═╝░░╚═╝╚═╝░░╚══╝╚═════╝░\n<br>\n<br>
-v0.0.9 Alpha - By @KLYE`;
+v0.1.0 Beta Version Phase I - By @KLYE`;
 
 var versionwarning = `
 ========================================================================\n<br>
-   ***WARNING*** This is an UNFINISHED EARLY ALPHA BUILD and WILL Contain BUGS\n<br>
-   There almost certainy is missing things, issues, bugs and whatever else\n<br>
-   By continuing past this point the site holds zero liability beyond this point\n<br>
+   ***WARNING*** This is an Online Beta Test and Likely contains BUGS\n<br>
+   There almost certainly is things missing, issues, bugs and whatever else\n<br>
+   By continuing using the site infers the site holds zero liability\n<br>
 ========================================================================
 </span>`;
 

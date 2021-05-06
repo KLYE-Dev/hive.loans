@@ -34,6 +34,14 @@ module.exports = {
       confirmed: {
         type: Sequelize.BOOLEAN
       },
+      confirmedblock: {
+        type: Sequelize.INTEGER
+      },
+      confirmedtxid: {
+        type: Sequelize.STRING,
+        allowNull: false,
+        defaultValue: null,
+      },
       createdAt: {
         allowNull: false,
         defaultValue: Sequelize.NOW,

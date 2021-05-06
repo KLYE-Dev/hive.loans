@@ -17,6 +17,11 @@ module.exports = {
       username: {
         type: Sequelize.STRING
       },
+      funded: {
+        allowNull: false,
+        type: Sequelize.BOOLEAN,
+        defaultValue: false
+      },
       amount: {
         allowNull: false,
         type: Sequelize.INTEGER,
