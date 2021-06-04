@@ -5,7 +5,7 @@ const log = require("fancy-log");
 const hive = require('@hiveio/hive-js');
 const openpgp = require('openpgp');
 const { pgpKeygen, pgpEncrypt, pgpDecryptAsync, keyPool } = require("../snippets/pgp.js");
-const { GetVotingPower } = require("../snippets/GetVotingPower.js");
+const { GetVotingPower } = require("../snippets/getVotingPower.js");
 const DB = require("../database/models");
 const sequelize = DB.sequelize;
 const DataBase = sequelize;
@@ -136,7 +136,7 @@ function acctXPAdd(data) {
   var UserShares = parseInt(data.shares);
   var UserShareProfit = parseInt(data.shareprofit) / 1000;
   var UserInvested = parseInt(data.invested) / 1000;
-  
+
 
 
   var UserSiteDelegation = parseInt(data.sitedelegation) / 1000;

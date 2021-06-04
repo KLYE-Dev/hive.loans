@@ -162,6 +162,11 @@ module.exports = {
         defaultValue: 0,
         allowNull: false
       },
+      feesloans: {
+        type: Sequelize.BIGINT,
+        defaultValue: 0,
+        allowNull: false
+      },
       totalloans: {
         type: Sequelize.BIGINT,
         defaultValue: 0,

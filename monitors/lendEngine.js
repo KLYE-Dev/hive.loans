@@ -570,28 +570,7 @@ process.on('message', async function(m) {
         raw: true
       }).then(function(entries){
         let usersCheked = entries.map(function(key) {
-          /*
-          "userId":13,
-          "rank":"user",
-          "hivebalance":0,
-          "feesorder":0,
-          "totalcfdtrade":0,
-          "feescfdtrade":0,
-          "activeloans":1,
-          "closedloans":0,
-          "feesloans":0,
-          "totalloans":10,
-          "activelends":1,
-          "closedlends":0,
-          "totallends":50,
-          "feeslends":0,
-          "deposits":0,
-          "depositstotal":0,
-          "withdrawals":10,
-          "withdrawalstotal":17633,
-          "withdrawalsfee":3596,
-          "totalfees":0
-          */
+
 
           delete key.id;
           //delete key.userId;
@@ -671,7 +650,8 @@ process.on('message', async function(m) {
           //if (key.createdAt !== -1) {
           //    delete key.createdAt;
           //}
-          return key;
+          if(key) return key;
+
         });
         stateLoanCheked.forEach((item, i) => {
           loanState.push(item);

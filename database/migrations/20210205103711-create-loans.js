@@ -88,7 +88,7 @@ module.exports = {
         type: Sequelize.BOOLEAN,
         defaultValue: false
       },
-      completed: {
+      cancelled: {
         allowNull: false,
         type: Sequelize.BOOLEAN,
         defaultValue: false
