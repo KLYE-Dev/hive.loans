@@ -1852,6 +1852,24 @@ var getHiveDelegations = async(user) => {
   //});
 };//END getHivePower = async(user)
 
+var paintitblack = false;
+function colorChange(){
+  console.log(`colorChange: ${paintitblack}`);
+  if(paintitblack == false){
+    paintitblack = true;
+    $('div.navbar').css({'box-shadow':'0 1px 0 rgb(255 255 255 / 25%), 0 1px 0 rgb(255 255 255 / 25%) inset, 0 0 0 rgb(0 0 0 / 50%) inset, 0 1.25rem 0 rgb(255 255 255 / 8%) inset, 0 -1.25rem 1.25rem rgb(0 0 0 / 30%) inset, 0 1.25rem 1.25rem rgb(255 255 255 / 10%) inset !important','border-bottom':'3px outset #000000 !important', 'border-right':'3px outset #000000 !important', 'background-color':'rgba(0,0,0,0.7)'});
+    $('footer').css({'box-shadow':'0 1px 0 rgb(255 255 255 / 25%), 0 1px 0 rgb(255 255 255 / 25%) inset, 0 0 0 rgb(0 0 0 / 50%) inset, 0 1.25rem 0 rgb(255 255 255 / 8%) inset, 0 -1.25rem 1.25rem rgb(0 0 0 / 30%) inset, 0 1.25rem 1.25rem rgb(255 255 255 / 10%) inset, #292929 0px 20px 20px 20px !important','border-top':'3px outset #000000 !important', 'background-color':'rgba(0,0,0,0.7)'});
+  } else if(paintitblack == true) {
+    paintitblack = false;
+    $('div.navbar').css({'box-shadow':'black 1px 1px 15px !important','border-bottom':'3px outset #E31337 !important', 'border-right':'3px outset #E31337 !important', 'background-color':'#E31337'});
+    $('footer').css({'box-shadow':'#292929 0px 20px 20px 20px !important','border-top':'3px outset #E31337 !important', 'background-color':'#E31337'});
+  } else {
+    paintitblack = true;
+    $('div.navbar').css({'box-shadow':'0 1px 0 rgb(255 255 255 / 25%), 0 1px 0 rgb(255 255 255 / 25%) inset, 0 0 0 rgb(0 0 0 / 50%) inset, 0 1.25rem 0 rgb(255 255 255 / 8%) inset, 0 -1.25rem 1.25rem rgb(0 0 0 / 30%) inset, 0 1.25rem 1.25rem rgb(255 255 255 / 10%) inset !important','border-bottom':'3px outset #000000 !important', 'border-right':'3px outset #000000 !important', 'background-color':'rgba(0,0,0,0.7)'});
+    $('footer').css({'box-shadow':'0 1px 0 rgb(255 255 255 / 25%), 0 1px 0 rgb(255 255 255 / 25%) inset, 0 0 0 rgb(0 0 0 / 50%) inset, 0 1.25rem 0 rgb(255 255 255 / 8%) inset, 0 -1.25rem 1.25rem rgb(0 0 0 / 30%) inset, 0 1.25rem 1.25rem rgb(255 255 255 / 10%) inset, #292929 0px 20px 20px 20px !important','border-top':'3px outset #000000 !important', 'background-color':'rgba(0,0,0,0.7)'});
+  }
+}
+
 var ol;
 $('input#betapass').keyup(function(e){
   if(!ol) ol = (($('input#betapass').val()).toString()).length;

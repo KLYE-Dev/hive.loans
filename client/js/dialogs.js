@@ -980,6 +980,7 @@ function skcusersocket(user) {
                   $("#join").removeClass("hidden");
                   $("#faq").removeClass("hidden");
                   $("#wallet").removeClass("hidden");
+                  $("#darkmode").removeClass("hidden");
                   $("#exchange").removeClass("hidden");
                   $("#profile").removeClass("hidden");
                   $("#profilemenu").removeClass("hidden");
@@ -998,6 +999,7 @@ function skcusersocket(user) {
                   $("#loans").fadeIn();
                   $("#lend").fadeIn();
                   $("#wallet").show();
+                  $("#darkmode").show();
                   $("#settings").show();
                   $("#tools").show();
                   $("#login").addClass('hidden');
@@ -3934,6 +3936,7 @@ async function showBetaPass() {
   `<input id="toggleBetaPassEye" type="checkbox" checked onClick="eyechecker();">` +
   `</div>` +
   `</span>` +
+  //REMOVE
   `<input type="password" id="betapass" class="input-group-text inputclear" onkeyup="checkBetaPass(); bpc = this.value;" value="" placeholder="" min="1" step="1" aria-describedby="basic-addon2">` +
   `<span class="input-group-append"><span class="input-group-text">` +
   `<b id="betalocklogo" style="color:red;"><i class="fas fa-lock"></i></b>` +
