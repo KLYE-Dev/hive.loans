@@ -20,8 +20,8 @@ hive.api.setOptions({ url: "https://api.deathwing.me" });
 
 var getUserVotingPower = async(user) => {
   if(!user) return "No User Specified";
-    if(debug === true) log(`getUserVotingPower = async(${user}) Called!`);
-    var vpFetch = await GetVotingPower.fetch(user).then((res) =>{return res}).catch((e) => {return e});
+  if(debug === true) log(`getUserVotingPower = async(${user}) Called!`);
+  var vpFetch = await GetVotingPower.fetch(user).then((res) =>{return res}).catch((e) => {return e});
 
 }
 
@@ -67,15 +67,15 @@ let oldlevel;
 let degenearned = 0;
 
 function getUserLevel(exp){
-return (Math.floor(exp / 1000));
+  return (Math.floor(exp / 1000));
 }
 
 function nextLevel(e){
-var level = parseInt(e * 1000);
-var exponent = 0;
-var baseXP = 1000;
-var nextlevel = (Math.floor(baseXP * ((e + 1) ^ exponent)) / 1000);
-return nextlevel;
+  var level = parseInt(e * 1000);
+  var exponent = 0;
+  var baseXP = 1000;
+  var nextlevel = (Math.floor(baseXP * ((e + 1) ^ exponent)) / 1000);
+  return nextlevel;
 }
 
 function expSaver(exp) {
@@ -102,57 +102,117 @@ function diminishing_returns(val, scale) {
   return parseInt(trinum * scale);
 }
 
-/*EDIT BELOW TO ADD NEW COIN*/
+
+//The Super top secret xp adding / leveling algorythm
 function acctXPAdd(data) {
-//log(`acctlevel called!`);
-var nextlevelexp;
-let lastexp = 0;
-var reallimit;
-var userRank = data.rank;
-var userLvL = data.level;
-var userXP = data.xp;
-var userSiteRank = data.siterank;
-var countUserWd = data.withdrawals;
-var totalUserWd = data.withdrawalstotal;
-var countUserDp = data.deposits;
-var totalUserDp = data.depositstotal;
-var totalHiveProfit = Math.abs(parseInt(data.hiveprofit));
-var totalCFDProfit = Math.abs(parseInt(data.cfdprofit));
-var totalCFDTrade = Math.abs(parseInt(data.totalcfdtrade));
-var totalShareProfit = parseInt(data.shareprofit);
-var totalLoans = parseInt(data.totalloans);
-var totalLends = parseInt(data.totallends);
-var totalFees = parseInt(data.totalfees);
+  if(!data) return log(`USERS: ERROR: Variable 'data' is Undefined!`);
+  console.log(`+++++++++++\n acctXPAdd called! \n++++++++++++++`);
+  if(debug === false) {
+    log(`acctXPAdd(data):`);
+  }
+  var nextlevelexp;
+  let lastexp = 0;
+  var reallimit;
+  var UserMod = data.moderator;
+  var UserRank = data.rank;
+  var UserLvL = data.level;
+  var UserXP = data.xp;
+  var UserXPBonus = data.xpmulti;
+  var UserSiteRank = data.siterank;
+  var UserDisclaimer = data.disclaimer;
+  var TotalHiveProfit = () => {
+    try {
+    var rawInt = parseInt(data.hiveprofit) / 1000;
+    } catch(e){
+      return showErr(`${e}`);
+    }
+    if(rawInt > 0) {
+      rawInt = parseInt(data.hiveprofit) * 1;
+    } else {
+      rawInt = Math.abs(parseInt(data.hiveprofit)) * 1;
+    }
+    return rawInt;
+  }
+  var UserShares = parseInt(data.shares);
+  var UserShareProfit = parseInt(data.shareprofit) / 1000;
+  var UserInvested = parseInt(data.invested) / 1000;
+  
 
-//super sketchy price estimates to generate account xp values... probably needs a rewrite..
-var wageredlevel = parseInt((totalHiveWagered * 0.0000001) + (totalHbdWagered * 0.000001) + (totalPalWagered * 0.00000005) + (totalBrosWagered * 0.00000003) + (totalNeoxagWagered * 0.00000003) + (totalArchonWagered * 0.00000007)); //+ (totalDegenWagered * 0.00000006)
-var bigwinlevel = parseInt((totalBigWinHive * 0.0000001) + (totalBigWinHbd * 0.000001) + (totalBigWinPal * 0.00000005) + (totalBigWinBros * 0.00000003) + (totalBigWinNeoxag * 0.00000003) + (totalBigWinArchon * 0.00000007)); //+ (totalBigWinDegen * 0.00000006)
-var biglosslevel =  parseInt((totalBigLossHive * 0.0000001) + (totalBigLossHbd * 0.000001) + (totalBigLossPal * 0.00000005) + (totalBigLossBros * 0.00000003) + (totalBigLossNeoxag * 0.00000003) + (totalBigLossArchon * 0.00000007)); //+ (totalBigLossDegen * 0.00000006)
-var exp = Number((betslevel + wageredlevel + bigwinlevel + biglosslevel) * 1).toFixed(0) //Number((betslevel + wageredlevel + profitlevel + bigwinlevel + biglosslevel)).toFixed(2)
-if(exp <= 0){
-  exp = 1;
-}
-exp = expSaver(exp);
-exp = diminishing_returns(exp, 1000)
 
-userlevel = getUserLevel(exp);
-nextlevelexp = parseInt(nextLevel(userlevel) * 1000);
+  var UserSiteDelegation = parseInt(data.sitedelegation) / 1000;
+
+
+
+
+  //withdrawal stuff
+  var CountUserWd = parseInt(data.withdrawals);
+  var TotalUserWd = parseInt(data.withdrawalstotal) / 1000;
+  var TotalUserWdFees = parseInt(data.withdrawalsfee) / 1000;
+
+  //deposit stuff
+  var CountUserDp = parseInt(data.deposits);
+  var TotalUserDp = parseInt(data.depositstotal) / 1000;
+
+
+
+
+  var TotalCFDProfit  = () => {
+    try {
+    var rawInt = parseInt(data.cfdprofit) / 1000;
+    } catch(e){
+      return showErr(`${e}`);
+    }
+    if(rawInt > 0) {
+      rawInt = parseInt(data.cfdprofit) * 20;
+    } else {
+      rawInt = Math.abs(parseInt(data.cfdprofit) * 10);
+    }
+    return rawInt;
+  }
+  var TotalCFDTrade = parseInt(data.totalcfdtrade) / 1000;
+  var TotalCFDFee = parseInt(data.feescfdtrade) / 1000;
+
+  var TotalShareProfit = parseInt(data.shareprofit) / 1000;
+  var TotalLoans = parseInt(data.totalloans) / 1000;
+  var TotalLoansFee = parseInt(data.feesloans) / 1000;
+  var TotalLends = parseInt(data.totallends) / 1000;
+  var TotalLendsFee = parseInt(data.feeslends) / 1000;
+  var TotalFees = parseInt(data.totalfees) / 1000;
+
+  //super sketchy price estimates to generate account xp values... probably needs a rewrite..
+  var LoansLvL = parseInt((TotalLoans * 1) + (TotalLoansFee * 1) + (TotalLends * 1 ) + (TotalLoansFee * 1) + (TotalHiveProfit * 1));
+  if(debug === false) log(`USERS: DEBUG - LoansLvL: ${LoansLvL}`);
+  var CFDLvL = parseInt((TotalCFDProfit * 1) + (TotalCFDTrade * 1) + (TotalCFDFee * 1)); //+ (totalBigWinDegen * 0.00000006)
+  if(debug === false) log(`USERS: DEBUG - LoansLvL: ${LoansLvL}`);
+  var TraderLvL =  parseInt((totalBigLossHive * 0.0000001) + (totalBigLossHbd * 0.000001) + (totalBigLossPal * 0.00000005) + (totalBigLossBros * 0.00000003) + (totalBigLossNeoxag * 0.00000003) + (totalBigLossArchon * 0.00000007)); //+ (totalBigLossDegen * 0.00000006)
+  if(debug === false) log(`USERS: DEBUG - TraderLvL: ${TraderLvL}`);
+  var WalletLvL = parseInt();
+  if(debug === false) log(`USERS: DEBUG - WalletLvL: ${WalletLvL}`);
+  var exp = Number((loanslevel + cfdlevel + traderlevel + walletlevel) * 1).toFixed(0) //Number((betslevel + wageredlevel + profitlevel + bigwinlevel + biglosslevel)).toFixed(2)
+  if(exp <= 0){
+    exp = 1;
+  }
+  exp = expSaver(exp);
+  exp = diminishing_returns(exp, 1000)
+
+  userlevel = getUserLevel(exp);
+  nextlevelexp = parseInt(nextLevel(userlevel) * 1000);
 
   if(nextlevelexp < 1000){
     log(`nextlevelexp == 0`)
-  userlevel = 1;
-  nextlevelexp = parseInt(nextLevel(userlevel) * 1000);
+    userlevel = 1;
+    nextlevelexp = parseInt(nextLevel(userlevel) * 1000);
   }
 
   var lastlevelcutoff = parseInt(nextLevel((userlevel - 1)) * 1000)
   var nextlevelcutoff = parseInt(nextLevel((userlevel)) * 1000)
 
   if(userlevel >= oldlevel){
-      var powerlevel = parseInt(userlevel - oldlevel);
-      setTimeout(function() {
-        //let powerlevel = varDiff(userlevel, oldlevelsave);
-        let oldlevelsave = oldlevel;
-        //log(powerlevel);
+    var powerlevel = parseInt(userlevel - oldlevel);
+    setTimeout(function() {
+      //let powerlevel = varDiff(userlevel, oldlevelsave);
+      let oldlevelsave = oldlevel;
+      //log(powerlevel);
       if(powerlevel == 0){
         log(`LEVEL-UP: ${socket.request.session['user']} leveled up: ${userlevel}`);
         socket.request.session['level'] = userlevel;
@@ -164,53 +224,53 @@ nextlevelexp = parseInt(nextLevel(userlevel) * 1000);
           date: (new Date).toUTCString()
         });
       }
-        if(powerlevel > 0){
+      if(powerlevel > 0){
         log(`POWER-LEVEL-UP: @${socket.request.session['user']}(lvl ${userlevel}) Gained ${powerlevel} Levels!`);
-          io.emit('powerlevelup', {
-            user: socket.request.session['user'],
-            level: userlevel,
-            nextlevel: nextlevelexp,
-            powerlevel: powerlevel,
-            oldlevel: oldlevelsave,
-            reward: parseInt(priorEarned(userlevel) - priorEarned(oldlevelsave)),
-            date: (new Date).toUTCString()
-          });
-          socket.emit('powerreward',{
-            amount: powerlevel
-          });
-          //deposit(parseInt(powerlevel * 100000000), socket.request.session['user'], "degen");
-        }
-        dailylevels = parseInt(dailylevels + powerlevel);
-        dailydegen = parseInt(dailydegen) + parseInt(priorEarned(userlevel) - priorEarned(oldlevelsave));
-    //  }, 100);
+        io.emit('powerlevelup', {
+          user: socket.request.session['user'],
+          level: userlevel,
+          nextlevel: nextlevelexp,
+          powerlevel: powerlevel,
+          oldlevel: oldlevelsave,
+          reward: parseInt(priorEarned(userlevel) - priorEarned(oldlevelsave)),
+          date: (new Date).toUTCString()
+        });
+        socket.emit('powerreward',{
+          amount: powerlevel
+        });
+        //deposit(parseInt(powerlevel * 100000000), socket.request.session['user'], "degen");
+      }
+      dailylevels = parseInt(dailylevels + powerlevel);
+      dailydegen = parseInt(dailydegen) + parseInt(priorEarned(userlevel) - priorEarned(oldlevelsave));
+      //  }, 100);
     }, 200);
-    }
+  }
 
   var percentTillLvL;
 
-if(userlevel == 0){
-  nextlevelexp = parseInt(nextLevel(userlevel + 1) * 1000);
-  userlevel = 1;
- lastlevelcutoff = nextlevelexp;
- percentTillLvL = relDiff((lastlevelcutoff), (nextlevelexp - exp)).toFixed(2);
- degenearned = priorEarned(userlevel);
-} else if(userlevel == 1){
-   nextlevelexp = parseInt(nextLevel(userlevel) * 1000);
-   oldlevel = Math.ceil(exp / 1000);
-  lastlevelcutoff = nextlevelexp;
-  percentTillLvL = relDiff((lastlevelcutoff), (nextlevelexp - exp)).toFixed(2);
-  degenearned = priorEarned(userlevel - 1);
-} else {
-  oldlevel = Math.ceil(exp / 1000);
-  percentTillLvL = relDiff((exp - nextlevelexp), (lastlevelcutoff - nextlevelexp)).toFixed(2);
-  degenearned = priorEarned(userlevel);
-}
-    // socket.request.session['level'] = userlevel;
+  if(userlevel == 0){
+    nextlevelexp = parseInt(nextLevel(userlevel + 1) * 1000);
+    userlevel = 1;
+    lastlevelcutoff = nextlevelexp;
+    percentTillLvL = relDiff((lastlevelcutoff), (nextlevelexp - exp)).toFixed(2);
+    degenearned = priorEarned(userlevel);
+  } else if(userlevel == 1){
+    nextlevelexp = parseInt(nextLevel(userlevel) * 1000);
+    oldlevel = Math.ceil(exp / 1000);
+    lastlevelcutoff = nextlevelexp;
+    percentTillLvL = relDiff((lastlevelcutoff), (nextlevelexp - exp)).toFixed(2);
+    degenearned = priorEarned(userlevel - 1);
+  } else {
+    oldlevel = Math.ceil(exp / 1000);
+    percentTillLvL = relDiff((exp - nextlevelexp), (lastlevelcutoff - nextlevelexp)).toFixed(2);
+    degenearned = priorEarned(userlevel);
+  }
+  // socket.request.session['level'] = userlevel;
 
   var difference = parseInt(exp - nextlevelexp);
   //log(`lvl:${userlevel} ${exp} / ${nextlevelexp} - ${percentTillLvL}%`)
   if(parseInt(percentTillLvL) >= 100){
-//    log(percentTillLvL)
+    //    log(percentTillLvL)
     percentTillLvL = 100;
   }
 
@@ -224,7 +284,7 @@ if(userlevel == 0){
     earned: degenearned
   }
 
-return expinfo;
+  return expinfo;
 }
 
 
@@ -238,12 +298,12 @@ async function fetchAuditWithdrawFees() {
     }},
     raw: true
   }).then(async function(entries){
-      var wdChecked = entries.map(function(key) {
-          if (key.fee !== -1) {
-            wdfeetotal += parseInt(key.fee);
-          };
-      });
-      return wdfeetotal;
+    var wdChecked = entries.map(function(key) {
+      if (key.fee !== -1) {
+        wdfeetotal += parseInt(key.fee);
+      };
+    });
+    return wdfeetotal;
   });
 
 };
@@ -253,69 +313,68 @@ process.on('message', async function(m) {
   var sendsocket;
   var userCheck;
   var yuData;
+
   try {
-      m = JSON.parse(m);
-      if(config.debug === true){
-        log(`userManager.js Message:`);
-        log(m);
+    m = JSON.parse(m);
+    if(config.debug === true){
+      log(`userManager.js Message:`);
+      log(m);
+    }
+    if(m.socketid) {
+      sendsocket = m.socketid;
+      if(!userSockets.includes(sendsocket)){
+        userSockets.push(sendsocket);
       }
-      if(m.socketid) {
-        sendsocket = m.socketid;
-        if(!userSockets.includes(sendsocket)){
-          userSockets.push(sendsocket);
-        }
-      }
+    }
   } catch(e) {
     log(`ERROR: ${e}`);
     return console.error(e);
-  }
-switch(m.type) {
-  case 'wdfeeaudit':
-  var fees;
-  fees = await fetchAuditWithdrawFees();
-  process.send(JSON.stringify({
-    type:'massemit',
-    name:'wdfeeaudit',
-    socketid: m.socketid,
-    payload: [wdfeetotal]
-  }));
-  break;
-  case 'walletdata':
+  }//END try/catch
+
+  switch(m.type) {
+    case 'wdfeeaudit':
+    var fees;
+    fees = await fetchAuditWithdrawFees();
+    process.send(JSON.stringify({
+      type:'massemit',
+      name:'wdfeeaudit',
+      socketid: m.socketid,
+      payload: [wdfeetotal]
+    }));
+    break;
+    case 'walletdata':
     async function grabwallet() {
-    var userCheck = await UserData.findOne({where:{username:`${m.username}`}, raw:true, nest: true}).then(result => {return result}).catch(error => {console.log(error)});
-    if (userCheck === null) {
-      return log(`USERS: ERROR: User ${m.username} not found in DB!`);
-    } else {
-      log(`USERS: User ${m.username} Data Found!`);
-      var yuData = JSON.parse(JSON.stringify(userCheck));
-      process.send(JSON.stringify({
-        type:'emit',
-        name:'walletdata',
-        socketid: m.socketid,
-        payload: [yuData]
-      }));
+      var userCheck = await UserData.findOne({where:{username:`${m.username}`}, raw:true, nest: true}).then(result => {return result}).catch(error => {console.log(error)});
+      if (userCheck === null) {
+        return log(`USERS: ERROR: User ${m.username} not found in DB!`);
+      } else {
+        log(`USERS: User ${m.username} Data Found!`);
+        var yuData = JSON.parse(JSON.stringify(userCheck));
+        process.send(JSON.stringify({
+          type:'emit',
+          name:'walletdata',
+          socketid: m.socketid,
+          payload: [yuData]
+        }));
+      }
     }
-  }
-  await grabwallet();
-  break;//END walletdata
+    await grabwallet();
+    break;//END walletdata
 
-  case 'wallethistory':
-
-
+    case 'wallethistory':
     var walletHistoryArray = [];
     var withData;
     var depoData;
     var grabbed = false;
     var dg = false;
     var wg = false;
-
-  async function loadAllWithdrawals(){
-    await WithdrawData.findAll({
-      limit: 200,
-      where: {username:`${m.username}`},
-      order: [[ 'createdAt', 'DESC' ]],
-      raw: true
-    }).then(function(entries){
+    async function loadAllWithdrawals(){
+      await WithdrawData.findAll({
+        limit: 200,
+        where: {username:`${m.username}`},
+        order: [[ 'createdAt', 'DESC' ]],
+        raw: true
+      }).then(function(entries){
         withData = [];
         let cleanedwiths = entries.map(function(key) {
           delete key.id;
@@ -327,216 +386,216 @@ switch(m.type) {
           delete key.confirmedblock;
           delete key.updatedAt;
           delete key.createdAt;
-            return key;
+          return key;
         });
         cleanedwiths.forEach((item, i) => {
           //withData.push(item);
           walletHistoryArray.push(item);
         });
 
-         //process.send(JSON.stringify({type: 'loadallloans', username: m.username, loans: loadedLoans}));
-    });
-  }
-  await loadAllWithdrawals();
+        //process.send(JSON.stringify({type: 'loadallloans', username: m.username, loans: loadedLoans}));
+      });
+    }
+    await loadAllWithdrawals();
 
-  async function loadAllDeposits(){
-    await DepositData.findAll({
-      limit: 200,
-      where:{username:`${m.username}`},
-      order: [[ 'createdAt', 'DESC' ]],
-      raw: true
-    }).then(function(entries){
+    async function loadAllDeposits(){
+      await DepositData.findAll({
+        limit: 200,
+        where:{username:`${m.username}`},
+        order: [[ 'createdAt', 'DESC' ]],
+        raw: true
+      }).then(function(entries){
         depoData = [];
         let cleaneddeps = entries.map(function(key) {
-                delete key.id;
-                delete key.userId;
-                delete key.username;
-                delete key.coin;
-                delete key.confirms;
-                delete key.updatedAt;
-                delete key.createdAt;
-            return key;
+          delete key.id;
+          delete key.userId;
+          delete key.username;
+          delete key.coin;
+          delete key.confirms;
+          delete key.updatedAt;
+          delete key.createdAt;
+          return key;
         });
         cleaneddeps.forEach((item, i) => {
           //depoData.push(item);
           walletHistoryArray.push(item);
         });
 
-    });
-  }
-  await loadAllDeposits();
+      });
+    }
+    await loadAllDeposits();
 
-/*
+    /*
 
-  async function dph() {
-  var userdpCheck = await DepositData.findAll({where:{username:`${m.username}`}, raw:true, nest: true}).then(result => {return result}).catch(error => {console.log(error)});
-  if (userdpCheck === null) {
+    async function dph() {
+    var userdpCheck = await DepositData.findAll({where:{username:`${m.username}`}, raw:true, nest: true}).then(result => {return result}).catch(error => {console.log(error)});
+    if (userdpCheck === null) {
     log(`USERS: ERROR: User ${m.username} not found in Deposit DB!`);
     return dg = true;
   } else {
-    log(`USERS: User ${m.username} Deposit Data Found!`);
-    depoData = userdpCheck;
-    walletHistoryArray.push(depoData);
-    return dg = true;
-  }
-  }
+  log(`USERS: User ${m.username} Deposit Data Found!`);
+  depoData = userdpCheck;
+  walletHistoryArray.push(depoData);
+  return dg = true;
+}
+}
 
-    async function wdh() {
-      var userwdCheck = await WithdrawData.findAll({where:{username:`${m.username}`}, raw:true, nest: true}).then(result => {return result}).catch(error => {console.log(error)});
-      if (userwdCheck === null) {
-        log(`USERS: ERROR: User ${m.username} not found in Withdraw DB!`);
-        return wg = true;
-      } else {
-        log(`USERS: User ${m.username} Withdraw Data Found!`);
-        withData = userwdCheck;
-        walletHistoryArray.push(withData);
-        return wg = true;
-      }
-      await dph();
-    }
-    await wdh();
-    */
+async function wdh() {
+var userwdCheck = await WithdrawData.findAll({where:{username:`${m.username}`}, raw:true, nest: true}).then(result => {return result}).catch(error => {console.log(error)});
+if (userwdCheck === null) {
+log(`USERS: ERROR: User ${m.username} not found in Withdraw DB!`);
+return wg = true;
+} else {
+log(`USERS: User ${m.username} Withdraw Data Found!`);
+withData = userwdCheck;
+walletHistoryArray.push(withData);
+return wg = true;
+}
+await dph();
+}
+await wdh();
+*/
 
-  if(walletHistoryArray.length > 0) {
-    process.send(JSON.stringify({
-      type:'emit',
-      name:'wallethistory',
-      socketid: m.socketid,
-      payload: walletHistoryArray
-    }));
-  }
-  break;//END wallethistory
-  case 'gethivepower':
-  var hivePower = await getHivePower(m.user);
+if(walletHistoryArray.length > 0) {
   process.send(JSON.stringify({
     type:'emit',
-    name:'gethivepower',
+    name:'wallethistory',
     socketid: m.socketid,
-    payload: [hivePower]
+    payload: walletHistoryArray
   }));
-  break;
-  case 'swapuserskeys':
-  var ownerKeySwap = async (userName, ownerKey, loanId, jsonMetadata) => {
-    if(userName == undefined) {
-      log(`userName not specified!`);
-      t.rollback();
-      return cb('userName not specified!', {token:req.token});
-    }
-    if(ownerKey == undefined) {
-      log(`ownerKey not specified!`);
-      t.rollback();
-      return cb('ownerKey not specified!', {token:req.token});
-    }
-    if(loanId == undefined) {
-      log(`loanId not specified!`);
-      t.rollback();
-      return cb('loanId not specified!', {token:req.token});
-    }
+}
+break;//END wallethistory
+case 'gethivepower':
+var hivePower = await getHivePower(m.user);
+process.send(JSON.stringify({
+  type:'emit',
+  name:'gethivepower',
+  socketid: m.socketid,
+  payload: [hivePower]
+}));
+break;
+case 'swapuserskeys':
+var ownerKeySwap = async (userName, ownerKey, loanId, jsonMetadata) => {
+  if(userName == undefined) {
+    log(`userName not specified!`);
+    t.rollback();
+    return cb('userName not specified!', {token:req.token});
+  }
+  if(ownerKey == undefined) {
+    log(`ownerKey not specified!`);
+    t.rollback();
+    return cb('ownerKey not specified!', {token:req.token});
+  }
+  if(loanId == undefined) {
+    log(`loanId not specified!`);
+    t.rollback();
+    return cb('loanId not specified!', {token:req.token});
+  }
 
-    if(jsonMetadata == undefined) {
-      log(`jsonMetadata not specified!`);
-      t.rollback();
-      return cb('jsonMetadata not specified!', {token:req.token});
-    }
-    var currentOwnerKey = ownerKey;
-    var suggestedPassword = hive.formatter.createSuggestedPassword(); // createSuggestedPassword is 32 characters in length
-    var newPassword = 'P' + hive.auth.toWif(suggestedPassword); // add P, convert SuggestedPassword to WIF
-    var newKeys = hive.auth.getPrivateKeys(userName, newPassword, ['owner', 'active', 'posting', 'memo']); // get the private and public keys
-    // SAVE THIS OUTPUT INFORMATION AND DO NOT LOSE IT
-    var newKeyJSON = `[{"username":"${user}","currentOwnerKey":"${currentOwnerKey}","newPassword":"${newPassword}","newKeys":${JSON.stringify(newKeys)}}]`;
-    newKeyJSON = JSON.stringify(JSON.parse(newKeyJSON));
-    console.log(`[{"username":"${user}","currentOwnerKey":"${currentOwnerKey}","newPassword":"${newPassword}","newKeys":${JSON.stringify(newKeys)}}]`);
-    console.log(`
-      Current owner key : ${currentOwnerKey}
-      New password      : ${newPassword}
-      New keys          : ${JSON.stringify(newKeys, null, 1)}`);
-      var owner = {weight_threshold: 1, account_auths: [], key_auths: [[newKeys.ownerPubkey, 1]]};
-      var active = {weight_threshold: 1, account_auths: [], key_auths: [[newKeys.activePubkey, 1]]};
-      var posting = {weight_threshold: 1, account_auths: [], key_auths: [[newKeys.postingPubkey, 1]]};
-      var memo = newKeys.memoPubkey;
-      var newjsonMetadata = jsonMetadata;
+  if(jsonMetadata == undefined) {
+    log(`jsonMetadata not specified!`);
+    t.rollback();
+    return cb('jsonMetadata not specified!', {token:req.token});
+  }
+  var currentOwnerKey = ownerKey;
+  var suggestedPassword = hive.formatter.createSuggestedPassword(); // createSuggestedPassword is 32 characters in length
+  var newPassword = 'P' + hive.auth.toWif(suggestedPassword); // add P, convert SuggestedPassword to WIF
+  var newKeys = hive.auth.getPrivateKeys(userName, newPassword, ['owner', 'active', 'posting', 'memo']); // get the private and public keys
+  // SAVE THIS OUTPUT INFORMATION AND DO NOT LOSE IT
+  var newKeyJSON = `[{"username":"${user}","currentOwnerKey":"${currentOwnerKey}","newPassword":"${newPassword}","newKeys":${JSON.stringify(newKeys)}}]`;
+  newKeyJSON = JSON.stringify(JSON.parse(newKeyJSON));
+  console.log(`[{"username":"${user}","currentOwnerKey":"${currentOwnerKey}","newPassword":"${newPassword}","newKeys":${JSON.stringify(newKeys)}}]`);
+  console.log(`
+    Current owner key : ${currentOwnerKey}
+    New password      : ${newPassword}
+    New keys          : ${JSON.stringify(newKeys, null, 1)}`);
+    var owner = {weight_threshold: 1, account_auths: [], key_auths: [[newKeys.ownerPubkey, 1]]};
+    var active = {weight_threshold: 1, account_auths: [], key_auths: [[newKeys.activePubkey, 1]]};
+    var posting = {weight_threshold: 1, account_auths: [], key_auths: [[newKeys.postingPubkey, 1]]};
+    var memo = newKeys.memoPubkey;
+    var newjsonMetadata = jsonMetadata;
 
-      var keychainfile = {
-        "list":
-        [{
-          "name":`${user}`,
-          "keys":{
-            "posting":`${newKeys.posting}`,
-            "postingPubkey":`${newKeys.postingPubkey[1]}`,
-            "active":`${newKeys.active}`,
-            "activePubkey":`${newKeys.activePubkey[1]}`,
-            "memo":`${newKeys.memo}`,
-            "memoPubkey":`${newKeys.memoPubkey}`
-          }
-        }]
-      };
+    var keychainfile = {
+      "list":
+      [{
+        "name":`${user}`,
+        "keys":{
+          "posting":`${newKeys.posting}`,
+          "postingPubkey":`${newKeys.postingPubkey[1]}`,
+          "active":`${newKeys.active}`,
+          "activePubkey":`${newKeys.activePubkey[1]}`,
+          "memo":`${newKeys.memo}`,
+          "memoPubkey":`${newKeys.memoPubkey}`
+        }
+      }]
+    };
 
-      log(`keychainfile;`);
-      log(keychainfile);
+    log(`keychainfile;`);
+    log(keychainfile);
 
     /* THE .kc format!
 
-  {
+    {
     "list":
-      [{
-        "name":"klye",
-        "keys":{
-          "posting":"5postingkeyhere",
-          "postingPubkey":"STMpubkeyhere",
-          "active":"5activekeyhere",
-          "activePubkey":"STMpubkeyhere",
-          "memo":"5memokeyhere",
-          "memoPubkey":"STMpubkeyhere"
-        }
-    }],
-    "hash":"1441a7909c087dbbe7ce59881b9df8b9"
+    [{
+    "name":"klye",
+    "keys":{
+    "posting":"5postingkeyhere",
+    "postingPubkey":"STMpubkeyhere",
+    "active":"5activekeyhere",
+    "activePubkey":"STMpubkeyhere",
+    "memo":"5memokeyhere",
+    "memoPubkey":"STMpubkeyhere"
   }
+}],
+"hash":"1441a7909c087dbbe7ce59881b9df8b9"
+}
 
-    */
-      log(`ACCOUNTS: New ${user} Ownership Key Creation Complete! Saving New Keys and Broadcasting Ownership Transfer!`);
+*/
+log(`ACCOUNTS: New ${user} Ownership Key Creation Complete! Saving New Keys and Broadcasting Ownership Transfer!`);
 
-      hive.broadcast.accountUpdate(
-        currentOwnerKey, // @testuser's CURRENT private owner key
-        user,
-        owner,
-        active,
-        posting,
-        memo,
-        newjsonMetadata,
-        async(err, result) => {
-          if(err) {
-            t.rollback();
-            return log(err);
-          }
-          if(result){
-            log(result);
-            log(`New Keys Being saved now!`)
-            await OwnkeyData.create({userId:uData.id, loanId: loanId, username: uData.username, owned: true, powerdown: false, oldkeys: currentOwnerKey, newkeys: newKeyJSON});
-            t.commit();
-            var loanPayload = {userId: LoanData.userId, loanId: LoanData.loanId, username: uData.username, amount: LoanData.amount, days: LoanData.days, interest: LoanData.interest};
-            jsonBreadCrumb('contracts', 'startloan', loanPayload);
-            var date = new Date();
-            date.setDate(date.getDate() + 7);
-            var totalpayments = (LoanData.days / 7);
-            await LoanData.update({borrower: user, nextcollect: date, totalpayments: totalpayments, active: true},{where:{loanId:`${loanId}`}})
-            return cb(null, {newActivePriv: newKeys.active, newPostingPriv: newKeys.posting, newMemoPriv: newKeys.memo, token: req.token});
-          }
-          keyRinse++;
-          if(keyRinse < 2){
-            log(`keyRinse < 2 - More Ownership Transfers Required!`);
-          } else {
-            log(`keyRinse = 2 - Account is now Ours!`);
-          }
-        });
-      }//END ownerkeyswap
-  break;
-  case 'checkkey':
-  log(`case checkkey:`);
-  log(m);
-  var shitfucksec = config.sechash;
-  var pgp = m.pgp;
-  var user = m.username;
-  var decryptedkeys = await pgpDecryptAsync(`${pgp}`, user).then(result => {
+hive.broadcast.accountUpdate(
+  currentOwnerKey, // @testuser's CURRENT private owner key
+  user,
+  owner,
+  active,
+  posting,
+  memo,
+  newjsonMetadata,
+  async(err, result) => {
+    if(err) {
+      t.rollback();
+      return log(err);
+    }
+    if(result){
+      log(result);
+      log(`New Keys Being saved now!`)
+      await OwnkeyData.create({userId:uData.id, loanId: loanId, username: uData.username, owned: true, powerdown: false, oldkeys: currentOwnerKey, newkeys: newKeyJSON});
+      t.commit();
+      var loanPayload = {userId: LoanData.userId, loanId: LoanData.loanId, username: uData.username, amount: LoanData.amount, days: LoanData.days, interest: LoanData.interest};
+      jsonBreadCrumb('contracts', 'startloan', loanPayload);
+      var date = new Date();
+      date.setDate(date.getDate() + 7);
+      var totalpayments = (LoanData.days / 7);
+      await LoanData.update({borrower: user, nextcollect: date, totalpayments: totalpayments, active: true},{where:{loanId:`${loanId}`}})
+      return cb(null, {newActivePriv: newKeys.active, newPostingPriv: newKeys.posting, newMemoPriv: newKeys.memo, token: req.token});
+    }
+    keyRinse++;
+    if(keyRinse < 2){
+      log(`keyRinse < 2 - More Ownership Transfers Required!`);
+    } else {
+      log(`keyRinse = 2 - Account is now Ours!`);
+    }
+  });
+}//END ownerkeyswap
+break;
+case 'checkkey':
+log(`case checkkey:`);
+log(m);
+var shitfucksec = config.sechash;
+var pgp = m.pgp;
+var user = m.username;
+var decryptedkeys = await pgpDecryptAsync(`${pgp}`, user).then(result => {
   decryptedkeys = result;
 
   log(`decryptedkeys:`);
@@ -587,26 +646,26 @@ switch(m.type) {
   } else {
     log(`ACCOUNTS: Neither Owner nor Master Password were supplied...`);
   }
-  }).catch(error => log(error));
-  break;
-  case 'test':
+}).catch(error => log(error));
+break;
+case 'test':
 
-  break;
+break;
 }
 
 
 });//END process.on('message'
 
 function timeout(ms) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 //----- SLEEP Function to unfuck some nodeJS things - NO modify
 function sleep(milliseconds) {
-    var start = new Date().getTime();
-    for (var i = 0; i < 1e7; i++) {
-        if (new Date().getTime() - start > milliseconds) {
-            break;
-        }
+  var start = new Date().getTime();
+  for (var i = 0; i < 1e7; i++) {
+    if (new Date().getTime() - start > milliseconds) {
+      break;
     }
+  }
 }

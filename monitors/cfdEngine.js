@@ -13,11 +13,26 @@ const coinWhitelist = require("../config/coinWhitelist.json");
 
 var userSockets = [];
 
+var ActiveCFDContracts = [];
+
 var online = process.connected;
 var pid = process.pid;
 log(`FUTURES: Connected: ${online} with PID: ${pid}`);
 
+var previousHIVEPrice;
 var currentHIVEPrice;
+
+var priceChange = function(price) {
+  if(!currentHIVEPrice) currentHIVEPrice = price;
+  if(!previousHIVEPrice) previousHIVEPrice = price;
+  if(currentHIVEPrice < previousHIVEPrice || currentHIVEPrice > previousHIVEPrice) {
+    currentHIVEPrice = price;
+    previousHIVEPrice = currentHIVEPrice;
+    return true;
+  } else {
+    return false;
+  }
+}
 
 var checkValidity = async() => {
   var activeOrders = [];
@@ -165,7 +180,36 @@ function killCalc(open, amount, margin, type){
   if(type !== 'long' || type !== 'short') return false;
 }
 
-function profitCalc(open, close, amount, margin, type){
+
+function spreadProfitCalc(price, amount, margin, type){
+  var pricediff;
+  var profit;
+  if(!price) return false;
+  if(typeof price !== 'number') return false;
+  if(price < 0.000001) return false;
+  if(!amount) return false;
+  if(typeof amount !== 'number') return false;
+  if(amount < 0.001) return false;
+  if(!margin) return false;
+  if(typeof margin !== 'number') return false;
+  if(margin < 1 || margin > 10) return false;
+  if(!type) return false;
+  if(type !== 'long' || type !== 'short') return false;
+
+  if(type === 'long') {
+    pricediff = price * 0.01;
+    profit = pricediff * amount;
+  } else if (type === 'short') {
+    pricediff = price * 0.01;
+    profit = pricediff * amount;
+  } else {
+    return false;
+  }
+  return profit;
+};
+
+
+var profitCalc =  function(open, close, amount, margin, type){
   var pricediff;
   var profit;
   if(!open) return false;
@@ -252,7 +296,7 @@ process.on('message', async function(m) {
   let loanData;
   try {
       m = JSON.parse(m);
-      if(debug === true){
+      if(debug === false){
         log(`cfdEngine.js Message:`);
         log(m)
       }
@@ -268,8 +312,12 @@ process.on('message', async function(m) {
   }
   switch(m.type){
     case 'price':
+    log(`PRICE TYPE`)
       if(!m.price) return;
-      currentHIVEPrice = m.price;
+      var PriceChange = priceChange(m.price);
+      if (PriceChange == true){
+
+      }
     break;
     case 'update':
 

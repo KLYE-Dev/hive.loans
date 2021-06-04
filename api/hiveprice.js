@@ -6,6 +6,7 @@ const { Op } = require("sequelize");
 const Pricedata = DataBase.models.Pricelog;
 
 module.exports.fetchlastprice = async() => {
+  log(`hiveprice.js module.exports.fetchlastprice called!`);
   var pricefetch = [];
   await Pricedata.findAll({
      limit: 1,

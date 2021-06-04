@@ -8,6 +8,21 @@ const fetch = require('node-fetch');
 const apiKey = config.cmcapikey;
 const client = new CoinMarketCap(apiKey);
 
+function returnTime(){
+  var time = new Date();
+  /*
+  time.toUTCString();
+  time = time.toUTCString();
+  time = time.slice(17, time.length - 4);
+  time = Math.floor(time.getTime() / 1000)
+  time.setHours(time.getHours());
+  time.setMo(time.getHours());
+  time = time.toUTCString();
+  time = time.slice(17, time.length - 4);
+  */
+  return time;
+}
+
 var hivecmcqoute;
 var hivefetchgo = false;
 var hbdcmcqoute;
@@ -19,7 +34,59 @@ var pid = process.pid;
 
 log(`TICKER: Connected: ${online} with PID: ${pid}`);
 
+
+
+
+async function HiveCGMarketFetch() {
+  log(`===============================/n===========================/n===============================`)
+  log(`HiveCGMarketFetch()`)
+  try {
+    await fetch('  https://api.coingecko.com/api/v3/coins/hive?tickers=true&market_data=true&community_data=false&developer_data=false&sparkline=false')
+    .then(res => res.json()).then(json => {
+      //response = json["hive"];
+      //var hiveprice = parseFloat(response["usd"]);
+      var pricepayload = { //json;
+
+
+        name: json.symbol,
+        price: json.market_data.current_price['usd'],
+        total_supply: json.total_supply,
+        volume_24h: json.volume_24h,
+        percent_change_1h: json.percent_change_percentage_1h,
+        percent_change_24h: json.percent_change_percentage_24h,
+        percent_change_7d: json.percent_change_percentage_7d,
+        percent_change_30d: json.percent_change_30d,
+        percent_change_60d: json.percent_change_60d,
+        percent_change_90d: json.price_change_percentage_200d / 2,
+        market_cap: json.market_cap['usd'],
+        last_updated: returnTime,
+        backup: true
+      };
+
+      process.send(JSON.stringify({
+        type: 'massemit',
+        name:'hivepriceupdate',
+        error: null,
+        payload: pricepayload
+      }));
+    }).catch(function (error) {
+      log("Error: " + error);
+    });
+  } catch(e) {
+    log(`pricefetch error: ${e}`)
+  }
+};//END
+
+HiveCGMarketFetch();
+
+var coinGeckoMarketFetchTimer = setInterval(function(){
+HiveCGMarketFetch();
+}, 30000);
+
+
 var backupfeed = async() => {
+  return HiveCGMarketFetch();
+  /*
   try {
     await fetch('https://api.coingecko.com/api/v3/simple/price?ids=hive&vs_currencies=usd%2Cbtc')
     .then(res => res.json()).then(json => {
@@ -40,6 +107,7 @@ var backupfeed = async() => {
   } catch(e) {
     log(`pricefetch error: ${e}`)
   }
+  */
 };
 
 async function hiveCMCprice() {
@@ -113,6 +181,8 @@ process.on("message", function(m){
 });
 
 
+
+
 function hbdCMCprice() {
   client.getQuotes({symbol: 'HBD'}).then(data => {data = JSON.stringify(data.data); log(data
   );}).catch(console.error);
@@ -120,6 +190,8 @@ function hbdCMCprice() {
     hbdCMCprice();
   }, 300000)
 }
+
+
 
   //hbdCMCprice();
 

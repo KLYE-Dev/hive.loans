@@ -1,6 +1,6 @@
 var socket = io();
 
-if(debug === true){
+if(debug === false){
   var onevent = socket.onevent;
   socket.onevent = function (packet) {
       var args = packet.data || [];
@@ -22,18 +22,9 @@ socket.on('connect', function(data){
   //console.log(`Browser Client SocketID: ${socket.id}`);
   bootbox.hideAll();
   showSuccess('Welcome to the Hive.Loans');
-  $("#alertpanel").css({'left':'0.5%','top':'57%','height':'50%','width': '18%','position': 'absolute'});
-
-  var dangerPrice = `<script type="text/javascript">` +
-  `var cf_widget_size = "large";` +
-  `var cf_widget_from = "HIVE";` +
-  `var cf_widget_to = "usd";` +
-  `var cf_widget_name = "Hive";` +
-  `var cf_clearstyle = false;` +
-  `</script>`;
-  $("#alertWrapper").html(dangerPrice);
-  $("#alertpanel").fadeIn();
-  $("#trollbox").eq(-1).html(`<h6 style="font-size:xx-small;">${hiveloanslogo}<br>${versionwarning}</h6>`);
+  $("#alertpanel").css({'left':'0.5%','top':'7%','height':'85%','width': '18%'});
+  $("#alertpricepanel").css({'left':'12%','bottom':'6%','height':'85%','width': '18%'});
+  $("#alertpricepanel").fadeIn();
   $("#jumbotron").center();
   $('#loadingscreenblack').fadeOut('slow');
   if($(`#usernamestore`).val().length > 0) logout();
@@ -43,12 +34,10 @@ socket.on('siteaudit', function(data){
   if(debug === true) console.log(`siteaudit data: ${JSON.parse(JSON.stringify(data))}`);
   data = JSON.parse(JSON.stringify(data));
   siteAudit = data;
-  siteAuditData();
+  siteAuditData(data);
 });
 
 socket.on('walletdata', function(data){
-
-
   if(data) {
     data = data[0];
     userWalletFetchData = data;
@@ -57,7 +46,6 @@ socket.on('walletdata', function(data){
   }
   console.log(`walletdata data:`)
   console.log(data);
-
   user = data.username;
   var address = data.address;
   let walletContent = `<center>` +
@@ -138,7 +126,7 @@ socket.on('walletdata', function(data){
     //$('#userhbdbalance').val((data.hbdbalance / 1000).toFixed(3));
     $('#depositName').val('hive.loans');
     $('#depositMemo').val(data.address);
-    $("#jumbotron").css({'top':'10%','height':'auto','width':'25%'});
+    $("#jumbotron").css({'top':'25%','height':'auto','width':'25%'});
     $("#jumbotron").center();
     $("#jumbotron").fadeIn();
   });
@@ -183,8 +171,8 @@ socket.on('infoloandata', function(data){
   } else {
     data.active = 'In Progress';
   }
-  if(data.conpleted === 0){
-    data.conpleted = 'Waiting';
+  if(data.completed === 0){
+    data.completed = 'Waiting';
   }
 
   var date = new Date(data.createdAt);
@@ -231,30 +219,32 @@ socket.on('newloanmade', function(data){
 });
 
 socket.on('loannuked', function(data){
-  showSuccess(`Attempting to Cancel Lending Contract...`);
+  if(data.cancelled == true){
+      showSuccess(`Succesfully Cancelled Lending Contract!`);
+  }
 });
 
 
-socket.on('loadmyloans', async function(err, data){
-  console.log(`socket.on('loadmyloans',`)
-  if(err) showErr(err);
+socket.on('loadmyloans', async function(data){
+  console.log(`socket.on('loadmyloans', async function(data)`)
+    console.log(data);
   if(data) {
+    data = JSON.parse(JSON.stringify(data));
     usersLoanDataFetch = data;
-    openMainLoanTab();
+    //showLendingTab();
     //showSuccess(data);
   }
 });
 
 socket.on('loadallloans', async function(data) {
-  console.log(`loadallloans fired!`);
+  console.log(`socket.on('loadallloans', async function(data)`);
   if(data){
-    var untappeddata = data[0];
+    console.log(data);
+    var untappeddata = data;
+      console.log(untappeddata);
       //if(data.error) return showErr(data.error);
-      console.log(data);
       var lendMax;
       var hpFloat;
-
-
       let loansContent =`<span id="loadAllLoans" style="width:100% !important; height:100% !important; overflow-y:scroll;">` +
       `</span>` +
       `<table id="header-fixed" style="max-height:30% !important;">` +
@@ -263,7 +253,7 @@ socket.on('loadallloans', async function(data) {
       `<span id="loadloaninfo"></span>` +
       `<br>` +
       `<br>` +
-      `<table style="text-align: center; width: 90%;">` +
+      `<table style="text-align: center; width: 100%;">` +
       `<tbody>` +
       `<tr>` +
       `<td>` +
@@ -306,8 +296,9 @@ socket.on('loadallloans', async function(data) {
       `<br></center>`;
       $("#jumbotron").promise().done(function(){
           $("#jumboWrapper").html(loansContent);
-          $("#jumbotron").css({'top':'7%','height':'85%','width':'60%'});
+          $("#jumbotron").css({'top':'11%','height':'86vh','width':'60%'});
           $("#jumbotron").center();
+          $("#jumboHead").show();
           $("#jumboTitle").text(`Lending Contract Pool Overview`);
             var hyperdatatable = `<table id="hyperdatatable" id="loadloans" class=" " style="background: #444444; border-radius: 10px; border: inset 2px grey; width: 100% !important; height: 5% !important;"><tbody><tr><td><code>Loan ID</code><br>~</td><td><code>Lender</code><br>~</td><td><code>Amount</code><br>~</td><td><code>Interest Rate</code><br>~</td><td><code>Repayment Total</code><br>~</td><td><code>Duration</code><br>~</td><td><code>Borrower</code><br>~</td><td><code>Payments</code><br>~ / ~</td><td><code>Active</code><br>~</td></tr></tbody></table>`; //<td><code>Completed</code><br>~</td><td><code>Created</code><br>~</td>
             $('#loadloaninfo').html(`${hyperdatatable}`);
@@ -315,10 +306,14 @@ socket.on('loadallloans', async function(data) {
             var activeLoanTable = `<table class="ourloans" id="ourloans" style="background: #444444; border-radius: 10px; border: inset 2px grey; width: 100% !important; height: 10% !important;"><tbody><tr><td><code>Loan ID</code><br>~</td><td><code>Lender</code><br>~</td><td><code>Amount</code><br>~</td><td><code>Interest Rate</code><br>~</td><td><code>Repayment Total</code><br>~</td><td><code>Duration</code><br>~</td><td><code>Borrower</code><br>~</td><td><code>Payments</code><br>~ / ~</td><td><code>Active</code><br>~</td><td><code>Completed</code><br>~</td><td><code>Created</code><br>~</td></tr></tbody></table>`;
             $('#loadActiveloans').html(`${activeLoanTable}`);
 
-                  $(`#contractcount`).html(`${data.loans.length}`);
-                  var loans = data.loans;
+                  //$(`#contractcount`).html(`${untappeddata.loans.length}`);
+                  var loans;
                   var ourloans = [];
-                 untappeddata.loans.map(function(key) {
+                  if(typeof untappeddata.loans == undefined){
+                    untappeddata.loans = [];
+                    loans = untappeddata.loans;
+                  }
+                 data.map(function(key) {
                    if(key.borrower == uUsername && key.completed == 0 && key.active == 1){
                      if (key.cancelled !== -1) {
                          delete key.cancelled;
@@ -335,10 +330,10 @@ socket.on('loadallloans', async function(data) {
                        ourloans.push(key);
                    }
                   });
-                  if(!data.loans) {data.loans = []};
+                  if(typeof untappeddata.loans == undefined) untappeddata.loans = [];
                   if(!ourloans) {ourloans = []};
                   CreateTableFromJSON(ourloans, 'ourloans', 'loadActiveloans', 'loadActiveTable', 'loadActiveHead');
-                  CreateTableFromJSON(data.loans, 'loadloans', 'loadAllLoans', 'loadAllLoansTable', 'loadAllLoansHead');
+                  CreateTableFromJSON(data, 'loadloans', 'loadAllLoans', 'loadAllLoansTable', 'loadAllLoansHead');
           //$('#loadloaninfo').html(`Select a lending contract to inspect above`);
           //$("#jumbotron").fadeIn();
       });
@@ -356,6 +351,7 @@ socket.on('loadallloans', async function(data) {
       $('span#loanMax').html(`${loanMax.toFixed(3)}`);
       $('span#loanMax7').val(`${(loanMax / 13).toFixed(3)}`);
       $('span#loanMax7').html(`${(loanMax / 13).toFixed(3)}`);
+      $('#loansHPdisplay').html(`${(hpNow).toFixed(3)}`);
       $('span#loanDelegation').val(`${hiveDele.toFixed(3)}`);
       $('span#loanDelegation').html(`${hiveDele.toFixed(3)}`);
   }
@@ -417,7 +413,7 @@ socket.on('loadedShares', async function(data){
         //$("#jumbotron").fadeOut('fast');
         $("#jumbotron").promise().done(function(){
             $("#jumboWrapper").html(sharesContent); //lendingContent
-            $("#jumbotron").css({'top':'7%','height':'85%','width':'60%'});
+            $("#jumbotron").css({'top':'11%','height':'86vh','width':'60%'});
             $("#jumbotron").center();
             //CreateTableFromJSON(data.loans, 'loans', 'activeLendView', 'activeLendTable', 'activeLendHead');
             //$("#jumbotron").fadeIn();
@@ -485,7 +481,7 @@ socket.on('loadedLoans', async function(data){
     //$("#jumbotron").fadeOut('fast');
     $("#jumbotron").promise().done(function(){
         $("#jumboWrapper").html(newLendingContent); //lendingContent
-        $("#jumbotron").css({'top':'7%','height':'85%','width':'60%'});
+        $("#jumbotron").css({'top':'10%','height':'auto','width':'60%'});
         $("#jumbotron").center();
         CreateTableFromJSON(data.loans, 'loans', 'activeLendView', 'activeLendTable', 'activeLendHead');
         //$("#jumbotron").fadeIn();
@@ -511,11 +507,11 @@ socket.on('depositcredit', function(data){
   if (data.coin == 'HIVE'){
     uHIVEbalance = data.balance;
     $('#userhivebalance').val(uHIVEbalance / 1000);
-    showWallet(uUsername);
+    if(swod == true) showWallet(uUsername);
   } else {
     uHBDbalance = data.balance;
     $('#userhbdbalance').val(uHBDbalance / 1000);
-    showWallet(uUsername);
+    if(swod == true) showWallet(uUsername);
   }
 });
 
@@ -528,36 +524,47 @@ socket.on('statereply', function(data){
 var blockssynced = '';
 
 socket.on('latestblock', function(data){
-  console.log(data);
+  if(!data) return;
+  if(debug === true) {
+    console.log(`socket.on('latestblock', function(data)`);
+    console.log(data);
+  }
   if(data.behind) {
     depositDelaySec = (data.behind * 3);
     $('#depsecs').html(depositDelaySec);
   }
   if(data.synced === false){
-    blockssynced = `&nbsp;<i class="fa fa-fw fa-exclamation-triangle sexyblackoutline" style="color:gold;" aria-hidden="true" title="Site is Currently Syncing! Deposits May be Delayed! ${data.behind} Behind Latest HIVE Block"></i>`;
+    blockssynced = `<i class="fa fa-fw fa-exclamation-triangle sexyblackoutline" style="font-size:small !important;color:gold;" aria-hidden="true"></i>`;
+
   }
   if(data.synced === true){
-    blockssynced = `&nbsp;<i class="far fa-fw fa-check-square sexyblackoutline" style="font-weight:100 !important; color:lawngreen;" aria-hidden="true" title="Connected to Latest HIVE Blocks! Deposits Should Arrive in Around ${(data.behind * 3)} Seconds!"></i>`;
+    blockssynced = `<i class="far fa-fw fa-check-square sexyblackoutline" style="font-size:small !important;font-weight:100 !important; color:lawngreen;" aria-hidden="true"></i>`;
   }
-  $('#blocknumber').html(`<a href="https://hiveblocks.com/b/${data.block}" target="_blank" title="Click this to view the block on HiveBlocks.com in a new window!" style="color:white !important; text-decoration: none !important;"><code>#</code>${data.block}</a>${blockssynced}`);
+  if(data.backup === true){
+    console.log(`this is backup data`);
+  }
+  $('#blocknumber').html(`<a href="https://hiveblocks.com/b/${data.block}" target="_blank" title="Click this to view the block on HiveBlocks.com in a new window!" style="color:white !important; text-decoration: none !important;"><code>#</code>${data.block}</a> ${blockssynced}`);
 });
 
 
 var scrollspeed = 5;
 
 function startScrollbar() {
-
   var items, scroller = $('#scroller');
   var width = 0;
   scroller.children().each(function(){
       width += $(this).outerWidth(true);
   });
   scroller.css('width', width);
-
   function scroll(){
       items = scroller.children();
       var scrollWidth = items.eq(0).outerWidth();
       scroller.animate({'left' : 0 - scrollWidth}, scrollWidth * 100 / scrollspeed, 'linear', changeFirst);
+      $('#scroller').hover(function(){
+      scroller.animate({'left' : 0 - 0}, 0 * 100 / scrollspeed, 'linear', changeFirst);
+      }, function(){
+        scroller.animate({'left' : 0 - scrollWidth}, scrollWidth * 100 / scrollspeed, 'linear', changeFirst);
+    });
   }
   function changeFirst(){
       scroller.append(items.eq(0).remove()).css('left', 0);
@@ -569,15 +576,19 @@ function startScrollbar() {
 
 
 var pricechartInit = 0;
-var scrollInit = 0;
+var scrollInit = false;
 var old_percent_change_1h = 0;
 var old_percent_change_24h = 0;
 var old_percent_change_7d = 0;
 var old_percent_change_30d = 0;
 
 socket.on('hivepriceupdate', function(data){
-  console.log(`hivepriceupdate data:`);
-  console.log(data);
+  if(!data) return;
+  if(debug === false){
+    console.log(`socket.on('hivepriceupdate', function(data) data:`);
+    console.log(data);
+  }
+
 
   var arrow1;
   var arrow7;
@@ -619,9 +630,9 @@ socket.on('hivepriceupdate', function(data){
   //$('#two').html(arrow24);
   //$('#three').html(arrow7);
   //$('#four').html(arrow30);
-  if(scrollInit != 1){
+  if(scrollInit != true){
     startScrollbar();
-    scrollInit = 1;
+    scrollInit = true;
   }
 });
 
@@ -638,9 +649,10 @@ var pricecheckinit = false;
 
 
 socket.on('priceupdate', function(data){
-  console.log(`priceupdate`);
-  console.log(`tickercurrency`);
-  console.log(tickercurrency);
+  if(debug === true) {
+    console.log(`socket.on('priceupdate)`);
+    console.log(data);
+  }
   if(!hiveprice) oldhiveusdprice = 0;
   var type = tickercurrency.toUpperCase();
   if(!data.hiveusdprice) return;

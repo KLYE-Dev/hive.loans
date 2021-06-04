@@ -13,8 +13,6 @@ $(document).ready(function() {
   }
   $('#jumboMove').click();
 
-
-
   socket.emit('latency', Date.now(), function(startTime, cb) {
       var latency = ((Date.now() - startTime) / 2).toFixed(2);
       if(!oldLatency) oldLatency = latency;
@@ -29,11 +27,68 @@ $(document).ready(function() {
 
   });
 
-  // ParticlesJS Config.
 
 particlesStart = function() {
-  $('#particles-js').css({'background-position':'right','background-repeat':' no-repeat','background-size':'100% !important','background':'rgb(64,64,64)','background':'linear-gradient(0deg, rgba(64,64,64,1) 0%, rgba(0,0,0,1) 100%)','background-image':'none'});
-
+  $('#particles-js').css({'background-position':'right','background-repeat':' no-repeat','background-size':'100% !important','background-color':'rgba(0,0,0,0)','background':'linear-gradient(0deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 100%)','background-image':'none'});
+   particlesJS("particles-js", {
+  "particles": {
+      "number": {
+          "value": 400,
+          "density": {
+              "enable": true,
+              "value_area": 1000
+          }
+      },
+      "shape": {
+         "type": "image",
+         "stroke": {
+           "width": 0,
+           "color": "#444444"
+         },
+         "image": {
+           "src": "/img/logo-hive.png",
+            "width": 110,
+            "height": 100
+          }
+        },
+      "opacity": {
+          "value": 1,
+          "anim": {
+              "enable": true
+          }
+      },
+      "size": {
+          "value": 10,
+          "random": true,
+          "anim": {
+              "enable": true,
+              "speed": 3
+          }
+      },
+      "line_linked": {
+          "enable": false,
+          "distance": 0,
+          "color": "#000000",
+          "opacity": 0,
+          "width": 0
+      },
+      "move": {
+        "enable": true,
+        "speed": 0.5,
+        "direction": "top",
+        "random": true,
+        "straight": false,
+        "out_mode": "out",
+        "bounce": false,
+        "attract": {
+          "enable": true,
+          "rotateX": 600,
+          "rotateY": 1200
+        }
+      }
+   }
+});
+/*
    particlesJS("particles-js", {
     "particles": {
       "number": {
@@ -63,40 +118,40 @@ particlesStart = function() {
         "random": false,
         "anim": {
           "enable": false,
-          "speed": 2,
+          "speed": 3,
           "opacity_min": 0.1,
           "sync": false
         }
       },
       "size": {
-        "value": 10,
+        "value": 12,
         "random": true,
         "anim": {
-          "enable": false,
-          "speed": 2,
-          "size_min": 50,
+          "enable": true,
+          "speed": 1,
+          "size_min": 3,
           "sync": false
         }
       },
       "line_linked": {
         "enable": true,
-        "distance": 100,
-        "color": "#ffffff",
-        "opacity": 0.4,
+        "distance": 200,
+        "color": "#00ff00",
+        "opacity": 0.2,
         "width": 1
       },
-      "move":{
-        "enable":true,
-        "speed":2,
-        "direction":"none",
-        "random":true,
-        "straight":false,
-        "out_mode":"out",
-        "bounce":false,
-        "attract":{
-          "enable":false,
-          "rotateX":0,
-          "rotateY":0
+      "move": {
+        "enable": true,
+        "speed": 2,
+        "direction": "top",
+        "random": true,
+        "straight": false,
+        "out_mode": "out",
+        "bounce": false,
+        "attract": {
+          "enable": true,
+          "rotateX": 600,
+          "rotateY": 1200
         }
       }
     },
@@ -143,8 +198,9 @@ particlesStart = function() {
         }
       }
     },
-    "retina_detect": false
+    "retina_detect": true
   });
+  */
 }
   particlesStart();
 });
@@ -325,6 +381,7 @@ var pingsend = setInterval(function() {
           oldLatency = latency;
         } else if(latency > 1000) {
           $('#pingheart').html('<i class="fas fa-fw fa-heart-broken" style="color:red;" title="Connection to Server is Unstable"></i>');
+          $("#ping").html(`Connection Lost!`);
         }
 
     });
@@ -387,12 +444,12 @@ $('#sound').click(function() {
 			$('#sound').toggleClass("soundon");
       soundgen('440.0', 'triangle');
 			//clicksound.play();
-			showSuccess('<i class="fa fa-2x fag-2x fa-check-circle" style="color:lawngreen;float:left;margin-top:-1%;"></i> Sound Enabled').dismissOthers();
+			//showSuccess('<i class="fa fa-2x fag-2x fa-check-circle" style="color:lawngreen;float:left;margin-top:-1%;"></i> Sound Enabled').dismissOthers();
 			var soundon = true;
 		}	 else {
 			$('#sound').html('<i class="fa fa-volume-off fa-2x" aria-hidden="true" style="padding-right:14px;"></i>');
 			$('#sound').toggleClass("soundon");
-			showErr('<i class="fa fa-2x far-2x fa-exclamation-circle" style="color:red;float:left;margin-top:-1%;"></i> Sound Disabled').dismissOthers();
+			//showErr('<i class="fa fa-2x far-2x fa-exclamation-circle" style="color:red;float:left;margin-top:-1%;"></i> Sound Disabled').dismissOthers();
 			var soundon = false;
 		}
 });
@@ -431,9 +488,15 @@ $("#betAmount").keyup( function (e) {
 });
 
 function openMainLoanTab() {
-  socket.emit('loadmyloans', {token: token}, function(err, data){
-    if(err) showErr(err);
+  console.log(`openMainLoanTab() called!`)
+  socket.emit('loadallloans', {token: token}, function(err, data){
+    if(err) {
+     showErr(`An Error Occured!`);
+     console.log(err)
+    }
     if(data) {
+      console.log(data[0])
+      data = data[0]
       usersLoanDataFetch = data;
       //showSuccess(data);
     }
@@ -441,29 +504,36 @@ function openMainLoanTab() {
 }
 
 function openLendingTab() {
-    socket.emit('loadmyloans', {token: token}, function(err, data){
-      if(err) showErr(err);
+  console.log(`openLendingTab() called!`)
+    socket.emit('loadmyloans', {token: token}, function(data){
       if(data) {
-        usersLoanDataFetch = data;
+        usersLoanDataFetch = data[0];
         //showSuccess(data);
       }
     });
 }
 
 function futuresPrice() {
+    console.log(`futuresPrice() called!`)
     socket.emit('loadmyfutures', {token: token}, function(err, data){
-      if(err) showErr(err);
+      if(err) {
+       showErr(`An Error Occured!`);
+       console.log(err)
+      }
       if(data) {
         console.log(data);
-        $('#longSpotPrice').val(data.hivelongprice);
-        $('#shortSpotPrice').val(data.hiveshortprice);
+        $('#longSpotPrice').val((data.hivelongprice).toFixed(6));
+        $('#shortSpotPrice').val((data.hiveshortprice).toFixed(6));
       }
     });
 }
 
 function openShares() {
     socket.emit('loadaallshares', {token: token}, function(err, data){
-      if(err) showErr(err);
+      if(err) {
+        showErr(`An Error Occured!`);
+        console.log(err)
+      }
       if(data) {
         //showSuccess(data);
       }
@@ -471,9 +541,17 @@ function openShares() {
 }
 
 function openAllLoansTab() {
+    console.log(`openAllLoansTab() called!`)
     socket.emit('loadallloans', {token: token}, function(err, data){
-      if(err) showErr(err);
+      if(err) {
+       showErr(`An Error Occured!`);
+       console.log(err)
+      }
+
       if(data) {
+        showSuccess(data)
+        data = data[0]
+        usersLoanDataFetch = data;
         //showSuccess(data);
       }
     });
@@ -518,29 +596,15 @@ function loginPush(username, token) {
 }
 
 jQuery.fn.center = function () {
-    this.css("position","absolute");
-    this.css("top", Math.max(0, (($(window).height() - $(this).outerHeight()) / 2) + $(window).scrollTop()) + "px");
-    this.css("left", Math.max(0, (($(window).width() - $(this).outerWidth()) / 2) +  $(window).scrollLeft()) + "px");
+    this.css("position","absolute !important");
+    this.css("top", Math.max(0, (($(window).height() - $(this).outerHeight()) / 2) + $(window).scrollTop()) + "px !important");
+    this.css("left", Math.max(0, (($(window).width() - $(this).outerWidth()) / 2) +  $(window).scrollLeft()) + "px !important");
     return this;
 }
 
 /*******************************************************************************************************************
 * Key presses actions
 *******************************************************************************************************************/
-
-function getBackers() {
-  socket.emit('getbackers', {data: 'lol'}, function(err, data){
-    if(err){console.log(err)}
-    if(data){
-      data = data.deposits;
-      console.log(data);
-      $('.lendingtable').css({'width':'100%'})
-      //CreateTableFromJSON(data, name, elementid, tablename, tableheadname)
-      CreateTableFromJSON(data, 'backers', 'activeBackerView', 'activeBackerTable', 'activeBackerHead');
-    }
-  })
-}
-
 
 var contractMenu = function(ele, contractID, data) {
   $('.iw-contextMenu').contextMenu('destroy'); $('.iw-cm-menu').contextMenu('destroy');
@@ -566,9 +630,10 @@ var contractMenu = function(ele, contractID, data) {
           if(menutype === "admin"){
             contMenu = [
               {
-                  name: `<code style="font-size:smaller;align-text:center;color:black;text-shadow:none;">${data.loanId}</code>`,
+                  name: `<code style="font-size:smaller;align-text:center;color:black;text-shadow:none;" title="Click Here to Open Transaction on HiveBlocks.com">${data.loanId}</code>`,
                   fun: function () {
-                    console.log(`This is just the loan ID`)
+                    showSuccess(`Opening Transaction on HiveBlocks.com...`);
+                    return window.open(`https://hiveblocks.com/tx/${loanId}`);
                   }
               },
               {
@@ -583,7 +648,7 @@ var contractMenu = function(ele, contractID, data) {
                     if(data.state != 'accepted'){
                       console.log(`data`);
                       console.log(data);
-                      cancelContract(loanId, data.state)
+                      cancelContract(loanId)
                     } else {
                       showErr(`ERROR: Cannot Cancel Active Loans!`);
                     }
@@ -611,10 +676,11 @@ var contractMenu = function(ele, contractID, data) {
           } else if (menutype === "moderator") {
             contMenu = [
               {
-                name: `<code style="font-size:smaller;align-text:center;color:black;text-shadow:none;">${data.loanId}</code>`,
-                  fun: function () {
-                    console.log(`This is just the loan ID`)
-                  }
+                name: `<code style="font-size:smaller;align-text:center;color:black;text-shadow:none;" title="Click Here to Open Transaction on HiveBlocks.com">${data.loanId}</code>`,
+                fun: function () {
+                  showSuccess(`Opening Transaction on HiveBlocks.com...`);
+                  return window.open(`https://hiveblocks.com/tx/${loanId}`);
+                }
               },
               {
                   name: '🧾View Contract',
@@ -638,10 +704,11 @@ var contractMenu = function(ele, contractID, data) {
           } else {
             contMenu = [
               {
-                name: `<code style="font-size:smaller;align-text:center;color:black;text-shadow:none;">${data.loanId}</code>`,
-                  fun: function () {
-                    console.log(`This is just the loan ID`)
-                  }
+                name: `<code style="font-size:smaller;align-text:center;color:black;text-shadow:none;" title="Click Here to Open Transaction on HiveBlocks.com">${data.loanId}</code>`,
+                fun: function () {
+                  showSuccess(`Opening Transaction on HiveBlocks.com...`);
+                  return window.open(`https://hiveblocks.com/tx/${loanId}`);
+                }
               },
               {
                   name: '🧾View Contract',
@@ -655,7 +722,7 @@ var contractMenu = function(ele, contractID, data) {
                     if(user == deployuser ){
                       console.log(`data`);
                       console.log(data);
-                      cancelContract(loanId, data.state)
+                      cancelContract(loanId)
                     } else if(data.state != 'accepted') {
                       showErr(`Cannot Cancel Active Contracts!`);
                     } else {
@@ -1494,6 +1561,6 @@ function copyStringToClipboard (str) {
    document.body.appendChild(el);
    el.select();
    document.execCommand('copy');
-   showSuccess("Copied to Clipboard!");
+   showSuccess(`Copied ${str.slice(0,24)}.. to Clipboard!`);
    document.body.removeChild(el);
 }

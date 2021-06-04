@@ -1,24 +1,28 @@
-const { config } = require("./config/index.js");
+const { config } = require(__dirname + "/config/index.js");
 let debug = config.debug;
+let verbose = config.verbose;
 const owner = config.owner;
+let testing = config.testing;
+let truebetapass = config.betapass;
 const fs = require("fs");
 const spawn = require("child_process");
 const crypto = require('crypto');
 const speakeasy = require('speakeasy');
 const QRCode = require('qrcode');
 const hive = require('@hiveio/hive-js');
-let { pgpKeygenAsync, pgpEncryptAsync, pgpDecryptAsync } = require("./snippets/pgp.js");
-const getStringByteSize = require('./snippets/getStringByteSize.js');
-const getVP = require('./snippets/GetVotingPower.js');
-const HP = require('./snippets/GetHivePower.js');
-const getPowerDownPath = require('./snippets/getPowerDownRoutes.js');
-const manaBar = require('./snippets/manaBar.js');
-const {Client,  Signature,  cryptoUtils} = require('@hiveio/dhive');
-let Price = require("./snippets/priceCheck.js");
+let { pgpKeygenAsync, pgpEncryptAsync, pgpDecryptAsync } = require(__dirname + '/snippets/pgp.js');
+let getStringByteSize = require(__dirname + '/snippets/getStringByteSize.js');
+let getVP = require(__dirname + '/snippets/GetVotingPower.js');
+let HP = require(__dirname + '/snippets/GetHivePower.js');
+let getPowerDownPath = require(__dirname + '/snippets/getPowerDownRoutes.js');
+let manaBar = require(__dirname + '/snippets/manaBar.js');
+let {Client,  Signature,  cryptoUtils} = require('@hiveio/dhive');
+let Price = require(__dirname + '/snippets/priceCheck.js');
 new Client('https://api.hive.blog');
 const log = require('fancy-log');
 const io = require("socket.io");
 const socket = io();
+const pm2 = require(__dirname + '/snippets/pm2MetricsHost.js');
 const { Timer } = require('easytimer.js');
 const moment = require('moment');
 const geoip = require('geoip-lite');
@@ -27,7 +31,7 @@ const fetch = require('node-fetch');
 const DB = require('./database/models');
 const sequelize = DB.sequelize;
 const DataBase = sequelize;
-const { Op } = require("sequelize");
+const { Op } = require('sequelize');
 const UserData = DataBase.models.Users;
 const LoanData = DataBase.models.Loans;
 const DepositData = DataBase.models.Deposits;
@@ -54,8 +58,8 @@ log("FUTURES: Initializing HIVE Futures Engine...");
 var futuresThread = spawn.fork(__dirname + '/monitors/cfdEngine.js');
 log("SEER: Initializing Seer Prediction Engine...");
 var seerThread = spawn.fork(__dirname + '/monitors/theSeer.js');
-
-
+log("LEASE: Initializing Hive Power Delegation Engine...")
+var leaseThread = spawn.fork(__dirname + '/monitors/leaseEngine.js');
 //const oneday = 60 * 60 * 24 * 1000;
 //log(`INITTIME: One Day is ${oneday}ms`);
 
@@ -76,7 +80,7 @@ function simpleStringify(object){
     return [simpleObject]; // returns cleaned up JSON
 };
 //185.130.44.165
-hive.api.setOptions({ url: "https://api.hivekings.com" });
+hive.api.setOptions({ url: "https://api.hive.blog" });
 
 var chatHist = [];
 var canUserTransact = []; //stores users logged in and if they are permitted to transact - stops a potential to tip and bet at the same time to overwrite balance
@@ -87,6 +91,7 @@ var userRawSockets = [];
 var socketListKeys = Object.keys(socketList);
 var usersHivePower = {};
 var founderslist = [];
+
 var foundersload = () => {
   fs.readFile(__dirname + "/lists/founders.csv", function(err, data){
     if(err) return false;
@@ -102,11 +107,13 @@ var foundersload = () => {
     }
   });
 };
+
 foundersload();
 var auditArray = [];
 var auditWalletArray = [];
 
 
+var onlineCounter = pm2.onlineCounter;
 
 
 var maxWin = 0;
@@ -129,6 +136,12 @@ let hivePriceData = [];
 let withdrawUSDcost = 0.25; // $0.10 USD withdraw fee
 let contractDeployUSDcost = 0.50;// $0.50 USD contract creation fee
 let cancelContractFeePercent = 1;
+
+//bn == binance.com | cm == coinmarketcap.com | wc == worldcoinindex.com | cg == coingecko.com | bx == bittrex
+let priceSourceNameArray = ["bn", "cm", "wc", "cg", "bx"];
+let priceSourceArray = [{bn:0}, {cm:0}, {wc:0}, {cg: 0}];
+let priceSourceIndex = 3;
+let priceSourceActive = "cg";
 
 var labelstack = [];
 var datas = [];
@@ -157,44 +170,72 @@ function returnTime(){
 }
 
 
+var cgData;
+var CGpricecheck = async(coin) => {
+  if(!coin) return false;
+  var coinGeckoPriceCheck = await Price.cgpricecheck(coin).then((res) => {log(res);return res;}).catch((e) => {log(e)});
+  if(debug === true){
+    log(`var CGpricecheck = async(${coin})`)
+    log(`coinGeckoPriceCheck:`);
+    log(coinGeckoPriceCheck);
+  }
+  return coinGeckoPriceCheck;
+};//END WCpricecheck
 
+async function cg(coin){
+  wcData = await CGpricecheck(coin);
+  if(debug === true){
+    log(`async function cg(${coin})`);
+    log(`cgData`);
+    log(cgData);
+  }
+  return wcData;
+};
+cg('hive');
 
 var bncData;
 var BNCpricecheck = async(coin) => {
 if(!coin) return false;
 var bncPriceCheck = await Price.bncpricecheck(coin).then((res) => {log(res);return res;}).catch((e) => {log(e)});
+if(debug === true){
 log(`BNCpricecheck:`);
 log(bncPriceCheck);
+}
 return bncPriceCheck;
 };//END CMCpricecheck
 
-async function bnc(coin){
+async function bn(coin){
   bncData = await BNCpricecheck(coin);
+  if(debug === true){
   log(`bncData`);
   log(bncData);
 }
-bnc('HIVE');
+}
+bn('HIVE');
 
 
 var cmcData;
 var CMCpricecheck = async(coin) => {
 if(!coin) return false;
 var coinMarketCapPriceCheck = await Price.cmcpricecheck(coin).then((res) => {log(res);return res;}).catch((e) => {log(e)});
+if(debug === true){
 log(`coinMarketCapPriceCheck:`);
 log(coinMarketCapPriceCheck);
+}
 return coinMarketCapPriceCheck;
 };//END CMCpricecheck
 
-async function cmc(coin){
+async function cm(coin){
   cmcData = await CMCpricecheck(coin);
+  if(debug === true){
   log(`cmcData`);
   log(cmcData);
 }
-cmc('hive');
+}
+cm('hive');
 
 
 var wcData;
-
 var WCpricecheck = async(coin) => {
   if(!coin) return false;
   var worldCoinIndexPriceCheck = await Price.wcpricecheck(coin).then((res) => {log(res);return res;}).catch((e) => {log(e)});
@@ -205,7 +246,6 @@ var WCpricecheck = async(coin) => {
   }
   return worldCoinIndexPriceCheck;
 };//END WCpricecheck
-
 
 async function wc(coin){
   wcData = await WCpricecheck(coin);
@@ -221,61 +261,262 @@ wc('hive');
 //https://api.coingecko.com/api/v3/coins/hive?tickers=true&market_data=true&community_data=false&developer_data=false&sparkline=false
 var pricecheckinit = false;
 var pricechecklast = 0;
+
+function futuresHIVEUSDAvg() {
+  var response;
+  var fhap = Price.HIVEUSDMarketsAverage();
+
+  if(fhap == undefined) return log(`futuresHIVEUSDAvg "fhap" Undefined!`);
+  //log(`fhap:`)
+  //log(fhap)
+  var sn = fhap.sourcecount;
+  fhap = fhap.price;
+  //log(`futuresHIVEUSDAvg HIVE/USD Price:`);
+  //log(fhap);
+  var spread = spreadpercent / 100;
+  if(pricechecklast == fhap) {
+    pricechecklast = fhap;
+    if(verbose === false) log(`SOCKET: futuresHIVEUSDAvg() SAME PRICE - Cancel Update`)
+    return;
+  } else {
+    pricechecklast = fhap;
+    hiveprice = fhap;
+    longHIVEprice = parseFloat((fhap + (fhap * spread)).toFixed(8));
+    shortHIVEprice = parseFloat((fhap - (fhap * spread)).toFixed(8));
+    futuresThread.send(JSON.stringify({price:hiveprice, date: dateNow}));
+    if(socketListKeys != undefined){
+      socketListKeys.forEach((item, i) => {
+          //log(`sent priceupdate to ${item}`)
+          socketList[item].emit('priceupdate', {hiveusdprice: hiveprice, hiveshortprice: shortHIVEprice, hivelongprice: longHIVEprice, hivebtcprice: hivebtcprice, sources: sn, date: dateNow}); /// chart: chartShit // to(socketListKeys[i])
+      });
+    }
+  }
+
+}
+
+futuresHIVEUSDAvg();
+
+var futuresCheckTimer = setInterval(function(){
+  futuresHIVEUSDAvg();
+}, 1000);
+
 var pricecheck = async(coin) => {
+  //var pricereply;
   if(coin == undefined) {
     coin = "hive%2Chive_dollar%2Cbitcoin"; //hive%2Chive_dollar%2Cbtc
   } else {
     if(coin != "hive%2Chive_dollar%2Cbitcoin") coin = coin.toLowerCase();
   }
+  var pricereply = await cg(coin).then(function(res){
+    if(res && res.length > 0){
+      log(res)
+      "var callreply = await function " + priceSourceActive + "("+ coin+").then(await function(res){}).catch(e => {log(`SOCKET: ERROR: pricecheck: ${e} - `);return false;});" +
+        priceNonce++;
+        if(config.debug === true) log('pricecheck() res:');
+        if(debug === true) log(res);
+        var resDate = res;
+        res = res[0];
+        var coinNames = Object.keys(res);
+        var timeDate = resDate[1]['date'];
+        timeDate.toUTCString();
+        var response;
+        if(coinNames.length < 2) {
+           response = res[coin];
+        } else {
+          for(entry in coinNames){
+            if(debug === true) log(coinNames[entry]);
+            if(coinNames[entry] == 'bitcoin') {
+              btcprice = res[coinNames[entry]]["usd"];
+            }
+            if(coinNames[entry] == 'hive') {
+              hiveprice = res[coinNames[entry]]["usd"];
+              hivebtcprice = res[coinNames[entry]]["btc"];
+            }
+            if(coinNames[entry] == 'hive_dollar') {
+              hbdprice = res[coinNames[entry]]["btc"] * btcprice;//res[coinNames[entry]]["usd"];
+              hbdbtcprice = res[coinNames[entry]]["btc"];
+            }
+          }
+        }
 
-  var checkResponse = await Price.cgpricecheck(coin)
-  .then(await function(res) {
-    priceNonce++;
-    if(config.debug === true) log('pricecheck() res:');
-    if(debug === true) log(res);
-    var resDate = res;
-    res = res[0];
-    var coinNames = Object.keys(res);
-    var timeDate = resDate[1]['date'];
-    timeDate.toUTCString();
-    var response;
-    if(coinNames.length < 2) {
-       response = res[coin];
-    } else {
-      for(entry in coinNames){
-        if(debug === true) log(coinNames[entry]);
-        if(coinNames[entry] == 'bitcoin') {
-          btcprice = res[coinNames[entry]]["usd"];
+        if(pricecheckinit == false) {
+          log(`SOCKET: Initializing PriceCheck!`);
+          pricechecklast = hiveprice;
+          pricecheckinit = true;
         }
-        if(coinNames[entry] == 'hive') {
-          hiveprice = res[coinNames[entry]]["usd"];
-          hivebtcprice = res[coinNames[entry]]["btc"];
+        futuresThread.send(JSON.stringify({price:hiveprice, date: timeDate}));
+        PriceData.create({hivebtcprice: hivebtcprice, hiveusdprice: hiveprice, hbdbtcprice: hbdbtcprice, hbdusdprice: hbdprice, btcusdprice: btcprice, block: newCurrentBlock, synced: synced, validdate: timeDate});
+
+
+        var spread = spreadpercent / 100;
+        longHIVEprice = parseFloat((hiveprice + (hiveprice * spread)).toFixed(6));
+        shortHIVEprice = parseFloat((hiveprice - (hiveprice * spread)).toFixed(6));
+
+        if(pricechecklast == hiveprice) {
+          return;
+        } else {
+          pricechecklast = hiveprice;
         }
-        if(coinNames[entry] == 'hive_dollar') {
-          hbdprice = res[coinNames[entry]]["btc"] * btcprice;//res[coinNames[entry]]["usd"];
-          hbdbtcprice = res[coinNames[entry]]["btc"];
+        if(debug === true){
+          log(`hiveprice:`);
+          log(hiveprice);
+          log(`longHIVEprice:`);
+          log(longHIVEprice);
+          log(`shortHIVEprice:`);
+          log(shortHIVEprice);
         }
-      }
+
+        var data = hiveprice;
+        var labels = dateNow;//returnTime();//.push( Date.now());  //s.push(data);
+        hivePriceData.push(data);
+        labelstack.push(labels);
+        var labelssend = {labelstack};
+        var datasets = {hivePriceData};
+        var chartShit = [{close: data, time: labels}]
+        //log(hivePriceData);
+        var hivePriceDataKeys = Object.keys(hivePriceData);
+        var hivePriceDateKeys = Object.keys(labelstack);
+        //renderChart(hivePriceData, hivePriceDataKeys, "myChart");
+
+        socketListKeys = Object.keys(socketList);
+          if(socketListKeys != undefined){
+            socketListKeys.forEach((item, i) => {
+                //log(`sent priceupdate to ${item}`)
+                socketList[item].emit('priceupdate', {hiveusdprice: hiveprice, hiveshortprice: shortHIVEprice, hivelongprice: longHIVEprice, hivebtcprice: hivebtcprice, date: timeDate}); /// chart: chartShit // to(socketListKeys[i])
+            });
+          }
+
+        if((hivePriceDateKeys.length > 20) == true){
+          hivePriceDateKeys.shift();
+          labelstack.shift();
+        }
+        if((hivePriceDataKeys.length > 20) == true){
+           hivePriceDataKeys.shift();
+           hivePriceData.shift();
+        }
+        process.stdout.clearLine();
     }
 
+      //alse;});
+
+
+  /*
+  switch(priceSourceActive) {
+    case "cg":
+    if(coin == undefined) {
+      coin = "hive%2Chive_dollar%2Cbitcoin"; //hive%2Chive_dollar%2Cbtc
+    } else {
+      if(coin != "hive%2Chive_dollar%2Cbitcoin") coin = coin.toLowerCase();
+    }
+    pricereply = await cg(coin).then(await function(res){
+      log(res)
+
+      var resDate = res;
+      res = res[0];
+      var coinNames = Object.keys(res);
+      var timeDate = dateNow;
+      timeDate = (timeDate).toUTCString();
+      var response;
+      if(coinNames.length < 2) {
+        response = res[coin];
+      } else {
+        for(entry in coinNames){
+          if(debug === true) log(coinNames[entry]);
+          if(coinNames[entry] == 'bitcoin') {
+            btcprice = res[coinNames[entry]]["usd"];
+          }
+          if(coinNames[entry] == 'hive') {
+            hiveprice = res[coinNames[entry]]["usd"];
+            hivebtcprice = res[coinNames[entry]]["btc"];
+          }
+          if(coinNames[entry] == 'hive_dollar') {
+            hbdprice = res[coinNames[entry]]["btc"] * btcprice;//res[coinNames[entry]]["usd"];
+            hbdbtcprice = res[coinNames[entry]]["btc"];
+          }
+        }
+      }
+
+      var data = hiveprice;
+      var labels = timeDate//returnTime();//.push( Date.now());  //s.push(data);
+      hivePriceData.push(data);
+      labelstack.push(labels);
+      var labelssend = {labelstack};
+      var datasets = {hivePriceData};
+      var chartShit = [{close: data, time: labels}]
+      //log(hivePriceData);
+      var hivePriceDataKeys = Object.keys(hivePriceData);
+      var hivePriceDateKeys = Object.keys(labelstack);
+      //renderChart(hivePriceData, hivePriceDataKeys, "myChart");
+    }).catch(e => {log(`SOCKET: ERROR: pricecheck: ${e} - `);return false;});
+
+    break;
+    case "bn":
+      if(coin == undefined) {
+        coin = "HIVE";
+      } else {
+        coin = coin.toUpperCase();
+      }
+      pricereply = await bn(coin).then(await function(res){
+        hiveprice = res[0].price;
+        return res[0].price;
+      }).catch(e => {log(`SOCKET: ERROR: pricecheck: ${e} - `);return false;});
+    break;
+    case "wc":
+      if(coin == undefined) {
+        coin = "HIVE";
+      } else {
+        coin = coin.toLowerCase();
+      }
+      pricereply = await wc(coin).then(await function(res){}).catch(e => {log(`SOCKET: ERROR: pricecheck: ${e} - `);return false;});
+    break;
+    case "cm":
+      if(coin == undefined) {
+        coin = "HIVE";
+      } else {
+        coin = coin.toUpperCase();
+      }
+      pricereply = await cm(coin).then(await function(res){}).catch(e => {log(`SOCKET: ERROR: pricecheck: ${e} - `);return false;});
+    break;
+  }
+  if(typeof pricereply == undefined){
+    log(`priceSourceIndex: ${priceSourceIndex}`)
+    log(`WTF NO PRICEREPLY`);
+    if(priceSourceIndex < 4) {
+      priceSourceIndex++;
+      priceSourceActive = priceSourceNameArray[priceSourceIndex];
+    } else if (priceSourceIndex > 3) {
+      priceSourceIndex = 0;
+      priceSourceActive = priceSourceNameArray[priceSourceIndex];
+    }
+    log(`switched to ${priceSourceNameArray[priceSourceIndex]}`);
+  } else if(typeof pricereply !== undefined && pricereply == []){
+    log(`priceSourceIndex: ${priceSourceIndex}`)
+    log(`WTF NO PRICEREPLY`);
+    if(priceSourceIndex < 4) {
+      priceSourceIndex++;
+      priceSourceActive = priceSourceNameArray[priceSourceIndex];
+    } else if (priceSourceIndex > 3) {
+      priceSourceIndex = 0;
+      priceSourceActive = priceSourceNameArray[priceSourceIndex];
+    }
+    log(`switched to ${priceSourceNameArray[priceSourceIndex]}`);
+  } else {
+    var spread = spreadpercent / 100;
+    longHIVEprice = parseFloat((hiveprice + (hiveprice * spread)).toFixed(6));
+    shortHIVEprice = parseFloat((hiveprice - (hiveprice * spread)).toFixed(6));
     if(pricecheckinit == false) {
       log(`SOCKET: Initializing PriceCheck!`);
       pricechecklast = hiveprice;
       pricecheckinit = true;
     }
-
-    PriceData.create({hivebtcprice: hivebtcprice, hiveusdprice: hiveprice, hbdbtcprice: hbdbtcprice, hbdusdprice: hbdprice, btcusdprice: btcprice, block: newCurrentBlock, synced: synced, validdate: timeDate});
-
-
-    var spread = spreadpercent / 100;
-    longHIVEprice = parseFloat((hiveprice + (hiveprice * spread)).toFixed(6));
-    shortHIVEprice = parseFloat((hiveprice - (hiveprice * spread)).toFixed(6));
-
     if(pricechecklast == hiveprice) {
       return;
     } else {
       pricechecklast = hiveprice;
     }
+
+    PriceData.create({hivebtcprice: hivebtcprice, hiveusdprice: hiveprice, hbdbtcprice: hbdbtcprice, hbdusdprice: hbdprice, btcusdprice: btcprice, block: newCurrentBlock, synced: synced, validdate: timeDate});
+
     if(debug === true){
       log(`hiveprice:`);
       log(hiveprice);
@@ -285,42 +526,27 @@ var pricecheck = async(coin) => {
       log(shortHIVEprice);
     }
 
-    var data = hiveprice;
-    var labels = timeDate//returnTime();//.push( Date.now());  //s.push(data);
-    hivePriceData.push(data);
-    labelstack.push(labels);
-    var labelssend = {labelstack};
-    var datasets = {hivePriceData};
-    var chartShit = [{close: data, time: labels}]
-    //log(hivePriceData);
-    var hivePriceDataKeys = Object.keys(hivePriceData);
-    var hivePriceDateKeys = Object.keys(labelstack);
-    //renderChart(hivePriceData, hivePriceDataKeys, "myChart");
-
     socketListKeys = Object.keys(socketList);
-      if(socketListKeys != undefined){
+    log(socketListKeys);
+      if(socketListKeys){
         socketListKeys.forEach((item, i) => {
             //log(`sent priceupdate to ${item}`)
             socketList[item].emit('priceupdate', {hiveusdprice: hiveprice, hiveshortprice: shortHIVEprice, hivelongprice: longHIVEprice, hivebtcprice: hivebtcprice, date: timeDate}); /// chart: chartShit // to(socketListKeys[i])
         });
       }
+  }
+*/
 
-    if((hivePriceDateKeys.length > 20) == true){
-      hivePriceDateKeys.shift();
-      labelstack.shift();
-    }
-    if((hivePriceDataKeys.length > 20) == true){
-       hivePriceDataKeys.shift();
-       hivePriceData.shift();
-    }
-    process.stdout.clearLine();
+
     //log(`PRICE: 1 HIVE / $${hiveprice} USD / ${hivebtcprice} BTC`)
+    //     return response;
+    //   + "}).catch(e => {log(`SOCKET: ERROR: pricecheck: ${e} - `);return false;});";
+  });
+};
 
-    return response;
 
-  }).catch(e => {log(`SOCKET: ERROR: pricecheck: ${e} - `);return false;});
 
-        /*
+/*
   try {
     fetch('https://api.coingecko.com/api/v3/simple/price?ids=hive&vs_currencies=usd%2Cbtc')
     .then(res => res.json()).then(json => {
@@ -364,20 +590,21 @@ var pricecheck = async(coin) => {
       }
       process.stdout.clearLine();
       //log(`PRICE: 1 HIVE / $${hiveprice} USD / ${hivebtcprice} BTC`)
-    }).catch(function (error) {
+    }catch(error) {
       log("Error: " + error);
-    });
-  } catch(e) {
-    log(`pricefetch error: ${e}`)
-  }
-*/
+    };
+
+
 };
+*/
+
 
 pricecheck();
 
 var priceCheckTimer = setInterval(function(){
   pricecheck();
-}, 1000);
+}, 30000);
+
 
 function censor(censor) {
   var i = 0;
@@ -406,8 +633,10 @@ setTimeout(function(){
 }, 60000);
 
 function jsonBreadCrumb(name, action, payload, socketid) {
+  log(`function jsonBreadCrumb(name: ${name}, action: ${action}, payload: ${payload}, socketid: ${socketid}) `)
   if(!name) return log(`SOCKET: ERROR: jsonBreadCrumb Missing name!`);
   if(!action) return log(`SOCKET: ERROR: jsonBreadCrumb Missing action!`);
+  //if(name == '')
   if(!payload) return log(`SOCKET: ERROR: jsonBreadCrumb Missing payload!`);
   if(debug === true){
     if(socketid == undefined) {
@@ -420,12 +649,14 @@ function jsonBreadCrumb(name, action, payload, socketid) {
   var hsPayload;
   try{
     payloadBytes = 0;
+    payload = [payload];
     payloadBytes = getStringByteSize.getStringByteSize(payload);
     if(debug === true) log("payload size: " + payloadBytes + " bytes");
   } catch(e) {
     return log(`SOCKET: ERROR: jsonBreadCrumb: ${e}`);
   }
-  if(payloadBytes < 2048) {
+  if(payloadBytes < 8192) {
+    log(`payloadBytes < 8192`);
     if(!socketid){
       if(debug === true) {
         log(`jsonBreadCrumb(${name}, ${action}, ${payload})`);
@@ -440,9 +671,9 @@ function jsonBreadCrumb(name, action, payload, socketid) {
       hsPayload = JSON.stringify({type: 'jsonbreadcrumb', name: name, action: action, payload: payload, socketid: simpleStringify(socketList[socket.id])});
     }
   } else {
-    return log(`SOCKET: ERROR: payloadBytes > 2048 bytes!`);
+    return log(`SOCKET: ERROR: payloadBytes > 8192 bytes!`);
   }
-  if(hsPayload){
+  if(hsPayload && scribeThread){
     scribeThread.send(hsPayload);
   }
 }//END jsonBreadCrumb
@@ -852,24 +1083,28 @@ loanThread.on('message', function(m) {
               newpayload.push(item);
             });
           } else {
+            if((m.payload).length == 0) m.payload = [];
             newpayload = m.payload;
           }
 
         }
         switch(m.name){
           case 'loadmyloans':
-          jsonBreadCrumb('contracts', m.name, m.payload);
+          //jsonBreadCrumb('contracts', m.name, m.payload);
           break;
           case 'newloanmade':
             jsonBreadCrumb('contracts', 'newloan', m.payload);
           break;//END case 'newloanmade'
           case 'loannuked':
+          if(m.payload == undefined)
             jsonBreadCrumb('contracts', 'nukeloan', m.payload);
           break;
           default:
-            jsonBreadCrumb('contracts', m.name, m.payload);
+            //jsonBreadCrumb('contracts', m.name, m.payload);
         }
-        if (socketList[m.socketid[0].id]) socketCorrect.emit(`${name}`, newpayload);
+      if (socketList[m.socketid[0].id]) {
+        socketCorrect.emit(`${name}`, newpayload);
+      }
       break;
       case 'massemit':
       auditArray = [];
@@ -880,10 +1115,10 @@ loanThread.on('message', function(m) {
         break;
         case 'siteaudit':
         if(auditWalletArray){
-          jsonBreadCrumb('security', 'audit', [m.payload]);
+
           m.payload.push({wallets: auditWalletArray});
           m.payload.push({wdfees: auditWdFeeArray});
-
+          //jsonBreadCrumb('security', 'audit', [m.payload]);
           //log(auditArray);
         }
         break;
@@ -902,7 +1137,7 @@ loanThread.on('message', function(m) {
 
       if(auditArray != undefined){
         try{
-          //jsonBreadCrumb('security', 'audit', [auditArray]);
+          jsonBreadCrumb('security', 'audit', [auditArray]);
         } catch(e) {
           //log(e)
         }
@@ -981,6 +1216,15 @@ tickerThread.on('message', function(m) {
         } else {
           newpayload = m.payload;
         }
+
+        switch(m.name){
+          case 'cgmarketfetch':
+          log(`cgmarketfetch m.payload:`);
+          log(m.payload);
+          return;
+          break;
+        }
+
         var masskeys = Object.keys(socketList);
         for (var i = 0; i< masskeys.length;i++){
           if (socketList[masskeys[i]]) {
@@ -1003,6 +1247,64 @@ tickerThread.on('message', function(m) {
   }
 });//END tickerThread.on('message',
 
+
+
+let loginContent = `<center style="font-weight: 600;"><h3 class="pagehead" style="color:white;">HIVE Account Identity Verification</h3>` + //Accessing Hive.Loans Requires a Quick
+`<b id="acctflash1">To Access this Service Specify an Account Below:</b><br>` + //o Login or Register Type a HIVE Account Below
+`<br>` +
+`<div class="casperInput input-group">` +
+`<span class="input-group-prepend">` +
+`<i class="fas fa-fw fa-user"></i>` +
+`</span>` +
+`<input type="text" id="usernameinput" onkeyup="$(this).val(this.value);" style="">` +
+`<span class="input-group-append" id="saveUser">` +
+`<span class="input-group-text">` +
+`<span class="fa-stack fa-1x saveLogin" onclick="loginUserName($('#usernameinput').val());" style="">` +
+`<i class="far fa-save fa-stack-1x"></i>` +
+`<i class="fas fa-ban fa-stack-1x  hidden" id="saveLoginBan" style="color:red"></i>` +
+`</span>` +
+`</span>` +
+`</span>` +
+`</div>` +
+`<code><span id="loginfuckery"></span></code><br>`+
+`<a href="#" onClick="$('#2fa').removeClass('hidden'); $(this).hide();" style="color:white !important;text-decoration: none !important;">` +
+`<sub>` +
+`Click here if you have 2FA enabled` +
+`</a>` +
+`</sub>` +
+`<br>` +
+`<input type='text' style="background: white;color: black;text-align: center;width: 9vw;height: 3vh;font-size: large; border-radius:10px;" class="hidden" placeholder="2FA Code Here" id='2fa'>` +
+`<br>` +
+`Choose a Verification Method:` +
+`<br><br>` +
+`<center>` +
+`<table>` +
+`<tbody>` +
+`<tr>` +
+`<td id="loginhivesigner" style="">` +
+`<button type="button" class="button disabledImg" style="" id="hivesignerlogin" onclick="/*login();*/ showErr('HiveSigner Login Currently Disabled!')" title="Click here to verify identify with Hive KeyChain"><img src="/img/hivesigner.svg" class="hivesignerlogo diabledImg" style="width:89%"></button></td>` +
+//`<!--<td id="loginspin">` +
+//`</td>-->` +
+`<td id="loginkeychain" style="">` +
+`<button type="button" style="" class="button" id="skclogologin" onclick="skclogologinclick(); showSuccess('Initializing Keychain.. Please Wait'); $('#skclogologin').html(demLoadDots); skcusersocket($('#usernameinput').val());" title="Click here to verify identify with Hive KeyChain"><img src="/img/keychaintext.png" class="keychainlogo" style="width:69%"></button></td></tr></tbody></table></center>`+
+`<br><br>` +
+`<hr class="allgrayeverythang">` +
+`<a style="color:white;" href="https://hivesigner.com/" target="_blank">HiveSigner</a> and <a style="color:white;" href="https://chrome.google.com/webstore/detail/hive-keychain/jcacnejopjdphbnjgfaaobbfafkihpep?hl=en" target="_blank">Hive Keychain</a><br>are Accepted for Verification<br><br>`+
+`<br>` +
+`We'll never ask for government ID or implement` +
+`<br>` +
+`any Form of KYC Record Keeping Compliance` +
+`<br><br><br>`+
+`<b style="font-size: smaller;">` +
+`<i class="fa fa-exclamation-triangle sexyblackoutline" style="color:gold;" aria-hidden="true"></i> ` +
+`By Logging in you Agree to our <a href="#" style="color:white !important;" onclick="termsOfService();">Terms of Service</a>` +
+`</b>`+
+`<br>` +
+`<sub style="position: absolute; bottom: 0; width: 100%; left: 0; text-shadow: none !important; color: black;">` +
+`Our servers are hosted by an extremely privacy savvy company <a style="color:white !important;" class="sexyblackoutline" href="https://pay.privex.io/order?r=klye"><b><u>Privex.io</u></b> <img src="/img/privex.svg" style="max-width: 25px !important; max-height: 25px !important; bottom: 0; right: 0; position: absolute; "></a></sub>`;
+
+
+
 //===================================================
 //Start the socket.io stuff
 //===================================================
@@ -1019,9 +1321,28 @@ exports = module.exports = function(socket, io){
       } else {
         pingArray[newUser] = latency
       }
-      log(pingArray);
+      if(debug === true) log(pingArray);
     }
     return cb(startTime, null);
+  });
+
+    var userbetapass;
+    var checkbetapass;
+  socket.on('betapass', function(req, cb){
+    socket.request.session['betapass'] = false;
+    if(debug === false) log(`socket.on('betapass'): ${req}`);
+    console.log(req);
+    userbetapass = parseInt(req.pass);
+    checkbetapass = parseInt(truebetapass);
+    log(`${userbetapass} == ${checkbetapass} ??`)
+    if(userbetapass == truebetapass){
+      socket.request.session['betapass'] = true;
+      return cb(null, {data: loginContent, passed: socket.request.session['betapass']});
+    } else {
+      socket.request.session['betapass'] = false;
+      return cb('ERROR: Incorrect Passcode!');
+    }
+
   });
 
   if (!socketList.includes(socket)) {
@@ -1029,12 +1350,12 @@ exports = module.exports = function(socket, io){
         socketListKeys = Object.keys(socketList);
         log(`SOCKET: Total Connected: ${socketListKeys.length}`);
         socket.emit('latestblock', {block: newCurrentBlock, synced:synced});
-        socket.emit('priceupdate', {hiveusdprice: hiveprice, hiveshortprice: shortHIVEprice, hivelongprice: longHIVEprice, hivebtcprice: hivebtcprice});
+        socket.emit('priceupdate', {hiveusdprice: hiveprice, hiveshortprice: shortHIVEprice, hivelongprice: longHIVEprice, hivebtcprice: hivebtcprice, date: dateNow});
       } else if (socketList.includes(socket)) {
         socketListKeys = Object.keys(socketList);
         log(`SOCKET: Known Socket Detected! Total Connected ${socketList.length}`);
-        socket.emit('latestblock', {block:m.block, synced:m.synced});
-        socket.emit('priceupdate', {hiveusdprice: newCurrentBlock, hiveshortprice: shortHIVEprice, hivelongprice: longHIVEprice, hivebtcprice: hivebtcprice});
+        socket.emit('latestblock', {block: newCurrentBlock, synced:synced});
+        socket.emit('priceupdate', {hiveusdprice: hiveprice, hiveshortprice: shortHIVEprice, hivelongprice: longHIVEprice, hivebtcprice: hivebtcprice, date: dateNow});
       } else {
         log(`Not on or Off list wtf`);
       }
@@ -1054,8 +1375,11 @@ var chatpunt = async() => {
 }
 */
 
+
+
 socket.on("disconnect", function() {
   console.log('User Disconnect:', socket.request.session['user']);
+  onlineCounter.dec();
   delete userSockets[socket.request.session['user']];
   delete canUserTransact[socket.request.session['user']];
   delete userTokens[socket.request.session['user']];
@@ -1295,7 +1619,7 @@ socket.on("loginopen", function(req, cb) {
 
 socket.on("login", async function(req, cb) {
   log(req);
-  if (typeof canUserTransact[req.username] !== undefinded && canUserTransact[req.username] == true) canUserTransact[req.username] = false;
+  if (typeof canUserTransact[req.username] !== undefined && canUserTransact[req.username] == true) canUserTransact[req.username] = false;
   if (typeof cb !== 'function') return socket.emit('muppet', 'You fucking muppet, you need a callback for this call');
   if (typeof req.username !== 'string') return cb('Username must be a string', null);
   if (typeof req.password !== 'string') return cb('Password must be a string', null);
@@ -1319,7 +1643,7 @@ socket.on("login", async function(req, cb) {
 
       var token = crypto.randomBytes(64).toString('base64');
       var chattoken = crypto.randomBytes(64).toString('base64');
-
+      socket.request.session['moderator'] = loginData.moderator;
       socket.request.session['user'] = login.username;
       socket.request.session['token'] = token;
       socket.request.session['chattoken'] = chattoken;
@@ -1357,14 +1681,15 @@ socket.on("openskclink", async function(data, cb) {
   if(!data.sec) return cb('Login Security ID Undefined', null);
 
   var user = data.username.toLowerCase();
-  if (typeof canUserTransact[user] !== undefinded && canUserTransact[user] == true) canUserTransact[user] = false;
+  if (typeof canUserTransact[user] !== undefined && canUserTransact[user] == true) canUserTransact[user] = false;
   var usersocketcheck = socket.request.session['user'];
   var agree = data.agree;
 
   log(usersocketcheck);
   log(user);
-
-  if(user != usersocketcheck) return cb('Invalid User Login Request', null);
+  if(typeof usersocketcheck != "undefined") {
+      if(user != usersocketcheck) return cb('Invalid User Login Request', null);
+  }
 
   if (user == "hive.loans"){
     log(`Idiot tried to log in`);
@@ -1383,7 +1708,7 @@ socket.on("openskclink", async function(data, cb) {
     if (err) {
       canUserTransact[user] = true;
       console.error(err);
-      return cb('Hive Keychain Login Failed!');
+      return cb('Hive Keychain Login Failed!', null);
     }
     if (result) {
       result = result[0];
@@ -1487,6 +1812,7 @@ socket.on("openskclink", async function(data, cb) {
                 socket.request.session['token'] = token;
                 socket.request.session['chattoken'] = chattoken;
                 socket.request.session['uid'] = uid;
+                socket.request.session['moderator'] = loginData.moderator;
                 socket.request.session['rank'] = loginData.rank;
                 socket.request.session['socketid'] = socket.request.session.id;
                 userTokens[login.username] = token;
@@ -1519,7 +1845,7 @@ socket.on("openskclink", async function(data, cb) {
                   raw: true
                 });
 
-
+                onlineCounter.inc();
 
                 socket.emit('chatHistory', {chathist: chatHist, newmsg: "0"});
 
@@ -1527,6 +1853,7 @@ socket.on("openskclink", async function(data, cb) {
                   token: userTokens[socket.request.session['user']],
                   chatToken: socket.request.session['chattoken'],
                   userId: socket.request.session['uid'],
+                  moderator: socket.request.session['moderator'],
                   username: socket.request.session['user'],
                   rank: socket.request.session['rank'],
                   socketid: socket.request.session['socketid'],
@@ -1585,6 +1912,7 @@ socket.on("openskclink", async function(data, cb) {
           socket.request.session['token'] = token;
           socket.request.session['chattoken'] = chattoken;
           socket.request.session['uid'] = newloginData.id;
+          socket.request.session['moderator'] = newloginData.moderator;
           socket.request.session['rank'] = newloginData.rank;
           socket.request.session['socketid'] = socket.request.session.id;
           userTokens[login.username] = token;
@@ -1622,6 +1950,7 @@ socket.on("openskclink", async function(data, cb) {
             token: userTokens[socket.request.session['user']],
             chatToken: socket.request.session['chattoken'],
             userId: socket.request.session['uid'],
+            moderator: socket.request.session['moderator'],
             username: socket.request.session['user'],
             rank: socket.request.session['rank'],
             socketid: socket.request.session['socketid'],
@@ -1649,10 +1978,26 @@ socket.on("openskclink", async function(data, cb) {
   })
 });
 
+socket.on("adminskipsync", function(data, cb) {
+  log(`socket.on("adminskipsync")`);
+  var requser = socket.request.session['user'];
+  //data = JSON.stringify(data);
+  if (requser == owner && socket.request.session['moderator'] == 1) {
+    log(`SOCKET: ADMIN: adminskipsync owner & moderator detected. Skipping Sync!`);
+    socketid: simpleStringify(socketList[socket.id])
+    var rpcpayload = JSON.stringify({type:'skipsync', username: requser, socketid: simpleStringify(socketList[socket.id])});
+    rpcThread.send(rpcpayload);
+    return cb(null, 'adminskipsync fired!');
+  } else {
+    log(`SOCKET: ADMIN - ERROR: ${requser} tried to adminskipsync!`);
+    return cb("Insufficient Privileges!", {user: requser});
+  }
+}); //END adminskipsync
+
 socket.on("chatmenu", function(data, cb) {
   var source = socket.request.session['user'];
   //data = JSON.stringify(data);
-  if (source === "klye") {
+  if (source === owner) {
     menu = "admin";
     return cb(null, {
       menu: menu,
@@ -1687,7 +2032,7 @@ socket.on("loanmenu", function(data, cb) {
   }
   log(data)
   var source = socket.request.session['user'];
-  if (source == 'klye') {
+  if (source == owner) {
     menu = "admin";
     return cb(null, {
       menu: menu,
@@ -1757,7 +2102,7 @@ socket.on('createloan', async function(req, cb){
   if(!req.interest && typeof req.interest != 'number' || req.interest < 0) return cb('Fee Variable Undefined, Invalid or a Non-Number Type', {token: req.token});
   if(!req.funded) req.funded = 0;
   if(req.funded == 0) req.funded = false;
-  if(req.funded == 0) req.funded = false;
+  if(req.funded == 1) req.funded = true;
   var sitefee;
   var user = socket.request.session['user'];
   var amount = parseInt(req.amount * 1000);
@@ -1796,12 +2141,12 @@ socket.on('createloan', async function(req, cb){
     if(funded == false);
     if(amount <= userData.hivebalance){
       log(`LENDING: ${user} creating a new loan - ${amount / 1000} HIVE at ${interest}% for ${days} days!`);
-      var ltpayload = JSON.stringify({type:'newloan', userId: userData.id, username: userData.username, amount: amount, funded: funded, days: days, interest: interest, token: req.token, socketid: socket.id});
+      var ltpayload = JSON.stringify({type:'newloan', userId: userData.id, username: userData.username, amount: amount, funded: funded, days: days, interest: interest, token: req.token, socketid: simpleStringify(socketList[socket.id])});
       loanThread.send(ltpayload);
 
 
 
-      return cb(null, {token: req.token});
+      return cb(null, {message:`Created New Loan: ${amount / 1000} HIVE at ${interest}% for ${days} days!`, token: req.token});
     } else {
       log(`LENDING: ${user} balance too low to create loan!`);
       return cb('Not Enough Balance to Create Loan!', {token: req.token});
@@ -1931,15 +2276,17 @@ socket.on('acceptloan', async function(req, cb) {
 
 
       socket.on('cancelloan', async function(req, cb){
-        var loanId = req.loanId;
-        var user = socket.request.session['user'];
         log(`socket.on('cancelloan',`)
         log(req);
+        var loanId = req.loanId;
+        var user = socket.request.session['user'];
+
         //if (typeof cb !== 'function') return socket.emit('muppet', {message:'You fucking muppet, you need a callback for this call', token: req.token});
         //if (typeof loanId != 'string') return cb('LoanID Specified was Not a String?!', {token: req.token});
         //if (!testToken(socket, req.token)) return cb('incorrect token', {token: req.token});
         var ltpayload = JSON.stringify({type:'cancelloan', username: user, loanId: loanId, token: req.token, socketid: simpleStringify(socketList[socket.id])});
         loanThread.send(ltpayload);
+        return cb(null, {contractID: loanId, token: req.token});
       });//END socket.on cancelloan
 
       socket.on("getmyactiveloans", function(req, cb) {
@@ -2112,8 +2459,8 @@ socket.on('acceptloan', async function(req, cb) {
         //return cb(null, 'Fetching Users Loans');
       });
 
-      socket.on("loadmyloans", function(req, cb) {
-        if(debug === true) log(`socket.on("loadmyloans",`); log(req);
+      socket.on("loadmyloans", function(req) {
+        if(debug === false) log(`socket.on("loadmyloans",`); log(req);
         var history;
         if(!req.history) history = false;
         if(req.history == true) {
@@ -2124,13 +2471,28 @@ socket.on('acceptloan', async function(req, cb) {
         var user = socket.request.session['user'];
         var payload = JSON.stringify({type:'loadmyloans', username: user, history: history, socketid: simpleStringify(socketList[socket.id])});
         loanThread.send(payload);
-        return cb(null, 'Loading Your Lending Contracts');
         log(`Fetching users loans`)
         //return cb(null, 'Fetching Users Loans');
       });
 
+      socket.on("loadmylends", function(req) {
+        if(debug === false) log(`socket.on("loadmylends",`); log(req);
+        var history;
+        if(!req.history) history = false;
+        if(req.history == true) {
+          history = true;
+        } else {
+          history = false;
+        }
+        var user = socket.request.session['user'];
+        var payload = JSON.stringify({type:'loadmyloans', username: user, history: history, socketid: simpleStringify(socketList[socket.id])});
+        loanThread.send(payload);
+        log(`Fetching users lends`)
+        //return cb(null, 'Fetching Users Loans');
+      });
+
       socket.on("loadallloans", function(req, cb) {
-        if(debug === true) log(`socket.on("loadallloans",`); log(req);
+        if(debug === false) log(`socket.on("loadallloans",`); log(req);
         var history;
         if(!req.history) history = false;
         if(req.history == true) {
@@ -2151,14 +2513,6 @@ socket.on('acceptloan', async function(req, cb) {
         var ltpayload = JSON.stringify({type:'statecheck', username: user, socketid: simpleStringify(socketList[socket.id])});
         loanThread.send(ltpayload);
         return cb(null, 'Loading All Lending Contracts');
-        log(`Fetching all loans`)
-        //return cb(null, 'Fetching Users Loans');
-      });
-
-      socket.on("getbackers", function(req, cb) {
-        var user = socket.request.session['user'];
-        var ltpayload = JSON.stringify({type:'loadallloans', username: user, socketid: simpleStringify(socketList[socket.id])});
-        loanThread.send(ltpayload);
         log(`Fetching all loans`)
         //return cb(null, 'Fetching Users Loans');
       });

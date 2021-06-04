@@ -16,8 +16,10 @@ module.exports = (sequelize, DataTypes) => {
   Pricelog.init({
     hivebtcprice: DataTypes.DECIMAL,
     hiveusdprice: DataTypes.DECIMAL,
+    hivevolume: DataTypes.BIGINT,
     hbdbtcprice: DataTypes.DECIMAL,
     hbdusdprice: DataTypes.DECIMAL,
+    hbdvolume: DataTypes.BIGINT,
     btcusdprice: DataTypes.BIGINT,
     block: DataTypes.BIGINT,
     synced: DataTypes.BOOLEAN,

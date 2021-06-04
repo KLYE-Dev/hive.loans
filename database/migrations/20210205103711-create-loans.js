@@ -14,6 +14,9 @@ module.exports = {
       loanId: {
         type: Sequelize.STRING
       },
+      seedId: {
+        type: Sequelize.STRING
+      },
       username: {
         type: Sequelize.STRING
       },

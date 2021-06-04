@@ -87,11 +87,11 @@ process.on('message', async function(m) {
   try {
       m = JSON.parse(m);
       if(config.debug == false) {
-        log(`chainSnoop.js Message:`);
+        log(`CHAIN: chainSnoop.js Message:`);
         log(m);
       }
   } catch(e) {
-    log(`ERROR: ${e}`);
+    log(`CHAIN: ERROR: ${e}`);
     return console.error(e);
   }
 
@@ -105,7 +105,17 @@ process.on('message', async function(m) {
         log(`CHAIN: ERROR: No User Was Specified!`);
       }
     break;
-
+    case 'skipsync':
+      log(`m.socketid:`)
+      log(m.socketid)
+      if(m.username != owner) {
+        log(`CHAIN: ERROR: User ${m.username} Tried to skipsync!`);
+      } else if (m.username == owner) {
+        await skipsync();
+      } else {
+        log(`CHAIN: ERROR: No User Was Specified!`);
+      }
+    break;
     case 'grabacct':
       log(`CHAIN: grabacct was called by ${m.username}`)
       if (m.username != config.owner && m.username != "siteaudit") {
@@ -264,16 +274,6 @@ function returnTime(){
   return time;
 }
 
-var syncOutput = setInterval(function(){
-
-  if(synced === false) {
-    process.stdout.write(`CHAIN: SYNCING - Block ${blockNum} / ${lastHeadBlock} (${(lastHeadBlock - blockNum)} Left) (${scansecondstepdown} BpS) (${opscan} Ops Scanned - ${opspersec} OpS)`);
-    process.stdout.cursorTo(0);
-  }
-
-  if(synced === true) clearInterval(syncOutput);
-}, 1000);
-
 let scanrate = 0;
 let synced = false;
 const version = "0.0.9";
@@ -325,7 +325,6 @@ const wif = config.wif;
 const mintransfer = 0.001;
 let lastSafeBlock;
 let lastHeadBlock;
-let lastb;
 let blockNum;
 var recentblock;
 var oldOpsCount = 0;
@@ -336,7 +335,28 @@ const metadata = {
     app: `hive.loans`,
 };
 
+async function skipsync() {
+  if (blockNum < lastHeadBlock){
 
+    log(`CHAIN: ADMIN: skipsync() set blockNum to lastHeadBlock`);
+
+
+    recentblock = await fetchHead();
+    scanOn = false;
+    parseOn = false;
+    synced = true;
+    newCurrentBlock = blockNum;
+    blockNum = lastHeadBlock;
+    process.send(JSON.stringify({type: 'blockupdate', block: blockNum, behind: (lastHeadBlock - blockNum), synced:synced}));
+    await saveHead(lastHeadBlock)
+    await saveBlock(lastHeadBlock)
+    return setTimeout(() => {return parseBlock(blockNum + 20)});
+    return true;
+  } else {
+    log(`CHAIN: ADMIN: skipsync() blockNum >= lastHeadBlock`);
+    return true;
+  }
+};
 
 async function changenode() {
   if (apiindex < apinodes.length){
@@ -450,32 +470,6 @@ if(promo === true){
 
 }//END DepositToAccount
 
-
-async function bail(err) {
-
-  switch (err) {
-    case 'shutdown':
-    log(`CHAIN: Shutting down in 1 seconds, start again with block ${blockNum}`);
-    ChainData.update({siteblock: blockNum},{where:{id:1}});
-    process.exit(err === 'Shutdown' ? 0 : 1);
-    break;
-  }
-    log(`bail called on ${err}`);
-    var errstring = err.toString();
-    log(`errstring`);
-    log(errstring)
-    if(errstring.toLowerCase().indexOf("rpcerror") >= 0){
-      log(`CHAIN: RPC ERROR: ${errstring} - SWITCHING NODES`);
-      changenode();
-      await timeout(500);
-      return setTimeout(() => parseBlock(blockNum));
-    } else {
-      log(`CHAIN: ERROR: ${errstring} SWITCHING NODES`);
-      changenode();
-      await timeout(500);
-      return setTimeout(() => parseBlock(blockNum));
-    }
-}
 
 var stallBlock;
 setInterval(function(){
@@ -740,6 +734,72 @@ function blockRipper(blockdata, blocknumber) {
     if(scanOn === true) blockOpFoo(action);
   }
 };
+
+
+async function blockGrabber(blockNum) {
+   hive.api.getOpsInBlock(blockNum, false, async function (err, block) {
+    if(err){
+      log(err);
+      //log(`Ooops. Parsed too fast!`);
+      synced = false;
+      await timeout(3005);
+      //log(`parseblock line 422`)
+      return setTimeout(() => {return parseBlock(blockNum)});
+    }
+    if (err !== null) return bail(err);
+    if (block.length == 0) {
+      //saveBlock(blockNum);
+      if (stdoutblocks === true) {
+        process.stdout.write(`[${returnTime()}] CHAIN: SYNCED! Block ${blockNum} / ${blockNum} (Waiting for Block) (Block Size: None / ${formatByteSizeDisplay(bytesParsed)} Total Session) (${opscan} Ops Scanned - ${opspersec} OpS) (${transferscan} transfer, ${votescan} vote, ${customjsonscan} custom_json, ${witnesspayscan} wtnessrewards)`);
+        process.stdout.cursorTo(0);
+      }
+        synced = true;
+        var headBlockCheck = await fetchHead();
+        saveHead(lastSafeBlock);
+        if(headBlockCheck < blockNum){
+          log(`CHAIN: DeRailed While Fetching Next Block.. Fixing Now!`);//blockNum = lastSafeBlock;
+          await timeout(3005);
+          process.stdout.clearLine();
+          parseOn = false;
+          synced = true;
+          return setTimeout(() => {return parseBlock(blockNum)});
+        }
+
+        //process.stdout.clearLine();
+        //log(`parseblock line 443`)
+        parseOn = false;
+        await timeout(1000);
+        return setTimeout(() => {return parseBlock(blockNum)});
+    }
+    if(block){
+      if((blockNum % 25) == 1) {
+        saveBlock(blockNum);
+        saveHead(lastHeadBlock);//lastSafeBlock = fetchSafe();
+      }
+      //newbytesParsed = byteSize(block);
+      if(newbytesParsed != undefined){//log(`block byte size: ${newbytesParsed}`)
+        bytesParsed += newbytesParsed;//log(`Total Byte size of session: ${bytesParsed}`);
+      }
+      blockRipper(block, blockNum);
+      if (stdoutblocks === true) {
+        process.stdout.write(`[${returnTime()}] CHAIN: Syncing Block ${blockNum} / ${lastHeadBlock} (${(lastHeadBlock - blockNum)} Left) (Block Size: ${formatByteSizeDisplay(newbytesParsed)} / ${formatByteSizeDisplay(bytesParsed)} Total) (${scansecondstepdown} BpS) (${opscan} Ops Scanned - ${opspersec} OpS) (${transferscan} transfer, ${votescan} vote, ${customjsonscan} custom_json, ${witnesspayscan} wtnessrewards)`);
+        process.stdout.cursorTo(0);
+      }
+      blockNum++;
+      recentblock = blockNum + 1;
+      process.send(JSON.stringify({type: 'blockupdate', block: blockNum, behind: (lastHeadBlock - blockNum), synced:synced}));
+      if (shutdown) {
+        return bail();
+      } else {
+        parseOn = false;
+        //process.send(JSON.stringify({type: 'blockupdate', block: blockNum, synced:synced}));
+        //log(`parseblock line 592 Block number: #${blockNum} head block: ${lastHeadBlock}`)
+        return parseBlock(blockNum);
+      }
+    }
+  });
+}
+
 var newbytesParsed;
 async function parseBlock(blockNum) {
 if(parseOn == true) {
@@ -749,69 +809,6 @@ parseOn = true;
     newbytesParsed = 0
     newCurrentBlock = blockNum;
     scanrate++;
-    async function blockGrabber(blockNum) {
-       hive.api.getOpsInBlock(blockNum, false, async function (err, block) {
-        if(err){
-          log(err);
-          //log(`Ooops. Parsed too fast!`);
-          synced = false;
-          await timeout(3005);
-          //log(`parseblock line 422`)
-          return setTimeout(() => {return parseBlock(blockNum)});
-        }
-        if (err !== null) return bail(err);
-        if (block.length == 0) {
-          //saveBlock(blockNum);
-          if (stdoutblocks === true) {
-            process.stdout.write(`[${returnTime()}] CHAIN: SYNCED! Block ${blockNum} / ${blockNum} (Waiting for Block) (Block Size: None / ${formatByteSizeDisplay(bytesParsed)} Total Session) (${opscan} Ops Scanned - ${opspersec} OpS) (${transferscan} transfer, ${votescan} vote, ${customjsonscan} custom_json, ${witnesspayscan} wtnessrewards)`);
-            process.stdout.cursorTo(0);
-          }
-            synced = true;
-            var headBlockCheck = await fetchHead();
-            saveHead(lastSafeBlock);
-            if(headBlockCheck < blockNum){
-              log(`CHAIN: DeRailed While Fetching Next Block.. Fixing Now!`);//blockNum = lastSafeBlock;
-              await timeout(3005);
-              process.stdout.clearLine();
-              parseOn = false;
-              synced = true;
-              return setTimeout(() => {return parseBlock(blockNum)});
-            }
-
-            //process.stdout.clearLine();
-            //log(`parseblock line 443`)
-            parseOn = false;
-            await timeout(1000);
-            return setTimeout(() => {return parseBlock(blockNum)});
-        }
-        if(block){
-          if((blockNum % 25) == 1) {
-            saveBlock(blockNum);
-            saveHead(lastHeadBlock);//lastSafeBlock = fetchSafe();
-          }
-          //newbytesParsed = byteSize(block);
-          if(newbytesParsed != undefined){//log(`block byte size: ${newbytesParsed}`)
-            bytesParsed += newbytesParsed;//log(`Total Byte size of session: ${bytesParsed}`);
-          }
-          blockRipper(block, blockNum);
-          if (stdoutblocks === true) {
-            process.stdout.write(`[${returnTime()}] CHAIN: Syncing Block ${blockNum} / ${lastHeadBlock} (${(lastHeadBlock - blockNum)} Left) (Block Size: ${formatByteSizeDisplay(newbytesParsed)} / ${formatByteSizeDisplay(bytesParsed)} Total) (${scansecondstepdown} BpS) (${opscan} Ops Scanned - ${opspersec} OpS) (${transferscan} transfer, ${votescan} vote, ${customjsonscan} custom_json, ${witnesspayscan} wtnessrewards)`);
-            process.stdout.cursorTo(0);
-          }
-          blockNum++;
-          recentblock = blockNum + 1;
-          process.send(JSON.stringify({type: 'blockupdate', block: blockNum, behind: (lastHeadBlock - blockNum), synced:synced}));
-          if (shutdown) {
-            return bail();
-          } else {
-            parseOn = false;
-            //process.send(JSON.stringify({type: 'blockupdate', block: blockNum, synced:synced}));
-            //log(`parseblock line 592 Block number: #${blockNum} head block: ${lastHeadBlock}`)
-            return parseBlock(blockNum);
-          }
-        }
-      });
-    }
     await blockGrabber(blockNum);
 }
 
@@ -821,6 +818,13 @@ log("CHAIN: Starting HIVE Network Overwatch Daemon");
 let shutdown = false;
 
 var letsgo = async() => {
+  var syncOutput = setInterval(function(){
+    if(synced === false) {
+      process.stdout.write(`[${returnTime()}] CHAIN: SYNCING - Block ${newCurrentBlock} / ${lastHeadBlock} (${(lastHeadBlock - newCurrentBlock)} Left) (${scansecondstepdown} BpS) (${opscan} Ops Scanned - ${opspersec} OpS)`);
+      process.stdout.cursorTo(0);
+    }
+    if(synced === true) clearInterval(syncOutput);
+  }, 1000);
   if (!process.argv[2]) {
     blockNum = await fetchLastBlockDB();
     /*
@@ -842,8 +846,7 @@ var letsgo = async() => {
         hive.api.getDynamicGlobalProperties(function (err, result) {
             sleep(3000);
             if (result) {
-                lastb = result["last_irreversible_block_num"];
-                blockNum = lastb;
+                blockNum = result["last_irreversible_block_num"];
                 parseBlock(blockNum);
             }
         });
@@ -874,8 +877,8 @@ var scanRateScanner = () => {
 scanRateScanner();
 
 
-var fetchHeadScanner = () => {
-  var head = fetchHead();
+var fetchHeadScanner = async() => {
+  var head = await fetchHead();
   //saveHead(head);
   setTimeout(function(){
     fetchHeadScanner();
@@ -960,6 +963,35 @@ var process_transfer = async function (transaction, op) {
       }
     }
 }; //END process_transfer
+
+
+
+async function bail(err) {
+
+  switch (err) {
+    case 'shutdown':
+    log(`CHAIN: Shutting down in 1 seconds, start again with block ${blockNum}`);
+    ChainData.update({siteblock: blockNum},{where:{id:1}});
+    process.exit(err === 'Shutdown' ? 0 : 1);
+    break;
+  }
+    log(`bail called on ${err}`);
+    var errstring = err.toString();
+    log(`errstring`);
+    log(errstring)
+    if(errstring.toLowerCase().indexOf("rpcerror") >= 0){
+      log(`CHAIN: RPC ERROR: ${errstring} - SWITCHING NODES`);
+      changenode();
+      await timeout(500);
+      return setTimeout(() => parseBlock(blockNum));
+    } else {
+      log(`CHAIN: ERROR: ${errstring} SWITCHING NODES`);
+      changenode();
+      await timeout(500);
+      return setTimeout(() => parseBlock(blockNum));
+    }
+}
+
 
 process.on("SIGINT", function () {
     shutdown = true;

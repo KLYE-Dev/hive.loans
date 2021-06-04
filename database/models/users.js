@@ -8,6 +8,7 @@ module.exports = (sequelize, DataTypes) => {
   }
   Users.init({
     userId: DataTypes.INTEGER,
+    moderator:DataTypes.BOOLEAN,
     username: DataTypes.STRING,
     rank: DataTypes.STRING,
     level: DataTypes.INTEGER,

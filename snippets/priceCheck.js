@@ -1,39 +1,269 @@
 const { config } = require("../config/index.js");
 let debug = config.debug;
+let verbose = config.verbose;
 const owner = config.owner;
-
 const fetch = require('node-fetch');
 const log = require('fancy-log');
-
 const wcapikey = config.worldcoinkey;
 const cmcapikey = config.cmcapikey;
 const bncapikey = config.binanceapikey;
 const bncapisec = config.binanceapisec;
+const Binance = require('node-binance-api');
+const BinanceAPI = new Binance().options({
+  APIKEY: bncapikey,
+  APISECRET: bncapisec,
+  useServerTime: true,
+  recvWindow: 60000, // Set a higher recvWindow to increase response timeout
+  verbose: true, // Add extra output when subscribing to WebSockets, etc
+  log: log => {
+    console.log(log); // You can create your own logger here, or disable console output
+  }
+});
+
+
+BinanceAPI.websockets.candlesticks(['HIVEUSDT'], "1m", (candlesticks) => {
+  let { e:eventType, E:eventTime, s:symbol, k:ticks } = candlesticks;
+  let { o:open, h:high, l:low, c:close, v:volume, n:trades, i:interval, x:isFinal, q:quoteVolume, V:buyVolume, Q:quoteBuyVolume } = ticks;
+  if(debug == true) console.info("Binance "+symbol+" "+interval+" Candlestick Update");
+  /*
+  console.info("open: "+open);
+  console.info("high: "+high);
+  console.info("low: "+low);
+  console.info("close: "+close);
+  console.info("volume: "+volume);
+  console.info("isFinal: "+isFinal);
+  */
+  if(close == lastBNCHivePrice) {
+    if(verbose === true) log(`priceCheck.js: STREAM Same Price - No Update`);
+    //lastHaP = hiveAveragePrice;
+  } else {
+    lastBNCHivePrice = close;
+    log(`priceCheck.js: STREAM Updated Binance HIVE/USDT Price: $${close}`);
+  }
+});
+
+
 const CoinMarketCap = require('coinmarketcap-api');
 const cmcClient = new CoinMarketCap(cmcapikey);
-
 const coinWhitelist = require("../config/coinWhitelist.json");
 
 function returnTime(){
   var time = new Date();
-  //time.toUTCString();
-  //time = time.toUTCString();
-  //time = time.slice(17, time.length - 4);
-  //time = Math.floor(time.getTime() / 1000)
-  //time.setHours(time.getHours());
-  //time.setMo(time.getHours());
-  //time = time.toUTCString();
-  //time = time.slice(17, time.length - 4);
+  /*
+  time.toUTCString();
+  time = time.toUTCString();
+  time = time.slice(17, time.length - 4);
+  time = Math.floor(time.getTime() / 1000)
+  time.setHours(time.getHours());
+  time.setMo(time.getHours());
+  time = time.toUTCString();
+  time = time.slice(17, time.length - 4);
+  */
   return time;
-}
+};//END returnTime()
+
+let lastBTCUSDPrice;
+let hiveAveragePrice;
+let lastBNCHivePrice;
+let lastCMCHivePrice;
+let lastWCHivePrice;
+let lastCGHivePrice;
+let lastBTXHivePrice;
+
+//bn == binance.com | cm == coinmarketcap.com | wc == worldcoinindex.com | cg == coingecko.com | bx == bittrex
+let priceSourceNameArray = ["bn", "cm", "wc", "cg", "bx"];
 
 let coin;
+let lastMarketHivePrice;
 
+var vc = 0
+function lastMarketHivePriceAverageCalc() {
+  if(debug === true) log(`priceCheck.js: lastMarketHivePriceAverageCalc() Called!`);
+  vc = 0;
+  var ap = 0;
+  lastMarketHivePrice = [lastBNCHivePrice, lastCMCHivePrice, lastWCHivePrice, lastCGHivePrice, lastBTXHivePrice];
+  if(debug === true || verbose === true) {
+    log(`lastMarketHivePrice:`);
+    log(lastMarketHivePrice);
+  }
+  lastMarketHivePrice.forEach((item, i) => {
+    if(!item || item === undefined) return;
+    item = parseFloat(item);
+    if(typeof item === 'number' && item != NaN){
+      if(debug === true) log(item);
+
+      vc++;
+      ap += item;
+      if(i === lastMarketHivePrice.length - 1) {
+        ap = ap / vc;
+        if(debug === false) {
+          log(`priceCheck.js: lastMarketHivePriceCalc Average HIVE/USD Price: (Sources: ${vc}): ${ap}`);
+        }
+        hiveAveragePrice = ap;
+        return ap;
+      }
+    }
+  });
+};//END lastMarketHivePriceAverageCalc
+
+lastMarketHivePriceAverageCalc();
+
+/*
+setInterval(function() {
+  hiveAveragePrice = lastMarketHivePriceAverageCalc();
+}, 1000);
+*/
+
+var lastHaP;
+module.exports.HIVEUSDMarketsAverage = () => {
+  if(debug === true) log(`HIVEUSDMarketsAverage Called`);
+  lastMarketHivePriceAverageCalc();
+  if(lastHaP == hiveAveragePrice) {
+    lastHaP = hiveAveragePrice;
+    if(debug === true || verbose === true) log(`priceCheck.js: HIVEUSDMarketsAverage - SAME PRICE: ${hiveAveragePrice} - Sources: ${vc}`);
+    return {price: hiveAveragePrice, sourcecount: vc};//JSON.stringify(hiveAveragePrice);
+  } else {
+    lastHaP = hiveAveragePrice;
+    if(debug === true || verbose === true) log(`priceCheck.js: HIVEUSDMarketsAverage - hiveAveragePrice: ${hiveAveragePrice} - Sources: ${vc}`);
+    return {price: hiveAveragePrice, sourcecount: vc};//JSON.stringify(hiveAveragePrice);
+  }
+};
+
+
+async function bpc() {
+  var coin = 'HIVE';
+  var bncURL = `https://api.binance.com/api/v3/avgPrice?symbol=${coin}USDT`;
+    await fetch(bncURL).then(res => res.json()).then(json => {
+      if(debug === true) log(json);
+      if(debug === true) log(`priceCheck.js: bpc: ${JSON.parse(json)}`)
+      if(parseFloat(lastBNCHivePrice) != parseFloat(json.price)) {
+        lastBNCHivePrice = parseFloat(json.price);
+        log(`priceCheck.js: 'bpc()' Updated Binance HIVE/USD Price: $${lastBNCHivePrice}`);
+      } else {
+        if(verbose === true) log(`priceCheck.js: 'bpc()' SAME PRICE DETECTED HIVE/USD. No Update!`);
+      }
+    }).catch(function (error) {
+      if(debug === true) log("priceCheck.js: bpc ERROR: " + error);
+      return false;
+    });
+};
+bpc();
+
+async function cmcpc() {
+  var coin = 'HIVE';
+  cmcClient.getQuotes({symbol: `${coin}`}).then(data => {
+    data = data.data[`${coin}`];
+    if(debug === true) console.log(data);
+    var quoteData = data.quote;
+    quoteData = quoteData['USD'];
+    if(parseFloat(lastCMCHivePrice) != parseFloat(quoteData.price)) {
+      lastCMCHivePrice = quoteData.price;
+      log(`priceCheck.js: 'cmcpc()' Updated CoinMarketCap HIVE/USD Price: $${lastCMCHivePrice}`);
+    } else {
+      if(verbose === true) log(`priceCheck.js: 'cmcpc()' SAME PRICE DETECTED HIVE/USD. No Update!`);
+    }
+  }).catch(error => {
+    if(debug === true) log(`priceCheck.js: cmcpc ERROR: ${error}`);
+    return false;
+  });
+};
+cmcpc();
+
+async function cwpc() {
+  var coin = 'hive';
+  var coinworldURL = `https://www.worldcoinindex.com/apiservice/ticker?key=${wcapikey}&label=${coin}usdt-${coin}btc&fiat=usdt"`;
+  await fetch(coinworldURL).then(res => res.json()).then(json => {
+    json = JSON.parse(JSON.stringify(json));
+    json = json.Markets;
+    if(debug === true) log(`priceCheck.js: wcpricecheck ${json}`);
+    if(parseFloat(lastWCHivePrice) != parseFloat(json[0].Price)) {
+      lastWCHivePrice = json[0].Price;
+      log(`priceCheck.js: 'cwpc()' Updated CoinWorldIndex HIVE/USD Price: $${lastWCHivePrice}`);
+    } else {
+      if(verbose === true) log(`priceCheck.js: 'cwpc()' SAME PRICE DETECTED HIVE/USD. No Update!`);
+    }
+  }).catch(function (error) {
+    if(debug === true) log("priceCheck.js: cwpc ERROR: " + error);
+    return false;
+  });
+};
+cwpc();
+
+async function cgpc() {
+  coin = "hive%2Chive_dollar%2Cbitcoin";
+  var coingeckoURL = "https://api.coingecko.com/api/v3/simple/price?ids=" + coin + "&vs_currencies=usd%2Cbtc";
+  await fetch(coingeckoURL).then(res => res.json()).then(json => {
+    if(debug === true) log(json);
+    if(parseFloat(lastCGHivePrice) != parseFloat(json.hive.usd)) {
+      lastCGHivePrice = json.hive.usd;
+      log(`priceCheck.js: 'cgpc()' Updated CoinGecko HIVE/USD Price: $${lastCGHivePrice}`);
+    } else {
+      if(verbose === true) log(`priceCheck.js: 'cgpc()' SAME PRICE DETECTED HIVE/USD. No Update!`);
+    }
+    if(parseFloat(lastBTCUSDPrice) != parseFloat(json.bitcoin.usd)) {
+      lastBTCUSDPrice = json.bitcoin.usd;
+      log(`priceCheck.js: 'cgpc()' Updated CoinGecko BTC/USD Price: $${lastBTCUSDPrice}`);
+    } else {
+      if(verbose === true) log(`priceCheck.js: 'cgpc()' SAME PRICE DETECTED BTC/USD. No Update!`);
+    }
+  }).catch(function (error) {
+  if(debug === true) log("priceCheck.js: cgpc ERROR: " + error);
+    return false;
+  });
+};
+cgpc();
+
+async function btxpc() {
+  coin = "HIVE-BTC";
+  var coingeckoURL = "https://api.bittrex.com/v3/markets/" + coin + "/ticker";
+  await fetch(coingeckoURL).then(res => res.json()).then(json => {
+    if(debug === true) log(json);
+    if(!lastBTCUSDPrice) return false;
+    var hivePrice = parseInt(lastBTCUSDPrice) * parseFloat(json.lastTradeRate);
+    if(parseFloat(lastBTXHivePrice) != parseFloat(hivePrice)) {
+      lastBTXHivePrice = hivePrice;
+      log(`priceCheck.js: 'btxpc()' Updated Bittrex HIVE/USD Price: $${lastBTXHivePrice}`);
+    } else {
+      if(verbose === true) log(`priceCheck.js: 'btxpc()' SAME PRICE DETECTED. No Update!`);
+    }
+  }).catch(function (error) {
+  if(debug === true) log("priceCheck.js: cgpc ERROR: " + error);
+    return false;
+  });
+};
+btxpc();
+
+var priceScraperFast = setInterval(function(){
+  //bpc();
+  bpc();
+  btxpc();
+}, 1000);
+
+var priceScraperNormal = setInterval(function(){
+  cgpc();
+  //btxpc();
+}, 5000);
+
+var priceScraperSlow = setInterval(function(){
+//btxpc();
+}, 15000);
+
+var priceScraperOneMin = setInterval(function(){
+  cmcpc();
+}, 60000);
+
+var priceScraperFiveMin = setInterval(function(){
+  cwpc();
+}, 300000);
+
+
+// https://api.bittrex.com/v3/markets/{marketSymbol}
+// https://api.bittrex.com/v3/markets/{marketSymbol}/summary
 
 
 module.exports.bncpricecheck = async(coin) => {
   var response = [];
-  if(debug === true) log(`priceCheck.js: Binance.com Price Check of ${coin} Called...`);
+  if(debug === true) log(`priceCheck.js: Binance.com module.exports.bncpricecheck Price Check of ${coin} Called...`);
   if(coin == undefined) {
     coin = "hive";
   } else {
@@ -41,20 +271,19 @@ module.exports.bncpricecheck = async(coin) => {
     //log(coinWhitelist);
     //log(coin);
     if(!coinWhitelist.includes(coin)){
-      if(debug === true) log(`priceCheck.js: bncpricecheck ${coin} type NOT whitelisted!`);
+      if(debug === true) log(`priceCheck.js: module.exports.bncpricecheck ${coin} type NOT whitelisted!`);
       return false;
     }
   }
   coin = coin.toUpperCase();
   var bncURL = `https://api.binance.com/api/v3/avgPrice?symbol=${coin}USDT`;
-
     await fetch(bncURL).then(res => res.json()).then(json => {
       if(debug === true) log(json);
-      log(json);
       response.push(json, {date: returnTime()});
+      if(debug === true) log(`priceCheck.js: module.exports.bncpricecheck: ${JSON.parse(json)}`)
+      lastBNCHivePrice = parseFloat(json.price);
     }).catch(function (error) {
-
-      log("priceCheck.js: Error: " + error);
+      if(debug === true) log("priceCheck.js: module.exports.bncpricecheck ERROR: " + error);
       return false;
     });
     if(response){
@@ -62,17 +291,15 @@ module.exports.bncpricecheck = async(coin) => {
     }
 };
 
-
 module.exports.cmcpricecheck = async(coin) => {
-  if(debug === false) log(`priceCheck.js: CoinMarketCap.com Price Check of ${coin} Called...`);
+  if(debug === true) log(`priceCheck.js: CoinMarketCap.com module.exports.cmcpricecheck Price Check of ${coin} Called...`);
   var response = [];
   if(coin == undefined) {
     coin = "HIVE";
   } else {
-    log(coinWhitelist);
-    log(coin);
+    if(debug === true) log(coinWhitelist);
     if(!coinWhitelist.includes(coin)){
-      log(`priceCheck.js: cmcpricecheck ${coin} type NOT whitelisted!`);
+      if(debug === true) log(`priceCheck.js: module.exports.cmcpricecheck ${coin} type NOT whitelisted!`);
       return false;
     }
   }
@@ -80,7 +307,7 @@ coin = coin.toUpperCase();
   hivefetchgo = true;
   cmcClient.getQuotes({symbol: `${coin}`}).then(data => {
     data = data.data[`${coin}`];
-    //console.log(data);
+    console.log(data);
     var quoteData = data.quote;
     quoteData = quoteData['USD'];
   //console.log(quoteData);
@@ -99,47 +326,41 @@ coin = coin.toUpperCase();
       last_updated: quoteData.last_updated
     };
     response.push(pricepayload);
+    lastCMCHivePrice = quoteData.price;
   }).catch(error => {
-    log(`priceCheck.js: error: ${error}`);
+    if(debug === true) log(`priceCheck.js: module.exports.cmcpricecheck ERROR: ${error}`);
     return false;
   });
   if(response) {
-    log(response)
+     if(debug === true) log(response)
     return response;
   }
 };
 //module.exports.cmcpricecheck = cmcpricecheck(coin);
 
-
 module.exports.wcpricecheck = async(coin) => {
+  if(debug === true) log(`module.exports.wcpricecheck`)
     var response = [];
-      if(debug === true) log(`priceCheck.js: WorldCoinIndex.com Price Check of ${coin} Called...`);
+      if(debug === true) log(`priceCheck.js: WorldCoinIndex.com module.exports.wcpricecheck Price Check of ${coin} Called...`);
       if(coin == undefined) {
         coin = "hive";
       } else {
-        if(debug === true){
-          log(coinWhitelist);
-          log(coin);
-        }
         if(!coinWhitelist.includes(coin)){
-          if(debug === true) log(`priceCheck.js: wcpricecheck ${coin} type NOT whitelisted!`);
+          if(debug === true) log(`priceCheck.js: module.exports.wcpricecheck ${coin} type NOT whitelisted!`);
           return false;
         }
         coin = coin.toLowerCase();
       }
-
     //`https://www.worldcoinindex.com/apiservice/ticker?key=${wcapikey}&label=${coin}btc-${coin}btc&fiat=btc`;
     var coinworldURL = `https://www.worldcoinindex.com/apiservice/ticker?key=${wcapikey}&label=${coin}usdt-${coin}btc&fiat=usdt"`;
     await fetch(coinworldURL).then(res => res.json()).then(json => {
       json = JSON.parse(JSON.stringify(json));
       json = json.Markets;
-      if(debug === true) {
-        log(`wcpricecheck`);
-        log(json);
-      }
+      if(debug === true) log(`module.exports.wcpricecheck ${json}`);
       response.push(json, {date: returnTime()});
+      lastWCHivePrice = json[0].Price;
     }).catch(function (error) {
-      log("priceCheck.js: Error: " + error);
+      if(debug === true) log("priceCheck.js: module.exports.wcpricecheck ERROR: " + error);
       return false;
     });
     if(response){
@@ -150,28 +371,25 @@ module.exports.wcpricecheck = async(coin) => {
 //module.exports.wcpricecheck = wcpricecheck(coin);
 
 module.exports.cgpricecheck = async(coin) => {
+  if(debug === true) log(`module.exports.cgpricecheck`)
   var response = [];
-  if(debug === true) log(`priceCheck.js: CoinGecko.com Price Check of ${coin} Called...`);
   if(coin == undefined) {
     coin = "hive%2Chive_dollar%2Cbitcoin";
   } else {
     coin = coin.toLowerCase();
-    //log(coinWhitelist);
-    //log(coin);
     if(!coinWhitelist.includes(coin)){
-      if(debug === true) log(`priceCheck.js: cgpricecheck ${coin} type NOT whitelisted!`);
+      if(debug === true) log(`priceCheck.js: module.exports.cgpricecheck  ${coin} type NOT whitelisted!`);
       return false;
     }
   }
-  //coin = coin.toLowerCase();
-  var coingeckoURL = "https://api.coingecko.com/api/v3/simple/price?ids=" + coin + "&vs_currencies=usd%2Cbtc";
-
+    //coin = coin.toLowerCase();
+    var coingeckoURL = "https://api.coingecko.com/api/v3/simple/price?ids=" + coin + "&vs_currencies=usd%2Cbtc";
     await fetch(coingeckoURL).then(res => res.json()).then(json => {
       if(debug === true) log(json);
       response.push(json, {date: returnTime()});
+      lastCGHivePrice = json.hive.usd;
     }).catch(function (error) {
-
-      log("priceCheck.js: Error: " + error);
+    if(debug === true) log("priceCheck.js: module.exports.cgpricecheck  ERROR: " + error);
       return false;
     });
     if(response){

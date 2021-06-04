@@ -5,13 +5,15 @@ var express = require("express"),
   io = require("socket.io")(server),
   session = require("express-session"),
   bodyParser = require('body-parser'),
-  cp = require("child_process"),
+  forker = require("child_process"),
   log = require('fancy-log');
-const debug = require('debug');
+//const debug = require('debug');
+var pm2 = require(__dirname + '/snippets/pm2MetricsHost.js');
 const { config } = require("./config/index.js");
-
-log("API: Initializing API Router....");
-var apiHandler = cp.fork('./apirouter.js');
+var debug = config.debug;
+const sec = config.sechash;
+const godmodeip = config.godmodeip;
+debug = true;
 
 if(config.dbSetup === true){
   async function migrateDB() {
@@ -23,24 +25,32 @@ if(config.dbSetup === true){
   migrateDB();
 }
 
+
+
 const sessiondata = {
-  secret: config.secret,
-  saveUninitialized: false,
-  resave: false,
-  cookie:{maxAge: 60000}};
+  secret: sec,
+  saveUninitialized: false, // don't create session until something stored,
+  resave: false, // don't save session if unmodified
+  cookie:{maxAge:6000}
+};
 
 var sessionMiddleware = session(sessiondata);
 app.use(sessionMiddleware);
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
-app.use(helmet({contentSecurityPolicy: false})),
+//app.use(helmet({contentSecurityPolicy: false})),
 io.use(function(socket, next) {sessionMiddleware(socket.request, socket.request.res, next)});
-
 
 let clientIp;
 let appSocketList = [];
-//  clientIp = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+let ipAddressList = [];
+//clientIp = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
 //  res.header('Access-Control-Allow-Origin', '*');
+const reqsec = pm2.RaS;
+
+var appSocketListMetric = pm2.appSocketList;
+
+var webPortMetric = pm2.webPortMetric;//.set(config.port);
 
 function httpRedirect(req, res, next){
   clientIp = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
@@ -51,6 +61,13 @@ function httpRedirect(req, res, next){
   }
 }
 
+log(`WEB: Hive.Loans v${config.version} Started on Port: ${config.port}`);
+server.listen(config.port);
+
+log("API: Initializing Public API Routing...");
+var apiHandler = forker.fork('./apirouter.js');
+
+var mainapp = require('./socket.js');
 
 function censor(censor) {
   var i = 0;
@@ -83,7 +100,6 @@ function simpleStringify(object){
 
 //set routes to public static files
 app.use("/", httpRedirect, express.static(__dirname + "/client"));
-
 
 var resnum = 0;
 var resarray = [];
@@ -157,21 +173,44 @@ app.post('/',function(req, res){
 */
 
 
+function FixNull(a) {
+  log(`APP: FixNull() Pre:`);
+  log(a);
+  var wow = a.filter(function (el) {
+    if(el != null) {
+      return el;
+    }
+ });
+ return wow;
+};
+
 
 var numClients = 0;
 
 //socket.io Routes
 io.on("connection", function(socket) {
-  if(!appSocketList.includes(socket)){
+  if(typeof appSocketList != undefined && !appSocketList.includes(socket)){
     appSocketList.push(socket);
+    if(debug === true) log(`APP: appSocketList: ${appSocketList}`);
   }
+  if(typeof clientIp != undefined && !ipAddressList.includes(clientIp)){
+    ipAddressList.push(clientIp);
+    if(debug === true) log(`APP: ipAddressList: ${ipAddressList}`);
+  }
+
   socket.on('disconnect', function() {
-    if(appSocketList.includes(socket)){
+    if(typeof appSocketList != undefined && appSocketList.includes(socket)){
       delete appSocketList[socket];
+      appSocketList = FixNull(appSocketList);
+      if(debug === false) log(`APP: appSocketList: ${appSocketList}`);
+    }
+    if(typeof clientIp != undefined && ipAddressList.includes(clientIp)){
+      delete ipAddressList[clientIp];
+      ipAddressList = FixNull(ipAddressList);
+      if(debug === false) log(`APP: ipAddressList: ${ipAddressList}`);
     }
   });
-  var newapp = require('./socket.js')(socket, io);
+  //newapp = mainapp(socket, io);
+  socket.request.session['ipaddress'] = clientIp;
+  newapp = require('./socket.js')(socket, io);
 });
-
-server.listen(config.port);
-log(`WEB: Hive.Loans v${config.version} Started on Port: ${config.port}`);

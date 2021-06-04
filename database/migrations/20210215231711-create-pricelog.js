@@ -14,11 +14,17 @@ module.exports = {
       hiveusdprice: {
         type: Sequelize.DECIMAL,
       },
+      hivevolume: {
+        type: Sequelize.BIGINT,
+      },
       hbdbtcprice: {
         type: Sequelize.DECIMAL,
       },
       hbdusdprice: {
         type: Sequelize.DECIMAL,
+      },
+      hbdvolume: {
+        type: Sequelize.BIGINT,
       },
       btcusdprice: {
         type: Sequelize.BIGINT,

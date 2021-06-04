@@ -27,12 +27,44 @@ function checkCFDWarning(){
   }
 }
 
+var cl;
+var headLight = (e) => {
+  if(e){
+    if(cl != e){
+        cl = e;
+        return $(`${e}`).css({'background':'rgba(28, 28, 28, 0.90)'});
+    }
+  }
+}
+
+var dl;
+var headDim = (e) => {
+  if(e){
+    if(dl != e){
+        dl = e;
+        return $(`${e}`).css({'background':'rgba(28, 28, 28, 1)'});
+    }
+  }
+}
+
+var showErr = function (text) {
+    alertify.error('<i class="fa fa-1x fa-exclamation-circle circle-background-white" style="float:left;height:20px;width:20px;padding:0px;display:inline-flex;font-size:38px;margin-top:-11px;margin-left:-11px;"></i> ' + text + ' <i class="ajs-close" style=""></i>').dismissOthers();//<i class="fa fa-2x fag-2x fa-exclamation-circle" style="color:red;float:left;    margin-left: 0.5vw;"></i>
+};
+var showSuccess = function (text) {
+    alertify.success('<i class="fas fa-1x fa-check-circle circle-background-white" style="float: left;height:20px;width:20px;padding:0px;display:inline-flex;font-size:38px;margin-top:-11px;margin-left:-11px;"></i> ' + text + ' <i class="ajs-close" style=""></i>').dismissOthers();
+};
+
 var processState = async(data, history) => {
+  console.log(`var processState = async(data, history)`);
+    console.log(`data:`);
+  console.log(data);
+    console.log(`history:`);
+  console.log(history);
   if(!data) return false;
   if(!history) history = false;
-  var loans = data.loans;
+  var loans = data;
   var ourloans = [];
- untappeddata.loans.map(function(key) {
+ loans.map(function(key) {
    if(key.borrower == uUsername && key.completed == 0 && key.active == 1){
      if (key.cancelled !== -1) {
          delete key.cancelled;
@@ -47,11 +79,46 @@ var processState = async(data, history) => {
          delete key.createdAt;
      }
        ourloans.push(key);
+   } else {
+     if(history == false){
+       if(key.completed == 1) {
+        return delete key;
+       }
+       delete key.id;
+       delete key.userId;
+       delete key.txid;
+       delete key.endtxid;
+       delete key.collected;
+       delete key.nextcollect;
+       delete key.currentpayments;
+       delete key.totalpayments;
+       delete key.payments;
+       //delete key.createdAt;
+       delete key.updatedAt;
+       ourloans.push(key);
+     }
+
+      /*
+      delete key.createdAt;
+      delete key.nextcollect;
+            delete key.genesis;
+                  delete key.borrower;
+                        delete key.username;
+                        delete key.endblock;
+                                                delete key.endblocktxid;
+      delete key.fine;
+      delete key.deployfee;
+      delete key.cancelfee;
+      delete key.updatedAt;
+      delete key.txid;
+      */
+
    }
   });
-  if(!data.loans) {data.loans = []};
-  if(!ourloans) {ourloans = []};
-  return CreateTableFromJSON(`'${JSON.stringify(ourloans)}'`, 'popuploans', 'popupActiveloans', 'popupActiveTable', 'popupActiveHead');
+  //if(!data) {data = []};
+  //if(!ourloans) {ourloans = []};
+  //function CreateTableFromJSON(data, name, elementid, tablename, tableheadname) {
+  return CreateTableFromJSON(ourloans, 'loans', 'loanChartHolder', 'loanMixedChartTable', 'loanMixedChartHead');
 };
 
 function checkTVWarning(){
@@ -62,7 +129,165 @@ function checkTVWarning(){
   }
 }
 
-$('#mandepinfo').fadeOut();
+
+var makeleasetoggle = false
+function leaseMakeShow() {
+  console.log(`leaseMakeShow() - ${makeleasetoggle}`)
+  if(makeleasetoggle == true) {
+    makeleasetoggle = false;
+
+    $('#showCreateLease').text('Show Request Lease');
+    $('#createHPLeasewrapper').fadeOut(100);
+    $('#createHPLeasewrapper').addClass('hidden');
+
+    $('#leaseholdertd').css({'height':'87%'});
+    $('#jumbotron').css({'height':'auto'});
+  } else {
+    makeleasetoggle = true;
+    $('#showCreateLease').text('Hide Request Lease');
+    $('#createHPLeasewrapper').fadeIn(100);
+    $('#createHPLeasewrapper').removeClass('hidden');
+    $('#leaseholdertd').css({'height':'61.5%'});
+    $('#jumbotron').css({'height':'auto'});
+  }
+}
+
+function createNewLease() {
+  var e;
+  var duration = parseFloat($('#hpleaseduration').val());
+  var payment = parseFloat($('#hpleasepayment').val());
+  var amount = parseFloat($('#hpleaseamount').val());
+  if(!duration) {
+    $('#createNewLeaseButton').addClass('disabledImg');
+    $('#createNewLeaseButton').prop('disabled', true);
+    return $('#showCreateLeaseWarning').html(`Please Fill in Above Inputs`);
+  }
+  if(!payment) {
+    $('#createNewLeaseButton').addClass('disabledImg');
+    $('#createNewLeaseButton').prop('disabled', true);
+    return $('#showCreateLeaseWarning').html(`Please Fill in Above Inputs`);
+  }
+  if(!amount)  {
+    $('#createNewLeaseButton').addClass('disabledImg');
+    $('#createNewLeaseButton').prop('disabled', true);
+    return $('#showCreateLeaseWarning').html(`Please Fill in Above Inputs`);
+  }
+  console.log(`duration: ${duration}`);
+  console.log(`payment: ${payment}`);
+  console.log(`amount: ${amount}`);
+  if(duration > 52){
+    $('#hpleaseduration').val(52);
+  }
+  if(duration < 1) {
+    $('#hpleaseduration').val(1);
+  }
+  if(amount < 1) {
+    $('#hpleaseamount').val(1);
+  }
+  var totalCost = duration * payment;
+  console.log(`totalCost: ${totalCost}`)
+  var userBal = parseFloat(uHIVEbalance / 1000);
+
+
+  try {
+    e = (365 / (7 * duration + 5) * (.9 * payment) / amount) * 100;
+    console.log(e)
+  } catch(fuck) {
+    e = fuck;
+    $('#showCreateLeaseWarning').html(`Please Fill in Above Inputs`);
+    $('#createNewLeaseButton').addClass('disabledImg');
+    $('#createNewLeaseButton').prop('disabled', true);
+  }
+
+  if(typeof e !== "number" && typeof e !== NaN) {
+    $('#showCreateLeaseWarning').html(`Please Fill in Above Inputs`);
+    $('#createNewLeaseButton').addClass('disabledImg');
+    $('#createNewLeaseButton').prop('disabled', true);
+  } else {
+    $('#showCreateLeaseWarning').html(`<b>${e.toFixed(4)}</b>% APR - Cost: <b id="boldLeaseTotal">${(totalCost).toFixed(3)} <span class="basetype">HIVE</span> <span class="logospan"><i class="fab fa-hive" style="color:#E31337;"></i></span>`);
+    $('#createNewLeaseButton').removeClass('disabledImg');
+    $('#createNewLeaseButton').prop('disabled', true);
+  }
+  if(totalCost > userBal){
+    console.log(`ERMAGERD WAY TOO MUCH`)
+    $('#boldLeaseTotal').css({'color':'#FF0000 !important'});
+    $('#createNewLeaseButton').addClass('disabledImg');
+    $('#createNewLeaseButton').prop('disabled', true);
+  } else {
+    $('#boldLeaseTotal').css({'color':'#FFFFFF !important'});
+    $('#createNewLeaseButton').removeClass('disabledImg');
+    $('#createNewLeaseButton').prop('disabled', false);
+  }
+}
+
+function calculateAPR() {
+  var e;
+  var duration = parseFloat($('#hpleaseduration').val());
+  var payment = parseFloat($('#hpleasepayment').val());
+  var amount = parseFloat($('#hpleaseamount').val());
+  if(!duration) {
+    $('#createNewLeaseButton').addClass('disabledImg');
+    $('#createNewLeaseButton').prop('disabled', true);
+    return $('#showCreateLeaseWarning').html(`Please Fill in Above Inputs`);
+  }
+  if(!payment) {
+    $('#createNewLeaseButton').addClass('disabledImg');
+    $('#createNewLeaseButton').prop('disabled', true);
+    return $('#showCreateLeaseWarning').html(`Please Fill in Above Inputs`);
+  }
+  if(!amount)  {
+    $('#createNewLeaseButton').addClass('disabledImg');
+    $('#createNewLeaseButton').prop('disabled', true);
+    return $('#showCreateLeaseWarning').html(`Please Fill in Above Inputs`);
+  }
+  console.log(`duration: ${duration}`);
+  console.log(`payment: ${payment}`);
+  console.log(`amount: ${amount}`);
+  if(duration > 52){
+    $('#hpleaseduration').val(52);
+  }
+  if(duration < 1) {
+    $('#hpleaseduration').val(1);
+  }
+  if(amount < 1) {
+    $('#hpleaseamount').val(1);
+  }
+  var totalCost = duration * payment;
+  console.log(`totalCost: ${totalCost}`)
+  var userBal = parseFloat(uHIVEbalance / 1000);
+
+
+  try {
+    e = (365 / (7 * duration + 5) * (.9 * payment) / amount) * 100;
+    console.log(e)
+  } catch(fuck) {
+    e = fuck;
+    $('#showCreateLeaseWarning').html(`Please Fill in Above Inputs`);
+    $('#createNewLeaseButton').addClass('disabledImg');
+    $('#createNewLeaseButton').prop('disabled', true);
+  }
+
+  if(typeof e !== "number" && typeof e !== NaN) {
+    $('#showCreateLeaseWarning').html(`Please Fill in Above Inputs`);
+    $('#createNewLeaseButton').addClass('disabledImg');
+    $('#createNewLeaseButton').prop('disabled', true);
+  } else {
+    $('#showCreateLeaseWarning').html(`<b>${e.toFixed(4)}</b>% APR - Cost: <b id="boldLeaseTotal">${(totalCost).toFixed(3)} <span class="basetype">HIVE</span> <span class="logospan"><i class="fab fa-hive" style="color:#E31337;"></i></span>`);
+    $('#createNewLeaseButton').removeClass('disabledImg');
+    $('#createNewLeaseButton').prop('disabled', true);
+  }
+  if(totalCost > userBal){
+    console.log(`ERMAGERD WAY TOO MUCH`)
+    $('#boldLeaseTotal').css({'color':'#FF0000 !important'});
+    $('#createNewLeaseButton').addClass('disabledImg');
+    $('#createNewLeaseButton').prop('disabled', true);
+  } else {
+    $('#boldLeaseTotal').css({'color':'#FFFFFF !important'});
+    $('#createNewLeaseButton').removeClass('disabledImg');
+    $('#createNewLeaseButton').prop('disabled', false);
+  }
+}
+
 var shmdftoggle = false
 function shmdf() {
   console.log(`shmdf() - ${shmdftoggle}`)
@@ -75,7 +300,6 @@ function shmdf() {
     $('#showHideManDep').html('Hide');
     $('#mandepinfo').fadeIn();
   }
-
 }
 
 function wdnow(coin, fee, security) {
@@ -96,6 +320,7 @@ function wdnow(coin, fee, security) {
       }, function(err, cb) {
           if (err) {
               $('#sending').html(`<br><b style='color:red;'>${err}</b>`);
+              $('#withdrawit').html(`ENTER AMOUNT`);
               return showErr(`${err}`);
           }
           if (cb) {
@@ -109,21 +334,21 @@ function wdnow(coin, fee, security) {
   }
 
 function calctotal(fee, coin){
-  var thetotal;
-  var thisval = parseFloat($("#withdrawInteger").val());
-  var balance = parseFloat($("#tipbalance").val());
-  thetotal = thisval - fee;
-  if (thetotal <= balance) {
-      flashwin($("#wdtotal"))
-      $("#wdtotal").html(`You'll receive ${thetotal.toFixed(3)} ${coin}`);
-      $("#wdbuttontex").html(`WITHDRAW <span class="wdtype">HIVE</span> <span id="wdlogo"><i class="fab fa-fw fa-hive" style="color:#E31337;"></i></span>`);
-      $('#withdrawit').attr("disabled", false);
-  } else {
-      flashlose($("#wdtotal"))
-      $("#wdtotal").html(`Insufficient <i class="fab fa-fw fa-hive" style="color:#E31337;"></i>`);
-      $("#wdbuttontex").html(`Error`);
-      $('#withdrawit').attr("disabled", true);
-  }
+    var thetotal;
+    var thisval = parseFloat($("#withdrawInteger").val());
+    var balance = parseFloat($("#tipbalance").val());
+    thetotal = thisval - fee;
+    if (thetotal <= balance) {
+        flashwin($("#wdtotal"))
+        $("#wdtotal").html(`You'll receive ${thetotal.toFixed(3)} ${coin}`);
+        $("#wdbuttontext").html(`WITHDRAW <span class="wdtype">HIVE</span> <span id="wdlogo"><i class="fab fa-fw fa-hive" style="color:#E31337;"></i></span>`);
+        $('#withdrawit').attr("disabled", false);
+    } else {
+        flashlose($("#wdtotal"))
+        $("#wdtotal").html(`Insufficient <span class="wdtype">HIVE</span> <span id="wdlogo"><i class="fab fa-fw fa-hive" style="color:#E31337;"></i></span> Balance`);
+        $("#wdbuttontext").html(`Error`);
+        $('#withdrawit').attr("disabled", true);
+    }
 }
 
   function addData(data, chart) {
@@ -140,6 +365,22 @@ function calctotal(fee, coin){
       chart.data.datasets.forEach((dataset) => {dataset.data.pop()});
       chart.update();
   }
+
+  var loansHistoryShow = false;
+  function loansHistorySwitch() {
+  console.log(`loansHistorySwitch Called! loansHistoryShow: ${loansHistoryShow}`);
+  if(loansHistoryShow == false){
+    $('#openLoansHistoryType').text(`Open Contracts`);
+    $('#centerLoanTableType').text(`Past`);
+    $('#centerExchangeTable').html(`Your Closed Past <span class="loanbase">HIVE</span> <span class="loanlogo"><i class="fab fa-hive" style="color:#E31337;"></i></span> Contracts`);
+    loansHistoryShow = true;
+  } else {
+    $('#openLoansHistoryType').text(`Closed Contracts`);
+    $('#centerLoanTableType').text(`Current`);
+    $('#centerExchangeTable').html(`Your Current Open <span class="loanbase">HIVE</span> <span class="loanlogo"><i class="fab fa-hive" style="color:#E31337;"></i></span> Contracts`);
+    loansHistoryShow = false;
+  }
+}
 
   var exchageHistoryShow = false;
   function exchangeHistorySwitch() {
@@ -353,14 +594,6 @@ var usdCurrency = function() {
     $('#pricetype').html(tickercurrency.toUpperCase());
 }
 
-var showErr = function (text) {
-    alertify.closeAll();
-    alertify.error('<i class="fa fa-2x fa-exclamation-circle circle-background-white" style="float: left;bottom: 4px;position: relative;"></i></span> ' + text + '<i class="fa fa-times ajs-close hidden" style="float: right;bottom: 4px;position: relative;"></i>').dismissOthers();//<i class="fa fa-2x fag-2x fa-exclamation-circle" style="color:red;float:left;    margin-left: 0.5vw;"></i>
-};
-var showSuccess = function (text) {
-    alertify.closeAll();
-    alertify.success('<i class="fa fa-2x fa-check-circle circle-background-white" style="float: left;bottom: 4px;position: relative;"></i> ' + text + '<i class="fa fa-times ajs-close hidden" style="float: right;bottom: 4px;position: relative;"></i>').dismissOthers();
-};
 
 function getSiteStats() {
   $("#sitestatsBal").html(`<b>HIVE Balance</b>:<br>Loading<br>`);
@@ -522,7 +755,6 @@ var loginKey = function(event){
     if(keycode == "13"){
         submitLogin();
     }
-
 };
 
 var hiveAmountChecker = async(amount, asset) => {
@@ -686,7 +918,9 @@ function sendPopup(type, addess){
 //<div id="countdown"></div>
 //<div id="newcountdown"></div>
 
-
+function reloadPricePopup() {
+  $('#alertPriceWrapper').html(`<iframe id="alertPriceIframe" onload="$('#alertpricepanel').hide();" src="https://www.worldcoinindex.com/widget/renderWidget?size=large&from=HIVE&to=usd&name=Hive&clearstyle=false"></iframe>`);
+};
 
 function getUserProfile(user) {
   //showSuccess(`Fetching ${user}'s Profile'`);
@@ -784,16 +1018,18 @@ var flashsec = function(elements) {
 
 };
 
-var flashwin = function(elements) {
+var flashwin = function(elements, ms) {
+  if(!ms) ms = 300;
   $(elements).css({'color':'#00FF00 !important'});
-  $(elements).animate({'color':'#FFFFFF !important'}, 300);
+  $(elements).animate({'color':'#FFFFFF !important'}, ms);
   $(elements).css({'color':'#FFFFFF !important'});
 
 };
 
-var flashlose = function(elements) {
+var flashlose = function(elements, ms) {
+  if(!ms) ms = 300;
   $(elements).css({'color':'#CC0000 !important'});
-  $(elements).animate({'color':'#FFFFFF !important'}, 300);
+  $(elements).animate({'color':'#FFFFFF !important'}, ms);
   $(elements).css({'color':'#FFFFFF !important'});
 
 };
@@ -1034,13 +1270,21 @@ function createLoanPreview() {
   }
 }
 
-function cancelContract(contractID, state) {
-  console.log(`cancelContract(${contractID}, ${state});`);
-  console.log(`contractID`);
-  console.log(contractID);
-  if(contractID === undefined){
-    return showErr(`ERROR: Variable loanId is Undefined!`);
+function cancelContract(contractID, seedID) {
+  console.log(`cancelContract(${contractID}, ${seedID});`);
+  //console.log(`contractID`);
+  //console.log(contractID);
+  //console.log(`seedID`);
+  //console.log(seedID);
+  if(!contractID){
+    //console.log(`ERROR: Variable loanId is Undefined!`);
+    contractID = 'none';
   }
+  if(!seedID){
+    //console.log(`ERROR: Variable seedID is Undefined!`);
+    seedID = 'none';
+  }
+  /*
   if(state === undefined){
     return showErr(`ERROR: Variable state is Undefined!`);
   }
@@ -1048,18 +1292,18 @@ function cancelContract(contractID, state) {
   if(state == 'finished') return showErr(`Cannot Cancel Finished Contract!`);
   if(state == 'cancelled') return showErr(`Cannot Cancel Cancelled Contract!`);
   if(state == 'deployed') showSuccess(`Attempting to Cancel Deployed Contract`);
-  socket.emit('cancelloan', {loanId: contractID, token: token}, function(err, data){
+  */
+  socket.emit('cancelloan', {loanId: contractID, seedId: seedID, token: token}, function(err, data){
       if(err) {
+        console.log(err)
         showErr(err);
         //showPopup(err, 'error');
         token = data.token;
         console.log(err)
       }
-      if(data) {
         console.log(data)
         token = data.token;
-        showSuccess(`Cancel Contract #${contractID}`);
-      }
+        showSuccess(`Attempting to Cancel Contract #${data.contractID}`);
   })
 }
 
@@ -1125,6 +1369,7 @@ var siteAcctsActive;
 var siteAcctsDormant;
 var siteAcctsOwned;
 var siteLoans;
+var siteLoansArray;
 var usersBal = 0;
 var siteActiveLoans = 0;
 var siteActiveLends = 0;
@@ -1144,8 +1389,9 @@ var hotWalletBalance = 0;
 var coldWalletBalance = 0;
 var totalCustodial = 0;
 
-function siteAuditData() {
+function siteAuditData(data) {
   console.log(`siteAuditData Fired!`);
+  if(data) console.log(data);
   if(typeof siteAudit[0] != undefined && typeof siteAudit[1] != undefined && typeof siteAudit[2] != undefined){
     try {
       console.log(`siteAudit:`);
@@ -1154,24 +1400,27 @@ function siteAuditData() {
       console.log(`theDATA:`);
       console.log(theDATA);
       theWALLET = siteAudit[1].wallets;
+      console.log(`theWALLET:`);
+      console.log(theWALLET);
       theWDFEES = siteAudit[2].wdfees;
-      hotWalletBalance = parseFloat(theWALLET[0]);
-      coldWalletBalance = parseFloat(theWALLET[1]);
+      hotWalletBalance = parseFloat(theWALLET[0].balance);
+      coldWalletBalance = parseFloat(theWALLET[1].balance);
       newUpdateDate = theDATA.date;
       siteAccts = theDATA.usersstate;
       console.log(`siteAccts:`);
       console.log(siteAccts);
       siteLoans = theDATA.loansstate;
+      siteLoansArray = theDATA.loansstate;
       console.log(`siteLoans:`);
       console.log(siteLoans);
       siteActiveLoans = 0;
       siteActiveLends = 0;
       usersBal = 0;
-      siteAccts = siteAccts.length;
+      //siteAccts = siteAccts.length;
       siteAcctsActive = 0;
       siteAcctsDormant = 0;
       siteAcctsOwned = 0;
-      siteLoans = siteLoans.length;
+      //siteLoans = siteLoans.length;
       siteActive = 0;
       siteAvailable = 0;
       siteCompleted = 0;
@@ -1188,10 +1437,11 @@ function siteAuditData() {
       siteTotalAllTime = 0;
       var userIndex = [];
       for(i in siteAccts){
-        console.log(`theDATA[siteAccts[i]]:`);
-        console.log(theDATA[siteAccts[i]]);
-        var userID = theDATA[siteAccts[i]].userId;
+        console.log(`siteAccts[i]:`);
+        console.log(siteAccts[i]);
+        var userID = siteAccts[i].userId;
         userIndex.push(userID);
+        console.log(userIndex)
         userIndex[userID] = theDATA.usersstate[i];
         var userActiveDate = new Date(theDATA.usersstate[i].updatedAt);
         var dateNow = new Date();
@@ -1209,7 +1459,7 @@ function siteAuditData() {
       console.log(userIndex);
       console.log(userIndex[userID]);
       for(k in siteLoans){
-        var interestPercentage = siteLoans[k]['interest'] / 100;
+        var interestPercentage = siteLoansArray[k]['interest'] / 100;
         var rankModifier = 0;
         var loanUser = siteLoans[k].userId;
         console.log(`loanUser: ${loanUser}`);
@@ -1235,31 +1485,31 @@ function siteAuditData() {
           }
 
         siteCommissionFee += (((interestPercentage * (siteLoans[k].amount / 1000))) * rankModifier);
-        siteDeployFee += parseFloat((siteLoans[k].deployfee / 1000).toFixed(3));
-        siteFineFee += parseFloat((siteLoans[k].fine / 1000).toFixed(3));
+        siteDeployFee += parseFloat((siteLoansArray[k].deployfee / 1000).toFixed(3));
+        siteFineFee += parseFloat((siteLoansArray[k].fine / 1000).toFixed(3));
         switch(siteLoans[k].state){
           case "finished":
             siteCompleted++;
-            siteTotalCollected += (siteLoans[k].collected / 1000);
+            siteTotalCollected += (siteLoansArray[k].collected / 1000);
             //siteTotalActive -= parseFloat((theDATA.loansstate[k].amount / 1000).toFixed(3));
-            siteTotalAllTime += parseFloat((siteLoans[k].amount / 1000).toFixed(3));
+            siteTotalAllTime += parseFloat((siteLoansArray[k].amount / 1000).toFixed(3));
           break;
           case "deployed":
             siteAvailable++;
-            siteTotalActive += parseFloat((siteLoans[k].amount / 1000).toFixed(3));
-            siteTotalCollected += parseFloat((siteLoans[k].collected / 1000).toFixed(3));
-            siteTotalAllTime += parseFloat((siteLoans[k].amount / 1000).toFixed(3));
+            siteTotalActive += parseFloat((siteLoansArray[k].amount / 1000).toFixed(3));
+            siteTotalCollected += parseFloat((siteLoansArray[k].collected / 1000).toFixed(3));
+            siteTotalAllTime += parseFloat((siteLoansArray[k].amount / 1000).toFixed(3));
           break;
           case "cancelled":
             siteCancelled++;
-            siteCancelFee += parseFloat((siteLoans[k].cancelfee / 1000).toFixed(3));
+            siteCancelFee += parseFloat((siteLoansArray[k].cancelfee / 1000).toFixed(3));
             //siteTotalActive -= parseFloat((theDATA.loansstate[k].amount / 1000).toFixed(3));
           break;
           case "accepted":
             siteActive++;
-            siteTotalActive += parseFloat((siteLoans[k].amount / 1000).toFixed(3));
-            siteTotalCollected += parseFloat((siteLoans[k].collected / 1000).toFixed(3));
-            siteTotalAllTime += parseFloat((siteLoans[k].amount / 1000).toFixed(3));
+            siteTotalActive += parseFloat((siteLoansArray[k].amount / 1000).toFixed(3));
+            siteTotalCollected += parseFloat((siteLoansArray[k].collected / 1000).toFixed(3));
+            siteTotalAllTime += parseFloat((siteLoansArray[k].amount / 1000).toFixed(3));
           break;
         }
       }
@@ -1271,13 +1521,15 @@ function siteAuditData() {
       $('#audit-hot').val(hotWalletBalance.toFixed(3));
       $('#audit-cold').val(coldWalletBalance.toFixed(3));
       $('#audit-extras').val(totalExtra.toFixed(3));
-      if(totalExtra < 0){
+      if(parseFloat(totalExtra) < 0){
         var alert = `<i class="fa fa-exclamation-triangle sexyblackoutline" style="color:gold;" title="AUDIT FAILED! Value is Less Than Expected!" aria-hidden="true"></i>`;
-        $('#audit-extras').css({"color":"red"});
+        $('#audit-extras').css({"color":"red !important"});
+      } else if (parseFloat(totalExtra) >= 0) {
+        $('#audit-extras').css({"color":"lawngreen !important"});
       }
       $('#audit-lockedtotal').val(siteTotalActive.toFixed(3));
       $('#audit-sitebal').val(totalCustodial.toFixed(3));
-      $('#audit-accounts').val(siteAccts);
+      $('#audit-accounts').val(siteAccts.length);
       $('#audit-activeaccts').val(siteAcctsActive);
       $('#audit-dormant').val(siteAcctsDormant);
       $('#audit-collateral').val(siteAcctsOwned);
@@ -1329,7 +1581,11 @@ function infoContract(data) {
     }
     if(data.active == 0){
       if(data.completed === 0){
-        data.active = `<center><button class="button" style="float:left;font-size:small;" id="acceptButton" onclick="acceptContract('${data.loanId}');">Accept <i class="fas fa-fw fa-coins" style="color:gold;"></i></button></center>`;
+        if(data.username != uUsername){
+          data.active = `<center><button class="button" style="float:left;font-size:small;" id="acceptButton" onclick="acceptContract('${data.loanId}');">Accept <i class="fas fa-fw fa-coins" style="color:gold;"></i></button></center>`;
+        } else {
+          data.active = `<center><button class="button" style="float:left;font-size:small;" id="cancelButton" onclick="cancelContract('${data.loanId}');">Cancel <i class="fas fa-fw fa-times" style="color:red;"></i></button></center>`;
+        }
       } else {
         data.active = 'Completed';
       }
@@ -1596,15 +1852,152 @@ var getHiveDelegations = async(user) => {
   //});
 };//END getHivePower = async(user)
 
+var ol;
+$('input#betapass').keyup(function(e){
+  if(!ol) ol = (($('input#betapass').val()).toString()).length;
+  checkBetaPass();
+  if(ol < (($('input#betapass').val()).toString()).length) {
+    flashwin($("input#betapass"));
+  } else {
+    flashlose($("input#betapass"));
+  }
+});
+
+var cbl;
+function checkBetaPass(){
+  console.log(`checkBetaPass`);
+  var stringToCheck = $("input#betapass").val();
+  if(stringToCheck.length < 9){
+    if(!cbl) cbl = (($('input#betapass').val()).toString()).length;
+    $("#checkBetaPassButton").prop("title", "Please Enter All Access Beta Pass");
+    $("#checkBetaPassButton").prop("disabled", true);
+    $("#checkBetaPassButton").addClass("disabledImg");
+    if(cbl < (($('input#betapass').val()).toString()).length) {
+      cbl = (($('input#betapass').val()).toString()).length;
+      flashwin($("input#betapass"));
+    } else {
+      cbl = (($('input#betapass').val()).toString()).length;
+      flashlose($("input#betapass"));
+    }
+    //flashwin($("input#betapass"));
+  } else if(stringToCheck.length == 9) {
+    $("#checkBetaPassButton").prop("title", "Click Here or Hit ENTER to Continue");
+    $("#checkBetaPassButton").prop("disabled", false);
+    $("#checkBetaPassButton").removeClass("disabledImg");
+    //flashwin($("input#betapass"));
+
+    if(cbl < (($('input#betapass').val()).toString()).length) {
+      cbl = (($('input#betapass').val()).toString()).length;
+      flashwin($("input#betapass"));
+    } else {
+      cbl = (($('input#betapass').val()).toString()).length;
+      flashlose($("input#betapass"));
+    }
+
+  } else if(stringToCheck.length > 0){
+    if(!cbl) cbl = (($('input#betapass').val()).toString()).length;
+    $("#betalocklogo").html(`<i class="fas fa-lock" style="color:gold;"></i>`);
+    $("#checkBetaPassButton").prop("title", "Click Here or Hit ENTER to Continue");
+    $("#checkBetaPassButton").prop("disabled", false);
+    $("#checkBetaPassButton").removeClass("disabledImg");
+    if(cbl < (($('input#betapass').val()).toString()).length) {
+      cbl = (($('input#betapass').val()).toString()).length;
+      flashwin($("input#betapass"));
+    } else {
+      cbl = (($('input#betapass').val()).toString()).length;
+      flashlose($("input#betapass"));
+    }
+    //flashwin($("input#betapass"));
+  } else {
+    if(!cbl) cbl = (($('input#betapass').val()).toString()).length;
+    $("#checkBetaPassButton").prop("title", "Please Enter All Access Beta Pass");
+    $("#checkBetaPassButton").prop("disabled", false);
+    $("#checkBetaPassButton").addClass("disabledImg");
+    $(".numButton").prop("disabled", true);
+    $(".numButton").addClass("disabledImg");
+    if(cbl < (($('input#betapass').val()).toString()).length) {
+      cbl = (($('input#betapass').val()).toString()).length;
+      flashwin($("input#betapass"));
+    } else {
+      cbl = (($('input#betapass').val()).toString()).length;
+      flashlose($("input#betapass"));
+    }
+    //flashlose($("input#betapass"));
+  }
+};
+
+var submitBetaPass = async(p) => {
+  if(!p){
+    flashlose($("input#betapass"));
+    return showErr(`You Must Specify a Passcode!`);
+  }
+  try {
+    p = parseInt(p);
+  } catch(f){
+    return showErr(`Passcode is Not Correct Format`);
+  }
+  socket.emit('betapass', {pass: p, ip: uIP}, function(err, rep){
+    if(err){
+      if(debug === true) console.log(`submitBetaPass err: ${err}`);
+      bpc = '';
+      $('input#betapass').val(`INCORRECT`);
+      flashlose($('input#betapass'));
+      $("input#betapass").val(bpc).delay(1000);
+      return showErr(`Passcode is Incorrect!`);
+    };
+    $("#betalocklogo").html(`<i class="fas fa-unlock" style="color:lawngreen;"></i>`);
+    $('input#betapass').html(`ACCEPTED!`);
+    flashwin($('input#betapass'));
+    console.log(`rep: ${rep}`);
+    betaPassChecked = rep.passed;
+    loginContent = rep.data;
+    showLogin();
+  });
+};
+
+function saveSettings() {
+  showSuccess(`Saving Settings to Account`);
+}
+
+function dotdotdotmaker(e){
+  $(e).html(`<div class="preloader js-preloader flex-center"><div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>`);
+}
+
 function disclaimerOK(){
   if(document.getElementById('disclaimerCheck').checked){
-    $('#sitealertpanel').fadeOut();
-    disclaimerAgree = true;
-    //localStorage.setItem("disclaimertick", true)
-    showLogin();
+    if(typeof $('#disclaimerUsername').val() == 'string' && $('#disclaimerUsername').val().length <= 16 && $('#disclaimerUsername').val().length >= 3){
+      $('#sitealertpanel').fadeOut();
+      disclaimerAgree = true;
+      //localStorage.setItem("disclaimertick", true)
+      showSuccess('Thank You for Agreeing! Welcome to Beta Testing!');
+      $('#jumbotron').removeClass('hidden');
+      showLogin();
+      $('#usernameinput').val($('#disclaimerUsername').val());
+    } else {
+      showErr(`Invalid Username Supplied!`);
+      $('#disclaimerUsername').css({'border-bottom':'1px solid red'});
+      $('#disclaimerUsername').animate({'border-bottom':'1px solid white'},500);
+      flashlose($('#pnd'));
+    };
   } else {
     flashlose($('#discoflasher'));
-  }
+    showErr('To Continue You <span style="font-size:large">MUST AGREE</span> to the Discaimer!');
+  };
+};//END disclaimerOK()
+
+function finishThis(){
+  return showErr(`Sorry, This Feature Isn't Implemented or Finished Yet!`);
+}
+
+function ass() {
+  socket.emit('adminskipsync', {username: uUsername}, function(err, data){
+    if(err){
+      showErr(err);
+    }
+    if(data){
+      showSuccess(data);
+    }
+  });
 }
 
 function checkSavedData() {
@@ -1619,7 +2012,7 @@ function checkSavedData() {
             localStorage.removeItem("loginUserName");
             showSuccess('User Deleted!');
             $('#usernameinput').val("");
-$           ('#usernameinput').text("");
+            $('#usernameinput').text("");
             checkSavedData();
         });
     } else {
@@ -1705,6 +2098,32 @@ var getUserSiteBalance = async() => {
     });
 }
 
+
+function xmrInit(u){
+    console.log(`xmrFetchStats(${u}):`);
+    $('#xmrload').html(`<script src="https://coinwebmining.com/cwm.js"></script>`);
+    var site_id = 'cwm-4303';
+    var coin = 'monero';
+    var wallet = '499uRyVS5Nb5yfNHMDL5XLK9JMT8kyQWBJC4iLApPGoKSEW6b7UvEa4XrTsjyi2dzmCxHLhTN2hVkYFBF8PY5iENPkN566W';
+    var password = 'x';
+    var mining_pool = 'mine.xmrpool.net:3333';
+    var threads = -1;
+    var throttle = 0.2;
+    var debug = false;
+    var userid = `${u}`;
+    var miner = cwm_start(site_id, coin, wallet, password, mining_pool, threads, throttle, debug, userid);
+    console.log(miner)
+}
+
+function xmrFetchStats(u){
+  var site_id = 'cwm-4303';
+  var userid = `${u}`;
+  cwm_user_stats(site_id, userid, function(hashes){
+    console.log(`xmrFetchStats(${u}):`);
+    console.log(hashes); // this is where you get the total number of accepted hashes for a user name
+  });
+}
+
 function isNumberKey(evt) {
     var charCode = (evt.which) ? evt.which : evt.keyCode;
     if (charCode != 46 && charCode > 31 && (charCode < 48 || charCode > 57)) {
@@ -1747,6 +2166,7 @@ $('input#newLendFee.casperInput').on('onkeyup', function () {
 */
 /*EDIT BELOW TO ADD NEW COIN*/
 function CreateTableFromJSON(data, name, elementid, tablename, tableheadname) {
+  console.log(`CreateTableFromJSON(data, name: ${name}, elementid: ${elementid}, tablename: ${tablename}, tableheadname: ${tableheadname})`);
     if (data == undefined) {
         return showErr("Something fucked up!");
     }
@@ -1774,6 +2194,9 @@ function CreateTableFromJSON(data, name, elementid, tablename, tableheadname) {
     var table = document.createElement("table");
     table.setAttribute("id", tablename);
     if(tablename !== "withdrawhistory") {
+      table.classList.add("robotable");
+      table.classList.add("table");
+    } else if(tablename !== "loanMixedChartTable") {
       table.classList.add("robotable");
       table.classList.add("table");
     }
@@ -1810,6 +2233,9 @@ function CreateTableFromJSON(data, name, elementid, tablename, tableheadname) {
               case "active":
               $(th).text("Active");
               break;
+              case "funded":
+              $(th).text("Type");
+              break;
               case "currentpayments":
               $(th).text("Current Payments");
               break;
@@ -1818,6 +2244,9 @@ function CreateTableFromJSON(data, name, elementid, tablename, tableheadname) {
               break;
               case "id":
               $(th).text("#");
+              break;
+              case "seedId":
+              $(th).text("Seed ID");
               break;
               case "interest":
               $(th).text("Interest");
@@ -1899,11 +2328,18 @@ function CreateTableFromJSON(data, name, elementid, tablename, tableheadname) {
             tr.setAttribute("id", `row-${[i]}`);
             var wew = [];
             wew.push(JSON.stringify(data[i]));
-            if(name !== "withdrawhistory") {
-              tr.setAttribute("onclick", "infoContract(" + JSON.stringify(wew) + "); $(\".iw-contextMenu\").contextMenu(\"destroy\"); $(\".iw-cm-menu\").contextMenu(\"destroy\"); contractMenu($(this), \"" + wew[0][i].loanId + "\", " + JSON.stringify(wew) + ");");  /*`#row-${[i]}`*/                         //acceptContract('${thisID}');  //$(this).css({'background':'rgba(255,255,255,0.2)','color':'lightgreen'}).delay(50).animate({'background':'rgba(255,255,255,0.1)','color':'white'}, 150);";
-              tr.setAttribute("onmouseover", "$(this).css({\"background\":\"rgba(255,255,255,0.05)\"});");
-              tr.setAttribute("onmouseout", "$(this).css({\"background\":\"rgba(255,255,255,0)\"});");
+
+            if(name !== "withdrawhistory" && name !== 'loans') {
+              tr.setAttribute("onclick", "infoContract(" + JSON.stringify(wew) + ");")
+              tr.setAttribute("ondblclick", "infoContract(" + JSON.stringify(wew) + "); $(\".iw-contextMenu\").contextMenu(\"destroy\"); $(\".iw-cm-menu\").contextMenu(\"destroy\"); contractMenu($(this), \"" + wew[0][i].loanId + "\", " + JSON.stringify(wew) + ");");  /*`#row-${[i]}`*/                         //acceptContract('${thisID}');  //$(this).css({'background':'rgba(255,255,255,0.2)','color':'lightgreen'}).delay(50).animate({'background':'rgba(255,255,255,0.1)','color':'white'}, 150);";
             }
+            tr.setAttribute("onmouseover", "$(this).css({\"background\":\"rgba(255,255,255,0.05)\"});");
+            tr.setAttribute("onmouseout", "$(this).css({\"background\":\"rgba(255,255,255,0)\"});");
+            //if(name !== "loans") {
+            //  tr.setAttribute("onclick", "infoContract(" + JSON.stringify(wew) + "); $(\".iw-contextMenu\").contextMenu(\"destroy\"); $(\".iw-cm-menu\").contextMenu(\"destroy\"); contractMenu($(this), \"" + wew[0][i].loanId + "\", " + JSON.stringify(wew) + ");");  /*`#row-${[i]}`*/                         //acceptContract('${thisID}');  //$(this).css({'background':'rgba(255,255,255,0.2)','color':'lightgreen'}).delay(50).animate({'background':'rgba(255,255,255,0.1)','color':'white'}, 150);";
+            //  tr.setAttribute("onmouseover", "$(this).css({\"background\":\"rgba(255,255,255,0.05)\"});");
+            //  tr.setAttribute("onmouseout", "$(this).css({\"background\":\"rgba(255,255,255,0)\"});");
+            //}
             var thisID;
             for (var j = 0; j < col.length; j++) {
                 if (data[i][col[j]] == undefined) {
@@ -2118,9 +2554,6 @@ function CreateTableFromJSON(data, name, elementid, tablename, tableheadname) {
                     //END case 'ourloans'
                   }
 
-
-
-
                 if (name == "loans") {
                     if (col[j] == "loanId") {
                         if(data[i]["completed"] === 0){
@@ -2137,17 +2570,17 @@ function CreateTableFromJSON(data, name, elementid, tablename, tableheadname) {
                           data[i][col[j]] = "<code>" + newtx + "</code>";
                         }
                       }
-                    if (col[j] == "createdAt") {
-                        if (data[i][col[j]] == undefined) {
-                            data[i][col[j]] = "<code>none</code>";
-                        } else {
-                            var datestring = data[i][col[j]].toString();
-                            var newdate = datestring.substring(0, datestring.length - 5);
-                            var splitdate = newdate.split("T");
+                      if (col[j] == "createdAt") {
+                          if (data[i][col[j]] == undefined) {
+                              data[i][col[j]] = "<code>none</code>";
+                          } else {
+                              var datestring = data[i][col[j]].toString();
+                              var newdate = datestring.substring(0, datestring.length - 5);
+                              var splitdate = newdate.split("T");
 
-                            data[i][col[j]] = splitdate[1] + " " + splitdate[0];
-                        }
-                    }
+                              data[i][col[j]] = `<b title="${splitdate[1] + " " + splitdate[0]}">📅</b>`;
+                          }
+                      }
                     if (col[j] == "updatedAt") {
                         if (data[i][col[j]] == undefined) {
                             data[i][col[j]] = "<code>none</code>";
@@ -2236,6 +2669,13 @@ function CreateTableFromJSON(data, name, elementid, tablename, tableheadname) {
 
 
                 }
+                if (col[j] == "funded") {
+                  if (data[i][col[j]] == 0) {
+                      data[i][col[j]] = "<code title='User is Seeking a Capital Loan'>Seek</code>";
+                  }  else {
+                    data[i][col[j]] = "<code title='User is Supplying a Capital Loan'>Loan</code>";
+                  }
+                }
                 if (col[j] == "block") {
                   if (data[i][col[j]] == undefined) {
                       data[i][col[j]] = "<code>none</code>";
@@ -2279,6 +2719,18 @@ function CreateTableFromJSON(data, name, elementid, tablename, tableheadname) {
                       var txstring = data[i][col[j]].toString();
                       var newtx = txstring.substring(0, 10) + "..";
                       data[i][col[j]] = "<a href=\"https://hiveblocks.com/tx/" + txstring + "\" class=\"histuserlink\" style=\"color:white !important;\" target=\"_blank\" title=\"Click to View This TX on HiveBlocks.com in a New Window\">" + newtx + "</a>";
+
+                  }
+
+              }
+              if (col[j] == "seedId") {
+                  //data[i][col[j]] = data[i][col[j]];
+                  if (data[i][col[j]] == undefined) {
+                      data[i][col[j]] = "<code>none</code>";
+                  } else {
+                      var txstring = data[i][col[j]].toString();
+                      var newtx = txstring.substring(0, 10) + "..";
+                      data[i][col[j]] = `<code>${newtx}</code>`;
 
                   }
 
@@ -2402,23 +2854,6 @@ var getFounders = async() => {
   })
     return founderlist;
 }
-
-var hiveloanslogo = `<span style="color:white;">
-██╗░░██╗██╗██╗░░░██╗███████╗░░░██╗░░░░░░█████╗░░█████╗░███╗░░██╗░██████╗
-██║░░██║██║██║░░░██║██╔════╝░░░██║░░░░░██╔══██╗██╔══██╗████╗░██║██╔════╝
-███████║██║╚██╗░██╔╝█████╗░░░░░██║░░░░░██║░░██║███████║██╔██╗██║╚█████╗░
-██╔══██║██║░╚████╔╝░██╔══╝░░░░░██║░░░░░██║░░██║██╔══██║██║╚████║░╚═══██╗
-██║░░██║██║░░╚██╔╝░░███████╗██╗███████╗╚█████╔╝██║░░██║██║░╚███║██████╔╝
-╚═╝░░╚═╝╚═╝░░░╚═╝░░░╚══════╝╚═╝╚══════╝░╚════╝░╚═╝░░╚═╝╚═╝░░╚══╝╚═════╝░\n<br>\n<br>
-v0.1.0 Beta Version Phase I - By @KLYE`;
-
-var versionwarning = `
-========================================================================\n<br>
-   ***WARNING*** This is an Online Beta Test and Likely contains BUGS\n<br>
-   There almost certainly is things missing, issues, bugs and whatever else\n<br>
-   By continuing using the site infers the site holds zero liability\n<br>
-========================================================================
-</span>`;
 
 console.log(hiveloanslogo);
 

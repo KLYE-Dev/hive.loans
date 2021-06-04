@@ -1,13 +1,19 @@
 const { config } = require("../config/index.js");
+const hive = require('@hiveio/hive-js');
+var dhive = require("@hiveio/dhive");
+var dhiveclient = new dhive.Client(["https://api.hive.blog", "https://api.hivekings.com", "https://anyx.io", "https://api.openhive.network"]);
 let debug = config.debug;
 const owner = config.owner;
 const hotwallet = config.hotwallet;
 const coldwallet = config.coldwallet;
 const sidechain = config.sidechainId;
+const auditwrite = config.auditwrite;
+const cid = config.sidechainId;
 const log = require("fancy-log");
 const DB = require("../database/models");
 const getStringByteSize = require('../snippets/getStringByteSize.js');
 const manaBar = require('../snippets/manaBar.js');
+const pm2 = require('../snippets/pm2MetricsHost.js');
 const sequelize = DB.sequelize;
 const DataBase = sequelize;
 const UserData = DataBase.models.Users;
@@ -23,28 +29,97 @@ log(`WRITE: Connected: ${online} with PID: ${pid}`);
 let writeArray = [];
 let writing = false;
 
+let userSockets = [];
+
+let head_block_id;
+let ref_block_num;
+
+
+function loanCount() {
+  Loandata.count().then(c => {
+    return c;
+  })
+}
+
+var writeArrayLengthMetric = pm2.writeArrayLengthMetric;
+
+var isWritingMetric = pm2.isWritingMetric;
+
 class ChainCrumb {
   constructor(name, action, payload) {
+    if(!name) return false;
+    if(!action) return false;
+    if(!payload) return false;
     this.contractName = name;
     this.contractAction = action;
     this.contractPayload = payload;
+    if(payload) {
+      //payload = JSON.parse(payload);
+      var payloadBytes = getStringByteSize.getStringByteSize(payload.contractPayload);
+      log(payload);
+      log(`SCRIBE: ChainCrumb - bytes: ${payloadBytes}`);
+      if(payloadBytes > 8192) {//8192
+      log(`SCRIBE: ChainCrumb - itemPayload Bytes > 8196b`);
+      return false;
+    } else {
+      return this;
+    }
+  }
+}
+}
+
+class ChainOp {
+  constructor(ref_block_num, ref_block_prefix, expiration, operations) {
+    this.ref_block_num = ref_block_num;
+    this.ref_block_prefix = Buffer.from(head_block_id, 'hex').readUInt32LE(4),
+    this.expiration = new Date(Date.now() + 60000).toISOString().slice(0, -5),
+    this.operations = [operations], //opertations syntax: ['opName', {atrribute1: var, attribute2: etcetc}]
+    this.extensions = []
   }
 }
 
+var fetchHead = async() => {
+  log(`fetchHead()`);
+  hive.api.getDynamicGlobalProperties(await function (err, result) {
+      if(err) {
+        log(err);
+        return false;
+      }
+      if (result) {
+          result = JSON.parse(JSON.stringify(result));
+          log(result);
+          result = parseInt(result["head_block_number"]);
+          head_block_id = result["head_block_id"];
+          ref_block_num = result["ref_block_num"];
+          return result;
+          //return result["last_irreversible_block_num"];
+      }
+  });
+};
+
 var arrayPacker = (name, action, payload) => {
+  log(`arrayPacker = (${name}, ${action}, ${payload})`);
   var createdCrumb;
   if (debug === false) log(`arrayPacker = (${name}, ${action}, ${payload})`);
-  if(!name) return log(`WRITE: ERROR: arrayPacker Missing name!`);
-  if(!action) return log(`WRITE: ERROR: arrayPacker Missing action!`);
-  if(!payload) return log(`WRITE: ERROR: arrayPacker Missing payload!`);
-  log(payload);
+  if(!name) log(`WRITE: ERROR: arrayPacker Missing name!`);
+  if(!action) log(`WRITE: ERROR: arrayPacker Missing action!`);
+  if(action !== 'nukeloan') {
+      if(!payload) log(`WRITE: ERROR: arrayPacker Missing payload!`);
+      log(payload);
+  }
+  if(!payload) payload = "none";
+
   //if(payload)
   createdCrumb = new ChainCrumb(name, action, payload);
-  log('createdCrumb:');
-  log(createdCrumb);
-
-  createdCrumb = JSON.stringify(createdCrumb);
-  writeArray.push(createdCrumb);
+  if(createdCrumb == false) {
+    log('createdCrumb: FALSE');
+    return;
+  } else {
+    log('createdCrumb:');
+    log(createdCrumb);
+    createdCrumb = JSON.stringify(createdCrumb);
+    writeArray.push(createdCrumb);
+  }
   delete createdCrumb;
 }
 
@@ -56,6 +131,7 @@ var fetchSiteRC = async() => {
 
 
 var auditseshtotal = 0;
+
 var jsonHiveWrite = async(writeArray) => {
   if (debug === false) log(`jsonHiveWrite = async(${writeArray})`);
   if(!writeArray) return log(`WRITE: ERROR: jsonHiveWrite Missing writeArray!`);
@@ -63,14 +139,12 @@ var jsonHiveWrite = async(writeArray) => {
   var oldArrayItem;
   writing = true;
   var al = writeArray.length;
-  log(`al`);
-  log(al);
+  //log(`al`);
+  //log(al);
   var nal = 0;
   for(item in writeArray){
-
-
-    log(`nal`);
-    log(nal);
+    //log(`nal`);
+    //log(nal);
     if(al <= nal) return;
     if(oldArrayItem){
       if(oldArrayItem == writeArray[item]) {
@@ -81,24 +155,98 @@ var jsonHiveWrite = async(writeArray) => {
       oldArrayItem = writeArray[item];
     }
     var itemPayload = writeArray[item];
-    nal++
+    nal++;
+      var preswitchoutpayload;
+      itemPayload = JSON.parse(itemPayload);
 
-    var payloadBytes = getStringByteSize.getStringByteSize(itemPayload);
-    itemPayload = JSON.parse(itemPayload);
-    log(`${item} - itemPayload:`);
-    log(itemPayload);
-    if(payloadBytes < 8192) {
-     await hive.broadcast.customJson(config.bankwif, ['hive.loans'], // requiredAuths (for signing json with active key)
-      [], `${config.sidechainId}.hive.loans`, JSON.stringify(itemPayload), async function(err, result) {
+      log(`SCRIBE: ${item} - itemPayload:`);
+      log(itemPayload);
+
+      log(`SCRIBE: itemPayload.contractAction:`);
+      log(itemPayload.contractAction);
+      if(auditwrite !== true && itemPayload.contractAction == 'audit'){
+        log(`SCRIBE: AUDIT FOUND - REMOVING`);
+        preswitchoutpayload = itemPayload;
+        itemPayload.contractPayload = {audit: 'view latest audit as https://hive.loans/api?audit'};
+        itemPayload = {audit: 'view latest audit as https://hive.loans/api?audit'};
+        return writeArray = writeArray.shift();
+      }
+
+    var payloadBytes = getStringByteSize.getStringByteSize(itemPayload.contractPayload);
+    log(`SCRIBE: payloadBytes: ${payloadBytes}b`);
+    if(payloadBytes > 8192) {//8192
+      log(`itemPayload Bytes > 8196b`);
+      if((writeArray.length - 1) == 0) {
+        writing = false;
+        writeArray = [];
+      }
+      //writeArray.shift();
+
+      writeArray = writeArray.shift();
+    } else {
+
+      /*
+      var newOp = {
+          ref_block_num: head_block_number,
+          ref_block_prefix: Buffer.from(head_block_id, 'hex').readUInt32LE(4),
+          expiration: new Date(Date.now() + expireTime).toISOString().slice(0, -5),
+          operations: [['vote', {
+              voter: account,
+              author: 'test',
+              permlink: 'test',
+              weight: 10000
+          }]],
+          extensions: [],
+      }
+
+      var signedOp = dhiveclient.broadcast.sign(newOp, privateKey)
+      */
+      /*
+      var headData = await fetchHead().then((res) => {
+        return res;
+      }).catch(errors => log(errors));
+      */
+      /*
+      hive.auth.signTransaction({
+        extensions: [],
+        ref_block_num: headData['head_block_number'],
+        ref_block_prefix: headData['head_block_id'],
+        operations: [
+          ['custom_json', {
+            required__auths: 'hive.loans',
+            required_posting_auths: [],
+            id: `${config.sidechainId}.hive.loans`,
+            json: JSON.stringify(itemPayload.contractPayload)
+          }]
+        ]}, [config.bankwif], (err, result) => {
+        return console.log(err, result);
+      });
+      log(headData);
+      */
+
+      //var newOP = await new ChainOp(`${fetchHead}`,);
+
+
+
+      //hive.auth.signTransaction(trx, keys);
+     await hive.broadcast.customJson(config.bankwif, ['hive.loans'], [], `${cid}.hive.loans`, JSON.stringify(itemPayload), async function(err, result) {
       if(err){
         log(err)
         return writing = false;
       }
       if(result) {
-        log(`WRITE: Blockchain Record Left Proof of ${(itemPayload.contractAction).toUpperCase()} at TXID ${result.id} on HIVE Block ${result.block_num}`);
+        log(`WRITE: Blockchain Record Left Proof of ${itemPayload.contractAction.toUpperCase()} at TXID ${result.id} on HIVE Block ${result.block_num}`);
         if(debug === false) log(result);
+        if(itemPayload.audit == 'view latest audit as https://hive.loans/api?audit') itemPayload = preswitchoutpayload;
           switch(`${itemPayload.contractAction}`){
             case 'audit':
+            log(`auditwrite: ${auditwrite}`)
+            if(auditwrite == false) {
+              return log(`WRITE: auditwrite is FALSE. No Audit Writing!`);
+              break;
+            } else {
+
+            }
               log(`audit case detected! Total in Session: ${auditseshtotal++}`);
               var auditUpdate = await AuditData.create({data: [itemPayload.contractPayload], txid:result.id, block:result.block_num}).then((res) => {
                 if(debug === true) log(auditUpdate);
@@ -112,61 +260,62 @@ var jsonHiveWrite = async(writeArray) => {
               }).catch((e) => {
                 return e;
               });
-            break;
+            break;//END case 'audit'
+
             case 'acceptdisclaimer':
-              UserData.update({disclaimer:writeArray[item].payload.agree},{where:{id:itemPayload['contractAction'].id}}).then((res) => {return res}).catch((e) => {return e});
+              UserData.update({disclaimer:writeArray[item].payload.agree},{where:{id:itemPayload['contractPayload'].id}}).then((res) => {return res}).catch((e) => {return e});
               if((writeArray.length - 1) == 0) writing = false;
               return writeArray.pop();
-            break;
+            break;//END case 'acceptdisclaimer'
             case 'newloan':
-              LoanData.update({startblock:result.block_num, txid:result.id, state:'deployed'},{where:{loanId:itemPayload['contractAction'].loanId}}).then((res) => {return res}).catch((e) => {return e});
-              userSockets[writeArray[item].payload.username].emit(`${writeArray[item].action}`, writeArray[item]);
+              LoanData.update({txid: result.id, startblock: result.block_num, state:'deployed'},{where:{seedId:itemPayload['contractPayload'].seedId}}).then((res) => {return res}).catch((e) => {return e});
+              userSockets[itemPayload.username].emit(`${itemPayload.contractAction}`, writeArray[item]);
               if((writeArray.length - 1) == 0) writing = false;
               return writeArray.pop();
-            break;
+            break;//END case ''
             case 'nukeloan':
-              LoanData.update({endblock:result.block_num, endtxid:result.id, state:'cancelled', completed: true, cancelled: true},{where:{loanId:itemPayload['contractAction'].loanId}}).then((res) => {return res}).catch((e) => {return e});
-              userSockets[writeArray[item].payload.username].emit(`${writeArray[item].action}`, writeArray[item]);
+              LoanData.update({endblock: result.block_num, endtxid: result.id, state:'cancelled', completed: true, cancelled: true},{where:{loanId:itemPayload['contractPayload'].loanId}}).then((res) => {return res}).catch((e) => {return e});
+              userSockets[itemPayload.username].emit(`${itemPayload.contractAction}`, writeArray[item]);
               if((writeArray.length - 1) == 0) writing = false;
               return writeArray.pop();
-            break;
+            break;//END case ''
             case 'startloan':
               LoanData.update({startblock:result.block_num, txid:result.id, state:'accepted'},{where:{loanId:itemPayload['contractAction'].userId}}).then((res) => {return res}).catch((e) => {return e});
               if((writeArray.length - 1) == 0) writing = false;
               return writeArray.pop();
-            break;
+            break;//END case ''
             case 'endloan':
               LoanData.update({endblock:result.block_num, txid:result.id, state:'completed'},{where:{loanId:itemPayload['contractAction'].userId}});
               if((writeArray.length - 1) == 0) writing = false;
               return writeArray.pop();
-            break;
+            break;//END case ''
             case 'newuser':
               UserData.update({flags: JSON.stringify([{"genesis":result.block_num, "birthtxid":result.id}])},{where:{userId: itemPayload['contractAction'].userId}}).then((res) => {return res}).catch((e) => {return e});
               if((writeArray.length - 1) == 0) writing = false;
               return writeArray.pop();
-            break;
+            break;//END case ''
             case 'withdraw':
               log(result);
               WithdrawData.update({confirmed: true, confirmedblock:result.block_num, confirmedtxid:result.id},{where:{txid:itemPayload['contractPayload'].txid}}).then((res) => {return res}).catch((e) => {return e});
               if((writeArray.length - 1) == 0) writing = false;
               return writeArray.pop();
-            break;
+            break;//END case ''
             case 'deposit':
               log(result);
               DepositData.update({confirmed: true, confirmedblock:result.block_num, confirmedtxid:result.id},{where:{txid:itemPayload['contractPayload'].txid}}).then((res) => {return res}).catch((e) => {return e});
               if((writeArray.length - 1) == 0) writing = false;
               return writeArray.pop();
-            break;
+            break;//END case ''
             case 'payment':
               LoanData.update({startblock:result.block_num, txid:result.id},{where:{loanId:writeArray[item]['contractPayload'].loanId}}).then((res) => {return res;}).catch((e) => {return e});
               if((writeArray.length - 1) == 0) writing = false;
               return writeArray.pop();
-            break;
+            break;//END case ''
             case 'completed':
               await LoanData.update({startblock:result.block_num, txid:result.id},{where:{loanId:writeArray[item]['contractPayload'].loanId}}).then((res) => {return res;}).catch((e) => {return e});
               if((writeArray.length - 1) == 0) writing = false;
               return writeArray.pop();
-            break;
+            break;//END case ''
             default:
             if((writeArray.length - 1) == 0) writing = false;
             return writeArray.pop();
@@ -176,8 +325,9 @@ var jsonHiveWrite = async(writeArray) => {
           return writeArray.pop();
         }
       });//END Broadcast
-    } else {
-      log(`itemPayload Bytes > 8196b`);
+
+
+
     }
   }
 };
@@ -207,7 +357,15 @@ if(debug === true) {
 var writeRobot = function(){
   var roboInterval = setInterval(function(){
     if(writing === true) {
-      return log(`WRITE: Blockchain Record Writing in Progress!`);
+      if(debug === true){
+        log(`writeArray:`);
+        log(writeArray);
+      }
+      if(writeArray.length == 0){
+        writing = false;
+      } else {
+        return log(`WRITE: Blockchain Record Writing in Progress!`);
+      }
     } else if(writing === false) {
       writeDaemon();
     }
@@ -222,7 +380,7 @@ process.on("message", async function(m){
   var sendsocket;
   try {
       m = JSON.parse(m);
-      if(debug === true){
+      if(debug === false){
         log(`hiveScribe.js Message:`);
         log(m);
       }
