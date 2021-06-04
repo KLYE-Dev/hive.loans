@@ -39,8 +39,7 @@ module.exports = {
       },
       confirmedtxid: {
         type: Sequelize.STRING,
-        allowNull: false,
-        defaultValue: null,
+        allowNull: true
       },
       createdAt: {
         allowNull: false,
