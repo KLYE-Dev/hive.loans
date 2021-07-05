@@ -45,6 +45,14 @@ process.on('message', async function(m) {
               resnum: m.resnum
             }));
         break;
+        case 'hivepricebyblock':
+          var price = await fetchhivepricebyblock();
+          process.send(JSON.stringify({
+            type: 'response',
+            payload: price,
+            resnum: m.resnum
+          }));
+        break;
         case 'borrowers':
           var borrowers = await borrowerslist();
           process.send(JSON.stringify({

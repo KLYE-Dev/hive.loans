@@ -44,7 +44,7 @@
     <ul class="menu sexyblackoutline">
       <li id="loansmenu" class="menu-sub-item hidden" onmouseover="$('#menufuckery2').fadeIn();$('#menufuckery').fadeOut();$('#menufuckery3').fadeOut();$('#menufuckery4').fadeOut();" onmousedown="$('#menufuckery2').fadeOut();"> <!--.addClass('hidden')    $('#menufuckery').fadeOut();-->
         <a onClick="showLoansMixed(); navAdd('loansmenu');"><b><i class="fas fa-landmark"></i> Loans</b></a>
-        <span id="menufuckery2" onload="$('#menufuckery2').hide();">
+        <span id="menufuckery2" class="menufuckery" onload="$('#menufuckery2').hide();">
           <ul id="lend" onClick="showLend(); navAdd('lend');" class="submenushit hidden"><li><a><b><i class="fas  fa-fw fa-chart-line" title="Click Here to Lend HIVE"></i> Lend</b></a></li></ul>
           <ul id="loans" onClick="showLoans(); navAdd('loans');" class="submenushit hidden"><li><a><b><i class="fas fa-fw fa-comments-dollar" title="Click Here to Borrow HIVE"></i> Borrow</b></a></li></ul>
           <ul id="audit" onClick="showSiteAudit(); navAdd('audit');" class="submenushit hidden"><li><a><b><i class="fas fa-fw fa-search-dollar" title="Click Here to View Site Audit"></i> Audit</b></a></li></ul>
@@ -52,7 +52,7 @@
       </li>
       <li id="futuresmenu" class="menu-sub-item hidden" onmouseover="$('#menufuckery3').fadeIn();$('#menufuckery1').fadeOut();$('#menufuckery2').fadeOut();$('#menufuckery4').fadeOut();" onmousedown="$('#menufuckery3').fadeOut();">
         <a onClick="showShares(); navAdd('shares');"><b><i class="far fa-fw fa-chart-bar" title="Click Here to Check Exchange Activities"></i> Exchange</b></a>
-        <span id="menufuckery3" onload="$('#menufuckery3').hide();">
+        <span id="menufuckery3" class="menufuckery" onload="$('#menufuckery3').hide();">
           <ul id="exchange" onClick="showShares(); navAdd('shares');" class="submenushit hidden"><li><a><b><i class="fas fa-fw fa-balance-scale" title="Click Here to Trade on Hive.Loans"></i> Trade</b></a></li></ul>
           <ul id="shares" onClick="showShares(); navAdd('shares');" class="submenushit hidden"><li><a><b><i class="fas fa-fw fa-chart-pie" title="Click Here to Trade Hive.Loans Shares"></i>
             <span class="shiny">
@@ -68,7 +68,7 @@
       </li>
       <li id="joinmenu" class="menu-sub-item hidden" onmouseover="$('#menufuckery4').fadeIn();$('#menufuckery1').fadeOut();$('#menufuckery2').fadeOut();$('#menufuckery3').fadeOut();" onmousedown="$('#menufuckery4').fadeOut();">
         <a onclick="showPowerTab(); navAdd('joinmenu');"><b><i class="fas fa-fw fa-charging-station" title="Click Here to Read FAQ"></i> Power</b></a></a>
-        <span id="menufuckery4" onload="$('#menufuckery4').hide();">
+        <span id="menufuckery4"  class="menufuckery" onload="$('#menufuckery4').hide();">
         <ul id="boost" onClick="showBoost(); navAdd('boost');" class="submenushit hidden"><li><b><i class="fas fa-fw fa-tachometer-alt" title="Click Here to Trade on Hive.Loans"></i> Boost</b></li></ul>
         <ul id="lease" onClick="showLease(); navAdd('lease');" class="submenushit hidden"><li><a><b><i class="fas fa-fw fa-fist-raised" title="Click Here to Lease Hive Power on Hive.Loans"></i> Lease</b></a></li></ul>
       </span>
@@ -77,7 +77,7 @@
       <li id="bugs" class="hidden" ><a href="https://github.com/klyed/hive.loans/issues" onClick="showSuccess('Thanks for Reporting Bugs on Github!')" title="Clicking this will Open Another Website" target="_blank"><b><i class="fas fa-fw fa-bug" title="Click Here to Report Bugs"></i> Bugs<sup><sub><i class="fas fa-fw fa-external-link-alt" title="Clicking this will Open Another Website"></i></sub></sup></b></a></li>
       <li id="profilemenu" class="menu-sub-item hidden" onmouseover="$('#menufuckery').fadeIn();$('#menufuckery2').fadeOut();$('#menufuckery3').fadeOut();$('#menufuckery4').fadeOut();" onmousedown="$('#menufuckery').fadeOut();"> <!--.addClass('hidden')    $('#menufuckery').fadeOut();-->
         <a onClick="showProfile(); navAdd(this.id);"><b><i class="fas fa-fw fa-user"></i> Account</b></a>
-        <span id="menufuckery" class="" onload="$('#menufuckery').hide();">
+        <span id="menufuckery"  class="menufuckery" onload="$('#menufuckery').hide();">
           <ul id="usernamestoreul"  class="submenushit"><li><a onClick=""><i class="fas fa-fw fa-at"></i> <b><span id="usernamestore"></span></b></a></li></ul>
           <ul id="admin" onClick="showAdmin(); navAdd('admin');" class="submenushit hidden"><li><a onClick=""><b><i class="fab fa-fw  fa-android"></i> Admin</b></a></li></ul>
           <ul id="wallet" onClick="showWallet(uUsername); navAdd('wallet');" class="submenushit hidden"><li><a onClick=""><b><i class="fas  fa-fw fa-wallet"></i> Wallet</b></a></li></ul>
@@ -88,13 +88,13 @@
           <ul id="profilelogout" class="submenushit hidden"><li><a onClick="logout();"><b><i class="fas  fa-fw fa-door-open"></i> Log Out</b></a></li></ul>
         </span>
       </li>
-      <li id="chaticon" class="hidden" ><a onclick="showChat(); $('#chaticon').addClass('hidden');" title="Click Here to Enable Chat"><b><i class="fas fa-comment-dots"></i></b></a></li>
-      <li id="darkmode" class="hidden" onclick="colorChange();"><a title="Click Here to Change Site Contrast"><b><i class="fas fa-adjust"></i></b></a></li>
+      <li id="chaticon" class="" ><a onclick="showChat(); $('#chaticon').addClass('hidden');" title="Click Here to Enable Chat"><b><i class="fas fa-comment-dots"></i></b></a></li>
+      <li id="darkmode" class="" onclick="colorChange();"><a title="Click Here to Change Site Contrast"><b><i id="coloricon" class="fas fa-adjust"></i></b></a></li>
       <!--<li><a id="logout" class="hidden" style="float: right;"  onClick="logout();showSuccess('Logging Out Now...')"><b><i class="fas   fa-fw fa-power-off" title="Power Off / Logo Out"></i> Logout</b></a></li>-->
       <li  id="login" class="hidden"><a style="float: right;" onClick="showLogin()"><b><i class="fas  fa-fw fa-sign-in-alt"></i> Login</b></a></li>
       <li id="menuburger" class="hidden"><a style="position: fixed; top: 0.7em; right: 1.1em;"><b><i class="fas   fa-fw fa-2x fa-bars"></i></b></a></li>
       <!--<li><a id="lights" class="hidden"><i class="fas  fa-fw fa-adjust"></i></a></li>-->
-      <li id="arrowin" class="hidden"><a style="float: right;" onClick="navbarBlitz()"><i class="fas  fa-fw fa-chevron-right" title="Click here to Grow Menu"></i></a></li>
+      <li id="arrowin" class="hidden" onClick="navbarBlitz()"><i class="fas  fa-fw fa-chevron-right" title="Click here to Grow Menu"></i></li>
     </ul>
   </nav>
 </div>
@@ -158,9 +158,9 @@
       <span id="alertMove" title="Click and Drag to Move Window" onmousedown="$('#alertpanel').draggable();">
         <i class="fas fa-arrows-alt"></i>
       </span>
-      <span id="alertTitle">HIVE / <span id="basetype">USD</span> Quick Price</span>
-      <span id="alertClose" class="hidden" title="Click to Close this Panel" onclick="$('#alertpanel').fadeOut();" onmouseover="$(this).css({'color':'grey'})" onmouseout="$(this).css({'color':'grey'})">
-        <i class="fas fa-times"></i>
+      <span id="alertTitle">HIVE / <span id="basetype">USD</span> Quick Chart</span>
+      <span id="alertClose" class="hidden" title="Click to Close this Panel" onclick="$('#alertpanel').animate({'bottom':'-26%'},500);$('#alertClose').html(<i class='fas fa-down-arrow'></i>)"; onmouseover="$(this).css({'color':'grey'})" onmouseout="$(this).css({'color':'grey'})">
+        <i class="fas fa-down-arrow"></i>
       </span>
     </div>
       <span id="alertWrapper" >
@@ -174,13 +174,13 @@
       <span id="alertPriceMove" class="smolbutton" title="Click and Drag to Move Window" onmousedown="$('#alertpricepanel').draggable();">
         <i class="fas fa-arrows-alt"></i>
       </span>
-      <span id="alertPriceTitle">HIVE&nbsp;/&nbsp;<span id="basetype">USD</span>&nbsp;Quick Price</span>
-      <span id="alertPriceClose" class="smolbutton"  title="Click to Close this Panel" onclick="$('#alertpricepanel').hide();">
-        <i class="fas fa-times"></i>
+      <span id="alertPriceTitle">HIVE&nbsp;/&nbsp;<span id="basetype">USD</span>&nbsp;Quick Chart</span>
+      <span id="alertPriceClose" class="smolbutton"  title="Click to Close this Panel" onclick="$('#alertpricepanel').css({'bottom':'6%'});$('#alertpricepanel').animate({'bottom':'-33%'},500) $('#alertPriceClose').html(<i class='fa fa-caret-up'></i>)">
+        <i class="fa fa-caret-down"></i>
       </span>
     </div>
       <span id="alertPriceWrapper" style="height:90%;width:100%;">
-        <iframe id="alertPriceIframe" style="height:90%;width:100%;" onload="$('#alertpricepanel').fadeIn();" src="https://www.worldcoinindex.com/widget/renderWidget?size=large&from=HIVE&to=usd&name=Hive&clearstyle=false"></iframe>
+        <iframe id="alertPriceIframe" style="height:330px;width:300px;" src="https://www.worldcoinindex.com/widget/renderWidget?size=large&from=HIVE&to=usd&name=Hive&clearstyle=false">        <script src="/js/packages/flot.min.js"></script></iframe>
         <code><p id="alertPriceFooter" class="sexyblackoutline">Above Price Quote from WorldCoinIndex.com</p></code>
       </span><!--END alertWrapper-->
   </span>
@@ -210,7 +210,7 @@
 </span><!--END chatpanel-->
 
 
-<span id="sitealertpanel" class="sitealertpanel hidden"  onmouseover="$('#menufuckery').fadeOut(); $('#menufuckery2').fadeOut(); $('#menufuckery3').fadeOut();$('#menufuckery4').fadeOut();headLight('#alertHead');"  onmouseout="headDim('#alertHead');" style="padding: 5px; text-align: center;">
+<span id="sitealertpanel" class="sitealertpanel hidden"  onmouseover="$('#menufuckery').fadeOut(); $('#menufuckery2').fadeOut(); $('#menufuckery3').fadeOut();$('#menufuckery4').fadeOut();headLight('#alertHead');"  onmouseout="headDim('#alertHead');" style="padding: 5px; text-align: center; height:78vh !important;">
   <div id="alertHead">
     <span id="siteAlertMove" class="smolbutton" title="Click and Drag to Move Window" onmousedown="$('#sitealertpanel').draggable();">
       <i class="fas fa-arrows-alt"></i>
@@ -249,11 +249,19 @@
         By hitting ACCEPT below you acknowledge this is beta testing<br>
         and agree that Hive.Loans is not responsible nor liable for <u>any</u><br>
         potential damages incurred during this testing phase!<br><br>
-        <code><input id="disclaimerCheck" type="checkbox"><span id="discoflasher" onclick="$('#disclaimerCheck').click();">&nbsp;I, <b id="pnd">@<input type"text" id="disclaimerUsername" class="sexyblackoutline casperInput " placeholder="username" onchange="disclaimersign(this.val);"></b> Hereby Sign and Agree that Hive.Loans is Free of ALL Liability</span></input></code>
-      </span><br><br><br><br><br>
+        <div><sub><code><b>Note</b>: You'll need <a src="https://hive-keychain.com/" target="_blank"><b>Hive Keychain</b></a> installed with your account keys to continue!</code></sub></div>
+        <code><span id="discoflasher" onclick="$('#disclaimerCheck').click();">
+          &nbsp;I, <b id="pnd">
+          @<input type"text" onfocus=" let value = this.value; this.value = null; this.value=value" id="disclaimerUsername" class="sexyblackoutline casperInput" placeholder="" onchange="disclaimersign(this.val);if($('#disclaimerUsername').val().length > 0){$('#disclaimerUsername').removeClass('blinking-cursor');}" onkeyup="if(this.value.length < 1){$('#disclaimerUsername').removeClass('blinking-cursor')}"></b> Hereby Sign and Agree that Hive.Loans is Free of ALL Liability</span></input>
+          </span>
+        </code>
+        <input id="disclaimerCheck" type="checkbox"></input><br>
         <button type="button" class="button sextext" id="closeAlertButton" onclick="disclaimerOK();">ACCEPT</button>
         <button type="button" class="button sextext" id="leaveAlertButton" onclick="window.location = 'https://google.com';">LEAVE</button>
-      </span>
+        </span>
+      <script>
+      document.getElementById("disclaimerUsername").focus();
+      </script>
     </span>
   </span>
 
@@ -307,7 +315,7 @@
    <span class="footersplitter"></span>
    <span id="blocknumber"><code>#</code>00000000<i class="fa fa-fw fa-spin fa-sync sexyblackoutline" style="color:gold;" aria-hidden="true" title="Site is Currently Syncing! Deposits May be Delayed!"></i></span>
    <span class="footersplitter"></span>
-   <i id="wcipricepopup" class="fas fa-chart-line" title="Click Here to Show Price Chart" onload="" onclick="$('#alertpricepanel').show();reloadPricePopup();">&nbsp;</i><span id="pricecheckchanger" onclick="tickerCurrency();">1 <span id="pricechecktoken">HIVE</span> <span id="pricechecktokenlogo"><i class="fab fa-hive" style="color:#E31337;"></i></span>
+   <i id="wcipricepopup" class="fas fa-chart-line" title="Click Here to Show Price Chart" onload="" onclick="$('#alertpricepanel').animate({'bottom':'6%'},500);">&nbsp;</i><span id="pricecheckchanger" onclick="tickerCurrency();">1 <span id="pricechecktoken">HIVE</span> <span id="pricechecktokenlogo"><i class="fab fa-hive" style="color:#E31337;"></i></span>
    </span>
    <i class="fas fa-equals"></i>
     <span id="pricecheckcaret"></span>
@@ -358,6 +366,7 @@
 <script src="/js/packages/colorFader.js"></script>
 <script src="/js/packages/contextMenu.min.js"></script>
 <script src="/js/packages/openpgp.min.js"></script>
+
 <!--<script src="/js/packages/aes256.js"></script>-->
 <script src="/js/dialogs.js"></script>
 <script src="/js/variables.js"></script>

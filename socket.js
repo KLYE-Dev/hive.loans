@@ -23,7 +23,6 @@ const log = require('fancy-log');
 const io = require("socket.io");
 const socket = io();
 const pm2 = require(__dirname + '/snippets/pm2MetricsHost.js');
-const { Timer } = require('easytimer.js');
 const moment = require('moment');
 const geoip = require('geoip-lite');
 const schedule = require('node-schedule');
@@ -109,6 +108,45 @@ var foundersload = () => {
 };
 
 foundersload();
+
+var backerslist = [];
+var backersload = () => {
+  fs.readFile(__dirname + "/lists/backers.csv", function(err, data){
+    if(err) return false;
+    if(data){
+      try{
+        backerslist.push(data);
+        log(backerslist)
+        return backerslist;
+      } catch(e) {
+        log(e);
+        return false;
+      }
+    }
+  });
+};
+
+backersload();
+
+var hlspreholderlist = [];
+var hlspreholder = () => {
+  fs.readFile(__dirname + "/lists/birds.json", function(err, data){
+    if(err) return false;
+    if(data){
+      try{
+        hlspreholderlist.push(data);
+        log(hlspreholderlist)
+        return hlspreholderlist;
+      } catch(e) {
+        log(e);
+        return false;
+      }
+    }
+  });
+};
+
+hlspreholder();
+
 var auditArray = [];
 var auditWalletArray = [];
 
@@ -616,7 +654,7 @@ function censor(censor) {
     ++i; // so we know we aren't using the original object anymore
     return value;
   }
-}
+};
 
 async function founders(){
   founderslist = [];
@@ -676,11 +714,11 @@ function jsonBreadCrumb(name, action, payload, socketid) {
   if(hsPayload && scribeThread){
     scribeThread.send(hsPayload);
   }
-}//END jsonBreadCrumb
+};//END jsonBreadCrumb
 
 
 
-
+/*
 async function sendbackersupdate() {
 await DepositData.findAll({
 limit: 100,
@@ -755,6 +793,8 @@ sendbackersupdate();
 //var backerTimer = setInterval(function(){
 //sendbackersupdate();
 //}, 30000);
+*/
+
 
 async function splitOffVests(string){
   if(string){
@@ -763,7 +803,7 @@ async function splitOffVests(string){
   } else {
     return false;
   }
-}
+};
 
 var getManaBarRC = async(user) => {
   if(!user) return "No User Specified";
@@ -787,7 +827,7 @@ var getVotePowerPercent = async(user) => {
   var userVP = await getVP.fetch(user);
   if(debug === true) log(`SOCKET: userVP: ${userVP}`);
   return userVP;
-}
+};
 
 var getHivePower = async(user) => {
   if(!user) return "No User Specified";
@@ -846,9 +886,9 @@ var connectiontest = async() => {
   } catch (error) {
     log('ERROR: Unable to Connect to the Database:', error);
   }
-}
-connectiontest();
+};
 
+connectiontest();
 
 function siteAudit() {
   if(config.verbose === true) log(`SOCKET: Start Site Audit!`);
@@ -858,7 +898,7 @@ function siteAudit() {
   loanThread.send(ltpayload);
   var wdpayload = JSON.stringify({type:'wdfeeaudit'});
   userThread.send(wdpayload);
-}
+};
 
 function siteAuditDaemon() {
   log(`SOCKET: Site Audit in Progress!`);
@@ -871,11 +911,9 @@ function siteAuditDaemon() {
   setTimeout(function(){
     siteAuditDaemon()
   }, 60000);
-}
+};
 
 siteAuditDaemon();
-
-
 rpcThread.on('message', function(m) {
   try {
     m = JSON.parse(m);
@@ -994,7 +1032,6 @@ rpcThread.on('message', function(m) {
 });//END rpcThread.on('message',
 
 var auditWdFeeArray;
-
 userThread.on('message', function(m) {
     try{
       m = JSON.parse(m);
@@ -1301,6 +1338,7 @@ let loginContent = `<center style="font-weight: 600;"><h3 class="pagehead" style
 `</b>`+
 `<br>` +
 `<sub style="position: absolute; bottom: 0; width: 100%; left: 0; text-shadow: none !important; color: black;">` +
+`<br><br>` +
 `Our servers are hosted by an extremely privacy savvy company <a style="color:white !important;" class="sexyblackoutline" href="https://pay.privex.io/order?r=klye"><b><u>Privex.io</u></b> <img src="/img/privex.svg" style="max-width: 25px !important; max-height: 25px !important; bottom: 0; right: 0; position: absolute; "></a></sub>`;
 
 
@@ -1374,8 +1412,6 @@ var chatpunt = async() => {
   return socket.emit('chatHistory', {chathist: chatHist, newmsg: "0"});
 }
 */
-
-
 
 socket.on("disconnect", function() {
   console.log('User Disconnect:', socket.request.session['user']);
@@ -1673,21 +1709,31 @@ socket.on("login", async function(req, cb) {
 
 
 socket.on("openskclink", async function(data, cb) {
+  if(debug == true) log(`socket.on("adminskipsync")`);
   var datasave;
+  log(`openskclink 'data' var:`);
+  log(data);
   if(!data.username) return cb('Login Username Undefined', null);
   if(!data.password) return cb('Login Password Undefined', null);
   if(!data.agree) return cb('Disclaimer Agreement Undefined', null);
+  if(!data.oauthtype) return cb('Login Oauth Type Undefined', null);
   if(!data.date) return cb('Login Date Undefined', null);
   if(!data.sec) return cb('Login Security ID Undefined', null);
+
+  log(`data.oauthtype`);
+  log(`${data.oauthtype}`);
 
   var user = data.username.toLowerCase();
   if (typeof canUserTransact[user] !== undefined && canUserTransact[user] == true) canUserTransact[user] = false;
   var usersocketcheck = socket.request.session['user'];
   var agree = data.agree;
 
+  log(`usersocketcheck`);
   log(usersocketcheck);
+  log(`user`);
   log(user);
-  if(typeof usersocketcheck != "undefined") {
+
+  if(usersocketcheck != undefined) {
       if(user != usersocketcheck) return cb('Invalid User Login Request', null);
   }
 
@@ -1795,14 +1841,19 @@ socket.on("openskclink", async function(data, cb) {
                 }
                 var newAddyHash = crypto.randomBytes(16).toString('hex');
                 if(loginData.address === '0'){
-                  log(`loginData.address is undefined! Updating now!`);
-
+                  log(`loginData.address is undefined! Updating now!`)
                   await UserData.update({address:newAddyHash},{where:{id:uid}});
                 }
                 if(loginData.disclaimer == true){
-                    //jsonBreadCrumb('accounts', 'acceptdisclaimer', {agree: data.agree}, simpleStringify(socketid));
+                    UserData.update({disclaimer:data.agree},{where:{id:uid}});
+                    jsonBreadCrumb('accounts', 'acceptdisclaimer', {username: user, agree: data.agree}, simpleStringify(socketid));
                 } else if (loginData.disclaimer == false){
-                    jsonBreadCrumb('accounts', 'acceptdisclaimer', {agree: data.agree}, simpleStringify(socketid));
+                    UserData.update({disclaimer:data.agree},{where:{id:uid}});
+                    jsonBreadCrumb('accounts', 'acceptdisclaimer', {username: user, agree: data.agree}, simpleStringify(socketid));
+                } else {
+                  loginData.disclaimer = false;
+                  UserData.update({disclaimer:false},{where:{id:uid}});
+                  jsonBreadCrumb('accounts', 'acceptdisclaimer', {username: user, agree: false}, simpleStringify(socketid));
                 }
 
                 var token = crypto.randomBytes(64).toString('base64');
@@ -1837,7 +1888,6 @@ socket.on("openskclink", async function(data, cb) {
 
                 log(`getActualHiveDelegated:`);
                 log(getActualHiveDelegated);
-
 
                 var chatHist = await ChatData.findAll({
                   limit: 100,
@@ -1995,7 +2045,9 @@ socket.on("adminskipsync", function(data, cb) {
 }); //END adminskipsync
 
 socket.on("chatmenu", function(data, cb) {
+
   var source = socket.request.session['user'];
+  log(`socket.on("chatmenu" from ${source}`);
   //data = JSON.stringify(data);
   if (source === owner) {
     menu = "admin";

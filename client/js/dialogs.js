@@ -847,14 +847,20 @@ function skcusersocket(user) {
     var splitpick = randompick.split(".");
     randompick = splitpick[1].toString();
     var randomBytes = randompick;
-    if(disclaimerAgree == true){
-
-    }
+    var skcloginmsg;
     var rngsample = randompick;
     var dateNow = new Date().getTime();
-    var skcloginmsg = `#Signed Hive.Loans @${user} Identity Verification - disclaimerAgree: ${disclaimerAgree} - Date: ${dateNow} - SecKey: ${rngsample}`;
     var postprivkey = "Posting";
-    hive_keychain.requestSignBuffer($("#skcuserinput").val(), skcloginmsg, postprivkey, function(response) {
+    if(disclaimerAgree == true){
+     skcloginmsg = `#Signed Hive.Loans @${user} Identity Verification - disclaimerAgree: ${disclaimerAgree} - Date: ${dateNow} - SecKey: ${rngsample}`;
+    } else if (disclaimerAgree == false) {
+      return showErr(`Error Processing Disclaimer Response`);
+    } else {
+      return showErr(`Something Went Wrong! Try Again`);
+    }
+    console.log('skcloginmsg:');
+    console.log(skcloginmsg)
+    hive_keychain.requestSignBuffer(user, skcloginmsg, postprivkey, function(response) {
         var skcpassword = response.result;
         var skcuser = $("#skcuserinput").val();
         var skcsignsuccess = response.success;
@@ -862,13 +868,16 @@ function skcusersocket(user) {
         skcuser = user.toString();
         if (skcsignsuccess == true) {
           showSuccess(`Keychain Initialization Success!`);
+            var nd;
             if (skc2fa != undefined) {
-                var data = {username: skcuser, pass: skcpassword, fa: skc2fa};
+                nd = {username: skcuser, pass: skcpassword, fa: skc2fa, agree: disclaimerAgree, date:dateNow, sec:rngsample, oauthtype: 'keychain'};
             } else {
-                var data = {username: skcuser, password: skcpassword};
+                nd = {username: skcuser, password: skcpassword, agree: disclaimerAgree, date:dateNow, sec:rngsample, oauthtype: 'keychain'};
                 console.log(`dialog.js openskclink preinput`);
-                console.log(data);
-                socket.emit('openskclink', { username: skcuser, password: skcpassword, agree: disclaimerAgree, date:dateNow, sec:rngsample}, function(err, data) {
+                console.log(response);
+                console.log(`disclaimerAgree:`);
+                console.log(`${disclaimerAgree}`);
+                socket.emit('openskclink', nd, function(err, data) {
                   if (err) {
                     showErr(`${err}`);
                     $('#loginspin').html("<i id='loadingring' style='color:red;' class='fa fa-times fa-2x fa-fw' ></i>");
@@ -988,6 +997,7 @@ function skcusersocket(user) {
                   $("#futuresmenu").removeClass("hidden");
                   $("#invest").removeClass("hidden");
                   $("#login").addClass('hidden');
+                  $("#chaticon").addClass('hidden');
                   $("#logout").removeClass('hidden');
                   $("#arrowin").removeClass('hidden');
                   $("#listing").removeClass('hidden');
@@ -1005,6 +1015,7 @@ function skcusersocket(user) {
                   $("#login").addClass('hidden');
                   $("#logout").show();
                   $("#arrowin").show();
+
                   $('#userhivebalance').val(data.hivebalance);
                   $('#userhbdbalance').val(data.hbdbalance);
                   scrollToTop($("#trollbox"));
@@ -1779,7 +1790,9 @@ async function showSettings() {
   `<button class="button" style="line-height: 1vh;" onClick="usdCurrency();">USD</button>` +
   `<br>` +
   `<br>` +
-  `<b>Donation Percentage</b>:` +
+  `<b>Show Info Bubbles</b>:` +
+  `<button id="settings-siteinfo" class="button" style="line-height: 1vh;" onClick="togglesiteinfo()">Hide</button> ` +
+  `<button class="button hidden" style="line-height: 1vh;" onClick="">Show</button> ` +
   `<br><input id="settingsDonatePercent" placeholder="Current Password" type="number" min="1" max="100" step="0.01" placeholder="1.00">` +
   `<br><br>` +
   `<button disabled type="button" style="font-size: larger; padding: 10px; background: #000; color: white; width: 40%;border-radius:5px;" class="button" id="setSettings" onClick="saveSettings();" title="Click Here to Save Settings" disabled >Save Settings</button></center><br><br>` +
@@ -1939,8 +1952,8 @@ async function showProfile() {
   `</td>` +
   `</tr>` +
   `<tr id="profilestatsrow">` +
+  `<p id="sasf" onload="$('#sasf').addClass('hidden');"><span id="showStatsTemp">Show</span> Account Stats & Facts</p>` +
   `<td class="profilestats">` +
-  `<p id="sasf" onload="$('#sasf').hide();"><span id="showStatsTemp">Show </span>Account Stats & Facts</p>` +
   `<b>Loans</b>` +
   `<br>` +
   `<code>Contracts Created</code>` +
@@ -2786,9 +2799,7 @@ if(userWalletFetchData) console.log(userWalletFetchData)
   $('#mandepinfo').fadeOut();
   $("#sitealertpanel").fadeIn();
   });
-
 };//END function showLeftSideWallet()
-
 
 async function showPowerTab() {
   console.log(`showPowerTab() called`);
@@ -3069,10 +3080,7 @@ async function showPowerTab() {
       $("#jumbotron").fadeIn();
       $("#jumboTitle").text(`Hive Power Leasing Pool`);
   });
-}//END showAcctRecoverPanel
-
-
-
+};//END showAcctRecoverPanel
 
 async function showAcctRecoverPanel() {
   console.log(`showAcctRecoverPanel() called`);
@@ -3274,7 +3282,7 @@ function makeExchangeChart(data){
     }
   })
      hivechartmade = true;
-}//END makeCFDChart;
+};//END makeCFDChart;
 
 var showExchangeWarning = true;
 async function showShares() {
@@ -3365,7 +3373,7 @@ async function showShares() {
       $("#jumbotron").fadeIn();
       $("#jumboTitle").html(`<span id="exchangeAssetType">HLSHARE</span>&nbsp;/&nbsp;<span id="exchangeAssetBase">HIVE</span>&nbsp;Exchange`);
   });
-}
+};
 
 async function showLoansMixed() {
   console.log(`showLoansMixed() called`);
@@ -3545,10 +3553,8 @@ async function showLoansMixed() {
         var loanState = processState(siteLoansArray, false);
         $("#noLoanContracts").html(loanState);
       }
-
   });
-
-}
+};
 
 async function showFaq() {
   console.log(`showFaq() called`);
@@ -3645,7 +3651,6 @@ async function showSiteAudit() {
   `<span style="float:right;">Site Fees Total:<i class="fas fa-fw fa-question-circle" title="Total Fees the Application has Generated"></i><br><div class="casperInput input-group"><input id="audit-totalfee" class=" input-group-text inputclear" placeholder="0.000" readonly><span class="input-group-append"><b><i class="fab fa-hive" style="color:#E31337;"></i></b></span></div></span>`;
   `<br><br><hr class="allgrayeverythang">`+
   `<br><b>STATUS</b>:<br><div class="casperInput input-group"><input id="audit-update" class="input-group-text inputclear" placeholder="Loading Site Audit Status..." readonly></div>`;
-
   //`<button id="auditcloser" onClick="$('#jumboClose').click();" class="button">CLOSE</button></center>`;
   $("#jumbotron").fadeOut('fast');
   $("#jumbotron").promise().done(function(){
@@ -3658,7 +3663,6 @@ async function showSiteAudit() {
       $("#jumbotron").fadeIn();
   });
 };
-
 
 async function showMining() {
   loadingjumbo();
@@ -3677,7 +3681,7 @@ async function showMining() {
       $("#jumbotron").fadeIn();
       $("#jumboTitle").text(`Mine HIVE in Your Browser`);
   });
-}
+};
 
 async function showUserAudit() {
   loadingjumbo();
@@ -3700,8 +3704,7 @@ $("#jumboHead").show();
       $("#jumbotron").fadeIn();
       $("#jumboTitle").text(`User Audit`);
   });
-}
-
+};
 
 var brtable =
 `<div class="tg-wrap">` +
@@ -3729,10 +3732,8 @@ var brtable =
 
 var TGSort=window.TGSort||function(n){"use strict";function r(n){return n?n.length:0}function t(n,t,e,o=0){for(e=r(n);o<e;++o)t(n[o],o)}function e(n){return n.split("").reverse().join("")}function o(n){var e=n[0];return t(n,function(n){for(;!n.startsWith(e);)e=e.substring(0,r(e)-1)}),r(e)}function u(n,r,e=[]){return t(n,function(n){r(n)&&e.push(n)}),e}var a=parseFloat;function i(n,r){return function(t){var e="";return t.replace(n,function(n,t,o){return e=t.replace(r,"")+"."+(o||"").substring(1)}),a(e)}}var s=i(/^(?:\s*)([+-]?(?:\d+)(?:,\d{3})*)(\.\d*)?$/g,/,/g),c=i(/^(?:\s*)([+-]?(?:\d+)(?:\.\d{3})*)(,\d*)?$/g,/\./g);function f(n){var t=a(n);return!isNaN(t)&&r(""+t)+1>=r(n)?t:NaN}function d(n){var e=[],o=n;return t([f,s,c],function(u){var a=[],i=[];t(n,function(n,r){r=u(n),a.push(r),r||i.push(n)}),r(i)<r(o)&&(o=i,e=a)}),r(u(o,function(n){return n==o[0]}))==r(o)?e:[]}function v(n){if("TABLE"==n.nodeName){for(var a=function(r){var e,o,u=[],a=[];return function n(r,e){e(r),t(r.childNodes,function(r){n(r,e)})}(n,function(n){"TR"==(o=n.nodeName)?(e=[],u.push(e),a.push(n)):"TD"!=o&&"TH"!=o||e.push(n)}),[u,a]}(),i=a[0],s=a[1],c=r(i),f=c>1&&r(i[0])<r(i[1])?1:0,v=f+1,p=i[f],h=r(p),l=[],g=[],N=[],m=v;m<c;++m){for(var T=0;T<h;++T){r(g)<h&&g.push([]);var C=i[m][T],L=C.textContent||C.innerText||"";g[T].push(L.trim())}N.push(m-v)}t(p,function(n,t){l[t]=0;var a=n.classList;a.add("tg-sort-header"),n.addEventListener("click",function(){var n=l[t];!function(){for(var n=0;n<h;++n){var r=p[n].classList;r.remove("tg-sort-asc"),r.remove("tg-sort-desc"),l[n]=0}}(),(n=1==n?-1:+!n)&&a.add(n>0?"tg-sort-asc":"tg-sort-desc"),l[t]=n;var i,f=g[t],m=function(r,t){return n*f[r].localeCompare(f[t])||n*(r-t)},T=function(n){var t=d(n);if(!r(t)){var u=o(n),a=o(n.map(e));t=d(n.map(function(n){return n.substring(u,r(n)-a)}))}return t}(f);(r(T)||r(T=r(u(i=f.map(Date.parse),isNaN))?[]:i))&&(m=function(r,t){var e=T[r],o=T[t],u=isNaN(e),a=isNaN(o);return u&&a?0:u?-n:a?n:e>o?n:e<o?-n:n*(r-t)});var C,L=N.slice();L.sort(m);for(var E=v;E<c;++E)(C=s[E].parentNode).removeChild(s[E]);for(E=v;E<c;++E)C.appendChild(s[v+L[E-v]])})})}}n.addEventListener("DOMContentLoaded",function(){for(var t=n.getElementsByClassName("tg"),e=0;e<r(t);++e)try{v(t[e])}catch(n){}})}(document);
 
-
 async function showBankroll() {
   loadingjumbo();
-
   let bankrollContent = `<center id="bankrollContent">` +
   `<div id="createHPLeasewrapper" class="" style="display: block;">` +
   `<span style="float:center;">Your Current Invested:</span>` +
@@ -3802,7 +3803,7 @@ async function showBankroll() {
     $("#jumbotron").fadeIn();
     $("#jumboTitle").text(`CFD Bankroll Liquidity Investing`);
   });
-}
+};
 
 async function showAdmin() {
   loadingjumbo();
@@ -3830,10 +3831,12 @@ function showDisclaimer(){
   $("#sitealertpanel").promise().done(function(){
       $("#jumbotron").hide();
       $("#jumbotron").addClass('hidden');
-      $("#sitealertpanel").css({'position':'relative','top':'14% !important','height':'86vh','width':'25%'});
+      $("#sitealertpanel").css({'position':'relative','top':'14% !important','height':'79vh !important','width':'25%'});
       $("#sitealertpanel").center();
       $("#sitealertpanel").removeClass('hidden');
       $("#sitealertpanel").fadeIn();
+      $("#disclaimerUsername").click();
+      $("#disclaimerUsername").focus();
   });
 }
 
@@ -3842,7 +3845,6 @@ function showPricePeakPanel(coin, type){
   if(!type) type = "usd";
   var url;
   if(!usersDataFetch) return;
-
   $("#alertpricepanel").promise().done(function(){
     $("#alertpricepanel").removeClass('hidden');
     if(type == "usd"){
@@ -3850,12 +3852,9 @@ function showPricePeakPanel(coin, type){
     }
     $("#HivePriceDanger").html('<span id="pricepanelchart"></span>' + url);
       //$("#jumbotron").hide();
-      $("#alertpricepanel").css({'height':'85%','width':'25%'});
-      $("#alertpricepanel").center();
-      $("#alertpricepanel").removeClass('hidden');
-      $("#alertpricepanel").fadeIn();
+      $("#alertpricepanel").animate({'bottom':'6%'}, 500);
   });
-}
+};
 
 function skclogologinclick(){
   var clickString = `Please See Keychain Popup to Continue <i style="color:white !important;" class="fas fa-long-arrow-alt-right"></i>`;
@@ -3885,9 +3884,6 @@ var betaKey = function(event){
     }
 };
 
-
-
-
 var betaNumPress = (n) => {
   //if(typeof n !== 'number') return;
   if(bpc == undefined) {
@@ -3910,18 +3906,16 @@ var betaNumPress = (n) => {
       submitBetaPass(bpc);
     }
   }
-}
-
-
+};
 
  function eyechecker(){
   if($('#toggleBetaPassEye').is(':checked')){
    $("input#betapass").attr("type", "number");
    $("#toggleText").html(`<i class="far fa-eye-slash"></i>`);
-  }else{
+  } else {
    $("input#betapass").attr("type", "password");
    $("#toggleText").html(`<i class="far fa-eye"></i>`);
-  }
+ };
  };
 
 
@@ -3961,9 +3955,9 @@ async function showBetaPass() {
     `<td><button onClick="betaNumPress(9);" class="button numButton" >9</button></td>`+
   `</tr>`+
   `<tr>`+
-    `<td><button onclick="$('input#betapass').val(''); bpc = ''; flashlos('input#betapass'); checkBetaPass(); " class="button numButton" ><i class="fas fa-undo-alt"></i></button></td>`+
+    `<td><button onclick="$('input#betapass').val(''); bpc = ''; flashlose('input#betapass'); checkBetaPass(); " class="button numButton" ><i class="fas fa-undo-alt"></i></button></td>`+
     `<td><button onClick="betaNumPress(0);" class="button numButton" >0</button></td>`+
-    `<td><button onclick=" bpc = bpc.slice(0, -1); $('input#betapass').val(bpc); checkBetaPass(); flashlose('input#betapass');" class="button numButton" title='Backspace'><i class="fas fa-backspace"></i></button></td>`+
+    `<td><button onclick="if(!bpc){return bpc = '';}; bpc = bpc.slice(0, -1); $('input#betapass').val(bpc); checkBetaPass(); flashlose('input#betapass');" class="button numButton" title='Backspace'><i class="fas fa-backspace"></i></button></td>`+
   `</tr>`+
 `</tbody>`+
 `</table>`+
@@ -3998,7 +3992,7 @@ function showLogin() {
   $("#sitealertpanel").addClass('hidden');
   if(betaPassChecked !== true) return showBetaPass();
   if(disclaimerAgree !== true){
-    $('#sitealertpanel').css({'top':'15%','height':'55%','width':'22%'});
+    $('#sitealertpanel').css({'top':'15%','height':'79vh !important','width':'22%'});
     return showDisclaimer();
   }
  //$('#sending').html('<i style="color:grey" class="fa fa-pulsener fa-pulse fa-2x fa-fw"></i>');
@@ -4020,7 +4014,6 @@ function showLogin() {
             $('#loginfuckery').fadeOut();
             $('#loginfuckery').css('white');
             $('#loginfuckery').html();
-
             setTimeout(function(){
               var isValidUsername = hive.utils.validateAccountName($('#usernameinput').val());
               console.log(isValidUsername)
@@ -4033,7 +4026,7 @@ function showLogin() {
           }
       });
   });
-}
+};
 
 async function showRepayWindow(loanData) {
   console.log(`showRepayWindow(loanData)`);
@@ -4042,7 +4035,6 @@ async function showRepayWindow(loanData) {
   try {
     //loanData = JSON.stringify(loanData);
   } catch (e) {console.log(e);showErr(`Failed to Parse Loan Data!`)};
-
   var newinterest = (loanData.interest / 100);
   var totalpayments = (loanData.days / 7);
   var totalrepay =  loanData.amount + (loanData.amount * newinterest);
@@ -4052,7 +4044,6 @@ async function showRepayWindow(loanData) {
   var encrypted;
   var superamtvar;
   //console.log(`showRepayWindow(${user}, ${contractID}, ${limit}, ${loanData}) `);
-
   var paymentcontent = `<h3 class="pagehead" style="color:white !important;">Manual Payment of Lending Contract Debt<br><sup><code>Lending Contract #<span id="contractsurrenderID"></span><br><br><span id="contractFinalizeData"></span></code></sup></h3><table><tbody><tr><td>Amount of HIVE to Repay:<br><input type="text" onchange="return manualPay = $(this).val();" id="paymentAmt" style="background: white; color: black; text-align: center; width: 80%; height: 3vh; font-size: large; border-radius: 10px;"></td></tr><tr><td>Once the Outstanding Contract Balance is Paid you're given your Owner Key</td></tr><tr><td><button class="button" id="submitmanualpayment" onclick="payloan('${loanData.borrower}', '${loanData.loanId}', document.getElementById('paymentAmt').value)">Submit Payment</button></td></tr><tr><td><span id="acceptTitle"></span></td></tr><tr><td><span id="acceptOutcome"></span></td></tr></tbody></table>`;
   $("#jumbotron").fadeOut('fast');
   $("#jumbotron").promise().done(function(){
@@ -4071,5 +4062,4 @@ async function showRepayWindow(loanData) {
       $("#jumbotron").fadeIn();
       $("#jumboTitle").text(`Manual Repayment`);
   });
-
-}
+};

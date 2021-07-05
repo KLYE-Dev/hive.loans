@@ -820,15 +820,34 @@ var blonkcount = 0;
     }
   }, 3000);
 
+var showsiteinfo = true;
+function togglesiteinfo() {
+  if(showsiteinfo == true) {
+    $('#settings-siteinfo').val('Hide');
+    $('.siteinfo').removeClass('hidden');
+    showsiteinfo == false;
+  } else if(showsiteinfo == false) {
+    $('#settings-siteinfo').val('Show');
+    $('.siteinfo').addClass('hidden');
+    showsiteinfo == true;
+  } else {
+    $('#settings-siteinfo').val('Hide');
+    $('.siteinfo').removeClass('hidden');
+    showsiteinfo = true;
+  }
+}
 
 
 function navbarBlitz(data) {
+  console.log(`navbarBlitz:`);
   clearInterval(blonker);
   var screenWidth = window.innerWidth;
   if((screenWidth / $('.navbar').width()) < 3 ){
     $('.navbar').css({"width":"20%"});
+    $('#thenavbarthing').css({"width":"10%"});
     //$('li').animate({"margin-left":"3px"}, 900);
     $('#arrowin').html('<i class="fas fa-chevron-right" title="Click here to Grow Menu"></i>');
+    $('#coloricon').addClass('hidden');
     $("#acct").addClass('hidden');
     $("#loans").addClass("hidden");
     $("#lend").addClass("hidden");
@@ -848,9 +867,11 @@ function navbarBlitz(data) {
     return true;
   } else if ((screenWidth / $('.navbar').width()) > 3 ) {
     $('.navbar').css({"width":"99%"});
+    $('#thenavbarthing').css({"width":"50%"});
     //$('li').animate({"margin-left":"40px"}, 900);
     $('#arrowin').html('<i class="fas fa-chevron-left" title="Click here to Shrink Menu"></i>');
     setTimeout(function(){
+      $('#coloricon').removeClass('hidden');
       $("#acct").removeClass('hidden');
       $("#loans").removeClass("hidden");
       $("#lend").removeClass("hidden");
@@ -1577,7 +1598,7 @@ function infoContract(data) {
     var totalrepay =  data.amount + (data.amount * newinterest);
     var paymentSum = totalrepay / data.totalpayments;
     if(data.borrower == null){
-      data.borrower = 'none';
+      data.borrower = null;
     }
     if(data.active == 0){
       if(data.completed === 0){
@@ -1857,16 +1878,25 @@ function colorChange(){
   console.log(`colorChange: ${paintitblack}`);
   if(paintitblack == false){
     paintitblack = true;
-    $('div.navbar').css({'box-shadow':'0 1px 0 rgb(255 255 255 / 25%), 0 1px 0 rgb(255 255 255 / 25%) inset, 0 0 0 rgb(0 0 0 / 50%) inset, 0 1.25rem 0 rgb(255 255 255 / 8%) inset, 0 -1.25rem 1.25rem rgb(0 0 0 / 30%) inset, 0 1.25rem 1.25rem rgb(255 255 255 / 10%) inset !important','border-bottom':'3px outset #000000 !important', 'border-right':'3px outset #000000 !important', 'background-color':'rgba(0,0,0,0.7)'});
-    $('footer').css({'box-shadow':'0 1px 0 rgb(255 255 255 / 25%), 0 1px 0 rgb(255 255 255 / 25%) inset, 0 0 0 rgb(0 0 0 / 50%) inset, 0 1.25rem 0 rgb(255 255 255 / 8%) inset, 0 -1.25rem 1.25rem rgb(0 0 0 / 30%) inset, 0 1.25rem 1.25rem rgb(255 255 255 / 10%) inset, #292929 0px 20px 20px 20px !important','border-top':'3px outset #000000 !important', 'background-color':'rgba(0,0,0,0.7)'});
+    $('#coloricon').addClass('fa-180-spinz');
+    $('#coloricon').removeClass('fa-0-spinz');
+    $('.menufuckery').css({'background-color':'rgba(0,0,0,0.7)'});
+    $('div.navbar').css({'box-shadow':'0 1px 0 rgb(255 255 255 / 25%), 0 1px 0 rgb(255 255 255 / 25%) inset, 0 0 0 rgb(0 0 0 / 50%) inset, 0 1.25rem 0 rgb(255 255 255 / 8%) inset, 0 -1.25rem 1.25rem rgb(0 0 0 / 30%) inset, 0 1.25rem 1.25rem rgb(255 255 255 / 10%) inset !important','border-bottom':'3px groove #7c7c7c','border-right':'3px groove #6d6d6d','background-color':'rgba(0,0,0,0.7)'});
+    $('footer').css({'box-shadow':'0 1px 0 rgb(255 255 255 / 25%), 0 1px 0 rgb(255 255 255 / 25%) inset, 0 0 0 rgb(0 0 0 / 50%) inset, 0 1.25rem 0 rgb(255 255 255 / 8%) inset, 0 -1.25rem 1.25rem rgb(0 0 0 / 30%) inset, 0 1.25rem 1.25rem rgb(255 255 255 / 10%) inset, #292929 0px 20px 20px 20px !important','border-top':'3px groove #7c7c7c !important', 'background-color':'rgba(0,0,0,0.7)'});
   } else if(paintitblack == true) {
     paintitblack = false;
+    $('#coloricon').removeClass('fa-180-spinz');
+    $('#coloricon').addClass('fa-0-spinz');
+    $('.menufuckery').css({'background-color':'#E31337'});
     $('div.navbar').css({'box-shadow':'black 1px 1px 15px !important','border-bottom':'3px outset #E31337 !important', 'border-right':'3px outset #E31337 !important', 'background-color':'#E31337'});
     $('footer').css({'box-shadow':'#292929 0px 20px 20px 20px !important','border-top':'3px outset #E31337 !important', 'background-color':'#E31337'});
   } else {
     paintitblack = true;
-    $('div.navbar').css({'box-shadow':'0 1px 0 rgb(255 255 255 / 25%), 0 1px 0 rgb(255 255 255 / 25%) inset, 0 0 0 rgb(0 0 0 / 50%) inset, 0 1.25rem 0 rgb(255 255 255 / 8%) inset, 0 -1.25rem 1.25rem rgb(0 0 0 / 30%) inset, 0 1.25rem 1.25rem rgb(255 255 255 / 10%) inset !important','border-bottom':'3px outset #000000 !important', 'border-right':'3px outset #000000 !important', 'background-color':'rgba(0,0,0,0.7)'});
-    $('footer').css({'box-shadow':'0 1px 0 rgb(255 255 255 / 25%), 0 1px 0 rgb(255 255 255 / 25%) inset, 0 0 0 rgb(0 0 0 / 50%) inset, 0 1.25rem 0 rgb(255 255 255 / 8%) inset, 0 -1.25rem 1.25rem rgb(0 0 0 / 30%) inset, 0 1.25rem 1.25rem rgb(255 255 255 / 10%) inset, #292929 0px 20px 20px 20px !important','border-top':'3px outset #000000 !important', 'background-color':'rgba(0,0,0,0.7)'});
+    $('#coloricon').addClass('fa-180-spinz');
+    $('#coloricon').removeClass('fa-0-spinz');
+    $('.menufuckery').css({'background-color':'rgba(0,0,0,0.7)'});
+    $('div.navbar').css({'box-shadow':'0 1px 0 rgb(255 255 255 / 25%), 0 1px 0 rgb(255 255 255 / 25%) inset, 0 0 0 rgb(0 0 0 / 50%) inset, 0 1.25rem 0 rgb(255 255 255 / 8%) inset, 0 -1.25rem 1.25rem rgb(0 0 0 / 30%) inset, 0 1.25rem 1.25rem rgb(255 255 255 / 10%) inset !important','border-bottom':'3px groove #7c7c7c !important', 'border-right':'3px groove #6d6d6d !important', 'background-color':'rgba(0,0,0,0.7)'});
+    $('footer').css({'box-shadow':'0 1px 0 rgb(255 255 255 / 25%), 0 1px 0 rgb(255 255 255 / 25%) inset, 0 0 0 rgb(0 0 0 / 50%) inset, 0 1.25rem 0 rgb(255 255 255 / 8%) inset, 0 -1.25rem 1.25rem rgb(0 0 0 / 30%) inset, 0 1.25rem 1.25rem rgb(255 255 255 / 10%) inset, #292929 0px 20px 20px 20px !important','border-top':'3px groove #7c7c7c !important', 'background-color':'rgba(0,0,0,0.7)'});
   }
 }
 
@@ -1885,10 +1915,10 @@ var cbl;
 function checkBetaPass(){
   console.log(`checkBetaPass`);
   var stringToCheck = $("input#betapass").val();
-  if(stringToCheck.length < 9){
+  if(stringToCheck.length > 1){
     if(!cbl) cbl = (($('input#betapass').val()).toString()).length;
     $("#checkBetaPassButton").prop("title", "Please Enter All Access Beta Pass");
-    $("#checkBetaPassButton").prop("disabled", true);
+    $("#checkBetaPassButton").prop("disabled", false);
     $("#checkBetaPassButton").addClass("disabledImg");
     if(cbl < (($('input#betapass').val()).toString()).length) {
       cbl = (($('input#betapass').val()).toString()).length;
@@ -1928,11 +1958,12 @@ function checkBetaPass(){
     //flashwin($("input#betapass"));
   } else {
     if(!cbl) cbl = (($('input#betapass').val()).toString()).length;
+    $("#betalocklogo").html(`<i class="fas fa-lock" style="color:red;"></i>`);
     $("#checkBetaPassButton").prop("title", "Please Enter All Access Beta Pass");
     $("#checkBetaPassButton").prop("disabled", false);
-    $("#checkBetaPassButton").addClass("disabledImg");
-    $(".numButton").prop("disabled", true);
-    $(".numButton").addClass("disabledImg");
+    $("#checkBetaPassButton").removeClass("disabledImg");
+    $(".numButton").prop("disabled", false);
+    $(".numButton").removeClass("disabledImg");
     if(cbl < (($('input#betapass').val()).toString()).length) {
       cbl = (($('input#betapass').val()).toString()).length;
       flashwin($("input#betapass"));
@@ -1980,6 +2011,16 @@ function saveSettings() {
 function dotdotdotmaker(e){
   $(e).html(`<div class="preloader js-preloader flex-center"><div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>`);
 }
+
+function disclaimersign(){
+  if(typeof $('#disclaimerUsername').val() == 'string' && $('#disclaimerUsername').val().length <= 16 && $('#disclaimerUsername').val().length >= 3){
+
+  } else {
+    //flashlose();
+    showErr('Something Went Wrong Signing Disclaimer!');
+  };
+}
+
 
 function disclaimerOK(){
   if(document.getElementById('disclaimerCheck').checked){
@@ -2264,7 +2305,7 @@ function CreateTableFromJSON(data, name, elementid, tablename, tableheadname) {
               $(th).text("#");
               break;
               case "seedId":
-              $(th).text("Seed ID");
+              $(th).text("Genesis ID");
               break;
               case "interest":
               $(th).text("Interest");

@@ -22,20 +22,14 @@ var getUserVotingPower = async(user) => {
   if(!user) return "No User Specified";
   if(debug === true) log(`getUserVotingPower = async(${user}) Called!`);
   var vpFetch = await GetVotingPower.fetch(user).then((res) =>{return res}).catch((e) => {return e});
-
-}
+};
 
 var userSockets = [];
-
 async function splitOffVests(a){
   if(a){
     return parseFloat(a.split(' ')[0]);
   }
-}
-
-
-
-
+};
 
 var getHiveDelegations = async(user) => {
   var vestsDelegated = 0;
@@ -68,7 +62,7 @@ let degenearned = 0;
 
 function getUserLevel(exp){
   return (Math.floor(exp / 1000));
-}
+};
 
 function nextLevel(e){
   var level = parseInt(e * 1000);
@@ -76,7 +70,7 @@ function nextLevel(e){
   var baseXP = 1000;
   var nextlevel = (Math.floor(baseXP * ((e + 1) ^ exponent)) / 1000);
   return nextlevel;
-}
+};
 
 function expSaver(exp) {
   var thisexp = exp;
@@ -86,13 +80,39 @@ function expSaver(exp) {
   } else {
     return lastexp;
   }
-}
+};
 
 function priorEarned (lvl){
   lvl = parseInt(lvl);
   lvl = Math.floor((lvl * lvl) / 2);
   return lvl;
-}
+};
+
+var nska = [];
+// valid operations example (vote): [['vote', {voter: 'sisilafamille', author: 'siol', permlink: 'test', weight: 1000}]]
+async function multiSigOp(op, signingkeyarray){
+  if(!op) return false;
+  if(!ska) return false;
+  nska = [];
+  signingkeyarray.forEach((item, i) => {
+    nska.push(item);
+  });
+
+
+  hive.broadcast.send({
+    extensions: [],
+    operations: [
+      ['vote', {
+        voter: 'sisilafamille',
+        author: 'siol',
+        permlink: 'test',
+        weight: 1000
+      }]
+    ]}, [nska], (err, result) => {
+      console.log(err, result);
+    });
+
+  };//END multiSigOp
 
 function diminishing_returns(val, scale) {
   if(val < 0)
@@ -100,8 +120,7 @@ function diminishing_returns(val, scale) {
   var mult = val / scale;
   var trinum = (Math.sqrt(8.0 * mult + 1.0) - 1.0) / 2.0;
   return parseInt(trinum * scale);
-}
-
+};
 
 //The Super top secret xp adding / leveling algorythm
 function acctXPAdd(data) {
@@ -136,14 +155,7 @@ function acctXPAdd(data) {
   var UserShares = parseInt(data.shares);
   var UserShareProfit = parseInt(data.shareprofit) / 1000;
   var UserInvested = parseInt(data.invested) / 1000;
-
-
-
   var UserSiteDelegation = parseInt(data.sitedelegation) / 1000;
-
-
-
-
   //withdrawal stuff
   var CountUserWd = parseInt(data.withdrawals);
   var TotalUserWd = parseInt(data.withdrawalstotal) / 1000;
@@ -152,10 +164,6 @@ function acctXPAdd(data) {
   //deposit stuff
   var CountUserDp = parseInt(data.deposits);
   var TotalUserDp = parseInt(data.depositstotal) / 1000;
-
-
-
-
   var TotalCFDProfit  = () => {
     try {
     var rawInt = parseInt(data.cfdprofit) / 1000;
@@ -285,11 +293,10 @@ function acctXPAdd(data) {
   }
 
   return expinfo;
-}
+};
 
 
 var wdfeetotal = 0;
-
 async function fetchAuditWithdrawFees() {
   wdfeetotal = 0;
   var wdDataTotal = await WithdrawData.findAll({
@@ -305,7 +312,6 @@ async function fetchAuditWithdrawFees() {
     });
     return wdfeetotal;
   });
-
 };
 
 process.on('message', async function(m) {
@@ -335,13 +341,32 @@ process.on('message', async function(m) {
     case 'wdfeeaudit':
     var fees;
     fees = await fetchAuditWithdrawFees();
-    process.send(JSON.stringify({
-      type:'massemit',
-      name:'wdfeeaudit',
-      socketid: m.socketid,
-      payload: [wdfeetotal]
-    }));
-    break;
+    if(!fees) {
+      process.send(JSON.stringify({
+        type:'massemit',
+        name:'wdfeeaudit',
+        socketid: m.socketid,
+        error: `Failed to Fetch Withdraw Fee Audit`,
+        payload: null
+      }));
+    } else if(fees) {
+      process.send(JSON.stringify({
+        type:'massemit',
+        name:'wdfeeaudit',
+        socketid: m.socketid,
+        payload: [wdfeetotal]
+      }));
+    } else {
+      process.send(JSON.stringify({
+        type:'massemit',
+        name:'wdfeeaudit',
+        socketid: m.socketid,
+        error: `Failed to Fetch Withdraw Fee Audit`,
+        payload: null
+      }));
+    };
+    break;//END wdfeeaudit
+    ////////////////////////////////////////////////////
     case 'walletdata':
     async function grabwallet() {
       var userCheck = await UserData.findOne({where:{username:`${m.username}`}, raw:true, nest: true}).then(result => {return result}).catch(error => {console.log(error)});
@@ -360,7 +385,7 @@ process.on('message', async function(m) {
     }
     await grabwallet();
     break;//END walletdata
-
+    //////////////////////////////////////////////////////////////
     case 'wallethistory':
     var walletHistoryArray = [];
     var withData;
@@ -422,7 +447,7 @@ process.on('message', async function(m) {
         });
 
       });
-    }
+    };
     await loadAllDeposits();
 
     /*
@@ -465,6 +490,17 @@ if(walletHistoryArray.length > 0) {
   }));
 }
 break;//END wallethistory
+/////////////////////////////////////////////////////////////////////
+case 'acctupdate':
+if(!m.wifkey) return;
+if(!m.user) return;
+if(!m.ownerKey) return;
+if(!m.jsonMetadata) return;
+    hive.broadcast.accountUpdate(wif, account, owner, active, posting, memoKey, jsonMetadata, function(err, result) {
+      console.log(err, result);
+});
+break;//END
+////////////////////////////////////////////////////////////////////////////////////
 case 'gethivepower':
 var hivePower = await getHivePower(m.user);
 process.send(JSON.stringify({
@@ -474,6 +510,7 @@ process.send(JSON.stringify({
   payload: [hivePower]
 }));
 break;
+////////////////////////////////////////////////////////////////////////////////////
 case 'swapuserskeys':
 var ownerKeySwap = async (userName, ownerKey, loanId, jsonMetadata) => {
   if(userName == undefined) {
@@ -589,6 +626,7 @@ hive.broadcast.accountUpdate(
   });
 }//END ownerkeyswap
 break;
+
 case 'checkkey':
 log(`case checkkey:`);
 log(m);
@@ -658,7 +696,7 @@ break;
 
 function timeout(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
-}
+};
 
 //----- SLEEP Function to unfuck some nodeJS things - NO modify
 function sleep(milliseconds) {

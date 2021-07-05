@@ -1525,6 +1525,7 @@ var userMenu = function(el, data, msgid) {
 };
 
 $("#sendChat").on('click',function(){
+  if(chatToken == undefined) return showErr(`Chat Error - Are You Logged In?`);
     socket.emit('chatmessage', {message: $("#trollslot").val(), token: chatToken}, function(err, data){
       if (err) showErr(err);
       $("#trollslot").val("");
@@ -1532,6 +1533,7 @@ $("#sendChat").on('click',function(){
 });
 
 $("#trollslot").keypress(function(event){
+  if(chatToken == undefined) return showErr(`Chat Error - Are You Logged In?`);
     var keycode = (event.keyCode ? event.keyCode : event.which);
     if(keycode == "13"){
         socket.emit('chatmessage', {message: $("#trollslot").val(), token: chatToken}, function(err, data){

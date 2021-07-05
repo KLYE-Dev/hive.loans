@@ -327,6 +327,7 @@ let lastSafeBlock;
 let lastHeadBlock;
 let blockNum;
 var recentblock;
+var newCurrentBlock = 0;
 var oldOpsCount = 0;
 
 var bytesParsed = 0;
