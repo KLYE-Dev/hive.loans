@@ -333,6 +333,7 @@ $("#particles-js").on('click',function(){
 });
 
 
+
 function heartbeat(){
   hbeats++;
   if((hbeats % 4) == 1) {
@@ -422,6 +423,18 @@ window.onload = function() {
 };
 
 
+var minichartopen = true;
+$('#alertPriceClose').click(function() {
+  if(minichartopen == true) {
+      $('#alertPriceClose').html("<i class='fa fa-caret-up'></i>");
+      $('#alertpricepanel').animate({'bottom':'-33%'},500);
+      minichartopen = false;
+  } else {
+    $('#alertPriceClose').html("<i class='fa fa-caret-down'></i>")
+    $('#alertpricepanel').animate({'bottom':'6%'},500);
+    minichartopen = true;
+  }
+});
 
 
 //Chat input hotkey disabler - needs work still
@@ -756,6 +769,11 @@ var contractMenu = function(ele, contractID, data) {
       }
 });
 }
+
+var updatebet = function(el, amount) {
+    el.val(amount).keyup();
+};
+
 /*********************************************************************************
 * CHAT
 ********************************************************************************/
@@ -1553,7 +1571,15 @@ $("#longMarginTotal").keypress(function(){
   }
 });
 
-
+$("#withdrawInteger").change(function(){
+  if($("#withdrawInteger").val() < 0.001){
+    $("#withdrawInteger").val(0.000);
+  } else if ($("#withdrawInteger").val() > $("#tipbalance").val()) {
+    $("#withdrawInteger").val($("#tipbalance").val());
+  } else {
+    $("#withdrawInteger").val($("#tipbalance").val());
+  }
+});
 
 function copyStringToClipboard (str) {
    var el = document.createElement('textarea');

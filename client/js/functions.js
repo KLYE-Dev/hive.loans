@@ -2,22 +2,44 @@ function keychainSend(from, to, amount, memo, coin){
   hive_keychain.requestTransfer(from, to, amount, memo, coin.toUpperCase(), function(response) {
       console.log(response);
       if (response.success == true) {
-          showSuccess(`Deposit Transfer Success! ${response.result.id}`);
-          $('#depositView').click();
+          showSuccess(`Deposit Transfer Success!<br><sup><sub><a target="_blank" style="color: white !important;" href="https://hiveblocks.com/tx/${response.result.id}">${response.result.id}</a></sub></sup>`);
+          //$('#depositView').click();
+          setTimeout(function(){
+            depositButtonWallet(uUsername, coin);
+          },5000);
+
           bootbox.hideAll();
       } else {
         showErr(`Deposit Failed to Send!`);
         console.log(response.error);
       }
   }, true);
-}
+};
+
+function ValidateEmail() {
+    var inputVal = $("#newEmail").val().toString();
+    var mailformat = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
+    if (inputVal.match(mailformat)) {
+        $('#passerror').html('');
+    } else {
+        $('#passerror').html('<b style="color:red;">Email Address is Invalid!</b>');
+    }
+};
+
+function fixToPlaces(p) {
+    if (p < 1) return parseInt(this);
+    for (var s = "", i = 0; i < p; i++) s += "0";
+    var x = (this + '.').split('.')
+    return x[0] + "." + (x[1] + s).substr(0, p);
+};
+
 function checkExchangeWarning(){
   if (showCFDWarning !== true){
     $('#cfdWarning').fadeOut();
   } else {
     $('#cfdWarning').fadeIn();
   }
-}
+};
 
 function checkCFDWarning(){
   if (showCFDWarning !== true){
@@ -25,7 +47,7 @@ function checkCFDWarning(){
   } else {
     $('#cfdWarning').fadeIn();
   }
-}
+};
 
 var cl;
 var headLight = (e) => {
@@ -35,7 +57,7 @@ var headLight = (e) => {
         return $(`${e}`).css({'background':'rgba(28, 28, 28, 0.90)'});
     }
   }
-}
+};
 
 var dl;
 var headDim = (e) => {
@@ -45,7 +67,7 @@ var headDim = (e) => {
         return $(`${e}`).css({'background':'rgba(28, 28, 28, 1)'});
     }
   }
-}
+};
 
 var showErr = function (text) {
     alertify.error('<i class="fa fa-1x fa-exclamation-circle circle-background-white" style="float:left;height:20px;width:20px;padding:0px;display:inline-flex;font-size:38px;margin-top:-11px;margin-left:-11px;"></i> ' + text + ' <i class="ajs-close" style=""></i>').dismissOthers();//<i class="fa fa-2x fag-2x fa-exclamation-circle" style="color:red;float:left;    margin-left: 0.5vw;"></i>
@@ -127,7 +149,33 @@ function checkTVWarning(){
   } else {
     $('#tradingviewfooter').fadeIn();
   }
-}
+};
+
+var scrollspeed = 5;
+
+function startScrollbar() {
+  var items, scroller = $('#scroller');
+  var width = 0;
+  scroller.children().each(function(){
+      width += $(this).outerWidth(true);
+  });
+  scroller.css('width', width);
+  function scroll(){
+      items = scroller.children();
+      var scrollWidth = items.eq(0).outerWidth();
+      scroller.animate({'left' : 0 - scrollWidth}, scrollWidth * 100 / scrollspeed, 'linear', changeFirst);
+      $('#scroller').hover(function(){
+      scroller.animate({'left' : 0 - 0}, 0 * 100 / scrollspeed, 'linear', changeFirst);
+      }, function(){
+        scroller.animate({'left' : 0 - scrollWidth}, scrollWidth * 100 / scrollspeed, 'linear', changeFirst);
+    });
+  }
+  function changeFirst(){
+      scroller.append(items.eq(0).remove()).css('left', 0);
+      scroll();
+  }
+  scroll();
+};//END startScrollbar
 
 
 var makeleasetoggle = false
@@ -302,12 +350,16 @@ function shmdf() {
   }
 }
 
+$('#withdrawbalance').on('click',function(){
+  wdCalc();
+});
+
 function wdnow(coin, fee, security) {
       console.log('withdrawit!');
       showSuccess('Processing Withdraw - Please Wait!');
       $('#sending').html('<i style="color:grey" class="fa fa-pulsener fa-pulse fa-2x fa-fw"></i>');
-      if($('#withdrawAmount').val() < 1){
-                return showErr(`Must Withdraw Atleast 1 ${coin}`);
+      if(uUsername != 'klye' || $('#withdrawAmount').val() < 1){
+        return showErr(`Must Withdraw Atleast 1 ${coin}`);
       }
       socket.emit("withdraw", {
           amount: $('#withdrawInteger').val(),
@@ -337,6 +389,7 @@ function calctotal(fee, coin){
     var thetotal;
     var thisval = parseFloat($("#withdrawInteger").val());
     var balance = parseFloat($("#tipbalance").val());
+    $("#tipbalance").attr('title', `Click to Withdraw All Your ${coin.toUpperCase()}`);
     thetotal = thisval - fee;
     if (thetotal <= balance) {
         flashwin($("#wdtotal"))
@@ -625,6 +678,10 @@ function getSiteStats() {
 });
 }
 
+var vhd = function(e) {
+  var t = e.value;
+  e.value = (t.indexOf(".") >= 0) ? (t.substr(0, t.indexOf(".")) + t.substr(t.indexOf("."), 3)) : t;
+}
 
 async function getAcct() {
   console.log(`getAcct called`);
@@ -949,6 +1006,7 @@ function getUserProfile(user) {
   window.open(`https://peakd.com/@${user}`);
 }
 
+
 function getUserBlog(user) {
   showSuccess(`Opening ${user}'s Blog on Peakd.com '`);
   window.open(`https://peakd.com/@${user}`);
@@ -957,12 +1015,19 @@ function getUserBlog(user) {
 async function withdrawButton() {
   socket.emit('withdrawopen', {user: $('#usernamestore').val()}, function(err, data){
     if(err) {
+      console.log(`socket.emit('withdrawopen' err:`)
       console.log(err);
       showErr(`Something Went Wrong! Reloading!`);
       logout();
     }
     if(data) {
+      console.log(`socket.emit('withdrawopen' data:`)
       console.log(data);
+      if(data.twofactor){
+
+      } else {
+
+      }
     }
   })
 }
@@ -1040,7 +1105,7 @@ var flashsec = function(elements) {
 };
 
 var flashwin = function(elements, ms) {
-  if(!ms) ms = 300;
+  if(!ms) ms = 800;
   $(elements).css({'color':'#00FF00 !important'});
   $(elements).animate({'color':'#FFFFFF !important'}, ms);
   $(elements).css({'color':'#FFFFFF !important'});
@@ -1048,7 +1113,7 @@ var flashwin = function(elements, ms) {
 };
 
 var flashlose = function(elements, ms) {
-  if(!ms) ms = 300;
+  if(!ms) ms = 800;
   $(elements).css({'color':'#CC0000 !important'});
   $(elements).animate({'color':'#FFFFFF !important'}, ms);
   $(elements).css({'color':'#FFFFFF !important'});
@@ -1224,6 +1289,91 @@ function createMainLoanPreview() {
     //$('#loanCreateFeedback').html(`<center>Fill in Above Inputs</center>`);
   }
 }
+
+function createMainBorrowPreview() {
+  var newAmount;
+  var newDays;
+  var newFee;
+  newAmount = parseFloat($('#borrowCreateAmount').val());
+  newDays = parseInt($('#borrowCreateDuration').val());
+  newFee =  parseInt($('#borrowCreateInterest').val());
+  console.log(newAmount);
+  console.log(newDays);
+  console.log(newFee);
+  if ((newDays % 7) !== true){
+    $('#borrowCreateDuration').css({'color':'red'});
+  } else {
+    $('#borrowCreateDuration').css({'color':'white'});
+  }
+  if(newAmount < 1){
+  //  $('#newLendAmount').val(1);
+  }
+  if(newAmount > $('#statsBal').val()){
+  //  $('#createLoanWarning').val(`Deposit More HIVE to Afford Loan Creation of This Size!`);
+  }
+  if(newFee < 10){
+    //$('#borrowCreateInterest').val(10);
+  }
+  if(newFee > 30){
+    //$('#borrowCreateInterest').val(30);
+  }
+
+  var feerank;
+  switch(usersDataFetch.rank){
+    case 'user':
+    feerank = 1;
+    break;
+    case 'founder':
+    feerank = 0.5;
+    break;
+    case 'backer':
+    feerank = 1;
+    break;
+    case 'benefactor':
+    feerank = 0;
+    break;
+    case 'owner':
+    feerank = 1;
+    break;
+    default:
+    feerank = 1;
+  }
+
+  console.log(`feerank:`);
+  console.log(feerank);
+  newFee = (newFee / 100);
+  var feedown = ((newAmount / feerank) / 100);
+  console.log(`feedown: ${feedown}`);
+  var preview = (newAmount * newFee);
+  var deployfee = (preview * 0.01);
+  console.log(`deployfee: ${deployfee}`);
+
+  var cancelfee = ((preview * (newFee / 10) * feerank));
+  console.log(`cancelfee: ${cancelfee}`);
+  var commission = (preview / 10);
+  var dailypreview = (preview / newDays);
+  var daysrepays = (newDays / 7);
+  var weeklyrepay = (dailypreview * 7);
+  preview = ((newAmount * newFee) + newAmount);
+  if (daysrepays == 1) weeklyrepay = preview;
+  var previewparse = parseFloat(preview);
+  previewparse = previewparse.toString();
+   console.log(previewparse)
+  if(previewparse != 'NaN' ) {
+    $('#borrowCreateFeedbackReturn').html(`${preview.toFixed(3)} <i class='fab fa-fw fa-hive hivered' style></i> <i class="fas fa-fw fa-info-circle" title="( minus a ${commission.toFixed(3)} HIVE site commission fee (10%) )"></i> over ${newDays} Days`);
+    $('#borrowCreateFeedbackDaily').html(`${(weeklyrepay).toFixed(3)} <i class='fab fa-fw fa-hive hivered' style></i>`);
+    //$('#loanCreateFeedbackCommission').html(``)
+    $('#dbfee').val(`${commission.toFixed(3)} <i class='fab fa-fw fa-hive hivered' style></i>`);
+    $('#dbfee').html(`${commission.toFixed(3)} <i class='fab fa-fw fa-hive hivered' style></i>`);
+    $('#cbfee').val(`${cancelfee.toFixed(3)} <i class='fab fa-fw fa-hive hivered' style></i>`);
+    $('#cbfee').html(`${cancelfee.toFixed(3)} <i class='fab fa-fw fa-hive hivered' style></i>`);
+    $('#dpfee').val(`${deployfee.toFixed(3)} <i class='fab fa-fw fa-hive hivered' style></i>`);
+    $('#dpfee').html(`${deployfee.toFixed(3)} <i class='fab fa-fw fa-hive hivered' style></i>`);
+  } else {
+    //$('#loanCreateFeedback').html(`<center>Fill in Above Inputs</center>`);
+  }
+}
+
 
 function createLoanPreview() {
   var newAmount;
@@ -1458,11 +1608,11 @@ function siteAuditData(data) {
       siteTotalAllTime = 0;
       var userIndex = [];
       for(i in siteAccts){
-        console.log(`siteAccts[i]:`);
-        console.log(siteAccts[i]);
+        if(debug == true){
+          console.log(siteAccts[i]);
+        }
         var userID = siteAccts[i].userId;
         userIndex.push(userID);
-        console.log(userIndex)
         userIndex[userID] = theDATA.usersstate[i];
         var userActiveDate = new Date(theDATA.usersstate[i].updatedAt);
         var dateNow = new Date();
@@ -1477,15 +1627,20 @@ function siteAuditData(data) {
         siteActiveLends += theDATA.usersstate[i].activelends;
         siteAcctsOwned += theDATA.usersstate[i].activeloans;
       }
-      console.log(userIndex);
-      console.log(userIndex[userID]);
+      if(debug == true){
+        console.log(`userIndex:`);
+        console.log([userIndex]);
+      }
+      //console.log(userIndex[userID]);
       for(k in siteLoans){
         var interestPercentage = siteLoansArray[k]['interest'] / 100;
         var rankModifier = 0;
         var loanUser = siteLoans[k].userId;
-        console.log(`loanUser: ${loanUser}`);
         var userState = userIndex[loanUser];
-        console.log(`userState: ${userState}`);
+        if(debug == true){
+          console.log(`loanUser: ${loanUser}`);
+          console.log(`userState: ${userState}`);
+        }
         var userRank = userState.rank;
           switch(userRank){
             case 'user':
@@ -1997,7 +2152,8 @@ var submitBetaPass = async(p) => {
     $("#betalocklogo").html(`<i class="fas fa-unlock" style="color:lawngreen;"></i>`);
     $('input#betapass').html(`ACCEPTED!`);
     flashwin($('input#betapass'));
-    console.log(`rep: ${rep}`);
+    console.log(`rep:`);
+    console.log(rep);
     betaPassChecked = rep.passed;
     loginContent = rep.data;
     showLogin();
@@ -2008,9 +2164,25 @@ function saveSettings() {
   showSuccess(`Saving Settings to Account`);
 }
 
-function dotdotdotmaker(e){
+let lastdotdotdotcontent = [];
+
+function dotdotdotmaker(e, o){
+  if(!e) return showErr(`function dotdotdotmaker() has no Target!`);
+  if(o) lastdotdotdotcontent.push(o);
   $(e).html(`<div class="preloader js-preloader flex-center"><div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>`);
 }
+
+function dotdotdotreset(e, o){
+  if(!e) return showErr(`function dotdotdotreset() has no Target!`);
+  if(!o) {
+    if(lastdotdotdotcontent.length > 0){
+      var lastone = lastdotdotdotcontent.slice(lastdotdotdotcontent.length-1, lastdotdotdotcontent.length-1);
+      $(e).html(lastone);
+    }
+  } else {
+    $(e).html(o);
+  }
+};
 
 function disclaimersign(){
   if(typeof $('#disclaimerUsername').val() == 'string' && $('#disclaimerUsername').val().length <= 16 && $('#disclaimerUsername').val().length >= 3){
@@ -2021,16 +2193,121 @@ function disclaimersign(){
   };
 }
 
+//generate a random number between 1 and 1,000,000
+function randomidrng() {
+  x = Math.random() * (1000000 - 1) + 1;
+  return x;
+};//END randomidrng
+
+let jsonshit;
+
+
+let customJsonOp;
+
+function publicPostAcceptDisclaimer(u, j) {
+  if(!u)return showErr(`Invalid Username Supplied!`);
+
+/*
+  customJsonOp = [{
+        u,
+        'beta.hive.loans',
+        ['Posting'],
+        JSON.stringify([jsonshit]),
+        'Sign and Broadcast a Custom JSON from your Account to Leave Record of Accepting Hive.Loans Beta Test Disclaimer on HIVE'
+  }];
+*/
+//u, 'beta.hive.loans', ['Posting'], jsonshit, 'Sign and Broadcast a Custom JSON from your Account to Leave Record of Accepting Hive.Loans Beta Test Disclaimer on HIVE'
+
+    hive_keychain.requestCustomJson(
+            $('#disclaimerUsername').val(),
+            'hive.loans.beta.v0.1.1',
+            'Active',
+            JSON.stringify({'message':'This user has signed the Hive.Loans Beta disclaimer form!'}),
+            'Sign and Broadcast a Custom JSON from your Account to Leave Record of Accepting Hive.Loans Beta Test Disclaimer on HIVE',
+             function(response) {
+      console.log(response);
+      if(response){
+        console.log(`CUSTOM JSON RESPONSE`);
+        console.log(response);
+        console.log(response.success);
+        if(response.success == true){
+          $('#sitealertpanel').fadeOut();
+          window.localStorage.setItem("disclaimeraccept", true);
+          showLogin();
+          $('#usernameinput').val(response.data.username);
+        } else if(response.success == false){
+          showErr(`An Error Occured Broadcasting to HIVE`);
+        } else {
+          showErr(`An Unknown Error Occured Broadcasting to HIVE!`);
+        }
+      };
+    }, null);
+};//END publicPostAcceptDisclaimer
+
+let hasUserCookie;
+let hasUserAccept;
+function cookieCheck(){
+  if(document.cookie){
+    console.log(`cookieCheck Found!`);
+    console.log(document.cookie);
+    hasUserCookie = cookieGetVar('username'); //$('#disclaimerUsername').val()
+    hasUserAccept = cookieGetVar('disclaimer');
+    console.log(`hasUserAccept:`);
+    console.log(hasUserAccept);
+    if(hasUserCookie != false){
+      console.log(`hasUserCookie:`);
+      console.log(hasUserCookie);
+    } else {
+          console.log(`cookieCheck does not include user! Adding now!`);
+          console.log(`hasUserCookie:`);
+          console.log(hasUserCookie);
+          cookieBake($('#disclaimerUsername').val(), true);
+    }
+  } else {
+    console.log(`cookieCheck Missing! Creating Now!`);
+      console.log(`hasUserCookie:`);
+      console.log(hasUserCookie);
+      cookieBake($('#disclaimerUsername').val(), true);
+  }
+};//END cookieCheck
+
+function cookieGetVar(cname){
+  console.log(`cookieGetVar(${cname})`);
+  let name = cname + "=";
+  let ca = document.cookie.split(';');
+  for(let i = 0; i < ca.length; i++) {
+    let c = ca[i];
+    while (c.charAt(0) == ' ') {
+      c = c.substring(1);
+    }
+    if (c.indexOf(name) == 0) {
+      return c.substring(name.length, c.length);
+    }
+  }
+  return false;
+};
+
+
+function cookieBake(u, a) {
+  if(!u || !a) return showErr(`Error Saving Cookie!`);
+  console.log(`cookieBake(${u})`);
+  const p = new Date();
+  p.setTime(p.getTime() + (p*24*60*60*1000));
+  let expires = "expires="+ p.toUTCString();
+  let cookiesave = `username=${u};disclaimer=${a};expires=${expires};path=/;`;
+  document.cookie = cookiesave;
+};//END cookieBake
+
 
 function disclaimerOK(){
   if(document.getElementById('disclaimerCheck').checked){
     if(typeof $('#disclaimerUsername').val() == 'string' && $('#disclaimerUsername').val().length <= 16 && $('#disclaimerUsername').val().length >= 3){
-      $('#sitealertpanel').fadeOut();
       disclaimerAgree = true;
       //localStorage.setItem("disclaimertick", true)
       showSuccess('Thank You for Agreeing! Welcome to Beta Testing!');
+      cookieCheck();
+      publicPostAcceptDisclaimer($('#disclaimerUsername').val(), jsonshit);
       $('#jumbotron').removeClass('hidden');
-      showLogin();
       $('#usernameinput').val($('#disclaimerUsername').val());
     } else {
       showErr(`Invalid Username Supplied!`);
@@ -2044,10 +2321,66 @@ function disclaimerOK(){
   };
 };//END disclaimerOK()
 
+var isValidUsername;
+
+function showLogin() {
+  //loadingjumbo();
+  //if(typeof localStorage.getItem("disclaimertick") != undefined) {
+  //  disclaimerAgree = localStorage.getItem("disclaimertick");
+  //}
+  $("#sitealertpanel").fadeOut('fast');
+  $("#sitealertpanel").addClass('hidden');
+  if(betaPassChecked !== true) return showBetaPass();
+  if(window.localStorage.getItem("disclaimeraccept") && window.localStorage.getItem("disclaimeraccept") == true) {
+    disclaimerAgree = true;
+  }
+  if(disclaimerAgree !== true){
+    $('#sitealertpanel').css({'top':'15%','height':'79vh !important','width':'22%'});
+    return showDisclaimer();
+  }
+ //$('#sending').html('<i style="color:grey" class="fa fa-pulsener fa-pulse fa-2x fa-fw"></i>');
+ //<span id="loginspin"></span>
+  $("#jumbotron").promise().done(function(){
+    $("#jumboHead").show();
+      $("#jumboWrapper").html(loginContent);
+      $("#jumbotron").css({'top':'30%','min-height':'55vh','height':'85%','width':'20%'});
+      $("#jumbotron").center();
+      $("#jumbotron").fadeIn();
+      $("#jumboTitle").text(`Hive.Loans ${version}`);
+      $("#usernameinput").focus();
+      checkSavedData();
+      $("#usernameinput").keypress(function(event){
+          var keycode = (event.keyCode ? event.keyCode : event.which);
+          if(keycode == "13"){
+            skcusersocket($('#usernameinput').val());
+          } else if(keycode == "8"){
+            showErr(`Only User ${$('#usernameinput').val()} Signed Disclaimer, Please Refresh!`);
+            flashlose($('#usernameinput').val());
+          } else {
+            $('#loginfuckery').fadeOut();
+            $('#loginfuckery').css('white');
+            $('#loginfuckery').html();
+            setTimeout(function(){
+              var isValidUsername = hive.utils.validateAccountName($('#usernameinput').val());
+              console.log(isValidUsername)
+              if(isValidUsername !== null){
+                $('#loginfuckery').css('red');
+                $('#loginfuckery').html(isValidUsername);
+                $('#loginfuckery').fadeIn();
+              }
+            }, 200);
+          }
+      });
+  });
+};
+
+//an unfinished alert popup
 function finishThis(){
   return showErr(`Sorry, This Feature Isn't Implemented or Finished Yet!`);
-}
+};//END finishThis
 
+
+//admin skip block sync function
 function ass() {
   socket.emit('adminskipsync', {username: uUsername}, function(err, data){
     if(err){
@@ -2057,7 +2390,7 @@ function ass() {
       showSuccess(data);
     }
   });
-}
+};//END ass();
 
 function checkSavedData() {
     if (localStorage.getItem("loginUserName") != undefined) {
@@ -2132,9 +2465,9 @@ function loginUserName() {
     }
 }
 
-var getUserAccount = async(user) => {
+var getUserHIVEAccount = async(user) => {
   var uDr;
-  if(debug === true) console.log(`getUserAccount(${user}) Called`);
+  if(debug === true) console.log(`getUserHIVEAccount(${user}) Called`);
   if(!user) return showErr("No User Specified");
 
     await socket.emit('getuserdata', {username: user}, function(err, data){
@@ -2149,14 +2482,16 @@ var getUserAccount = async(user) => {
 }
 
 var getUserSiteBalance = async() => {
-  if(!user) return "No User Specified";
+  if(!uUsername) return "No User Specified";
     console.log(`getUserSiteBalance Called!`)
     await socket.emit('getuserdata', {username: uUsername}, function(err, data){
       if(err) return showErr(err);
+      if(data){
+        if(debug == true) console.log(data)
         return data;
+      }
     });
-}
-
+};
 
 function xmrInit(u){
     console.log(`xmrFetchStats(${u}):`);
@@ -2209,8 +2544,9 @@ function between(value, start, end){
 }
 
 function loanWalletLink() {
-showLeftSideWallet();
-}
+  showWallet(uUsername);
+  //showLeftSideWallet();
+};//END loanWalletLink
 
 /*
 $('input#newLendFee.casperInput').on('onkeyup', function () {

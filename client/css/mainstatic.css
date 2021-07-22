@@ -172,7 +172,7 @@ html {
 
 input {
   margin: 0px !important;
-  background: #444 !important;
+  background: #212121 !important;
   color: #FFFFFFS;
   -webkit-transition: all 0.1s !important;
   -moz-transition: all 0.1s !important;
@@ -550,6 +550,16 @@ button.red {
   padding: 5px;
 }
 
+#tipbalance {
+  border-bottom: 1px dotted;
+  cursor: grab;
+  /* text-decoration:underline; */
+}
+
+#2fa {
+border: 2px inset #323232;
+}
+
 .menufuckery {
   margin-left:-20px;
   position: fixed;
@@ -582,6 +592,12 @@ button.red {
     z-index: 100000003 !important;
 }
 
+.dottybottom {
+  cursor: grab;
+  padding-bottom: 3px;
+  border-bottom: 1px dotted rgb(255,255,255);
+}
+
 #thenavbarthing {position: relative;/* vertical-align: middle; *//* width: -webkit-fill-available; */margin-right: -2%;margin-left: 0%;top: 1em;}
 
 #disclaimerUsername {
@@ -599,8 +615,10 @@ button.red {
   color: white !important;
   border-bottom: 1px white dotted !important;
   /* background: #444 !important; */
-  background-color: #91919100 !important;
+  background-color: #696969 !important;
   text-align: left;
+  border-top-left-radius: 5px !important;
+  border-top-right-radius: 5px !important;
   /* border-right: 2px inset grey !important; */
   /* border-left: 2px inset grey !important; */
 }
@@ -841,7 +859,7 @@ height:100%;
 }
 
 #trollslot {
-  background: #444;
+  background: #212121;
   color:white;
   font-weight: 700;
   font-size: small;
@@ -1030,9 +1048,9 @@ font-size: inherit;
   /* top: 0; */
   /* right: -3px; */
   padding-top: 0px;
-  background: #444444;
+  background: #212121;
   border-radius: 10px;
-  border: inset 2px grey;
+  border: inset 2px #212121;
   width: 98% !important;
   float: right;
   margin-bottom: 6.9px;
@@ -1058,11 +1076,12 @@ font-size: inherit;
 
 #trollslot {
   width: 81%;
-  background: #444444;
+  background: #212121;
   border-radius: 5px;
   border-top-left-radius: 15px;
   border-bottom-left-radius: 15px;
   line-height: 17px;
+  border: 2px inset #212121;
 }
 
 #chatWrapper {
@@ -1203,9 +1222,9 @@ position: relative;
 }
 
 .robotable {
-    background: #444444;
+    background: #212121;
     border-radius: 20px !important;
-    border: inset 3px grey !important;
+    border: inset 3px #212121 !important;
     width: 100% !important;
     height: 50% !important;
     max-height: 60% !important;
@@ -1346,10 +1365,10 @@ textarea {
   box-shadow: black 0px 0px 14px 0px;
   display: block;
   top: 23%;
-  border: 2px outset #eae6e6;
+  border: 2px outset #797979 !important;
   border-radius: 15px;
   color: white !important;
-  background: #808080;
+  background: #323232 !important;
   position: relative !important;
   padding-left: 10px !important;
   padding-right: 10px !important;
@@ -1363,13 +1382,35 @@ textarea {
   /* min-width: 2vw; */
 }
 
+option {
+  text-align: center !important;
+  align-content: center !important;
+  align-self: center !important;
+  vertical-align: middle !important;
+}
+
 #loginhivesigner, #loginkeychain {
   width: 43.5% !important;
 }
 
 .walletTopName {
-  font-size: 2vw;
+  font-size: 1vw;
   color: white;
+  border-bottom: 3px double;
+  cursor: alias;
+}
+
+.doubleunderurl {
+    /* font-size: 1vw; */
+    color: white;
+    border-bottom: 2px double;
+    cursor: alias;
+}
+
+.walletTopName::before {
+  font-size: 1vw;
+  color: white;
+  content: "@";
 }
 
 #longbutton, #shortbutton, #buybutton, #sellbutton {
@@ -1461,7 +1502,7 @@ textarea {
 }
 
 #loanCreateDuration {
-  text-align: right;
+  text-align: right !important;
   align-self: center;
   align-items: center;
 }
@@ -1514,9 +1555,9 @@ textarea {
   height:45%;
   width: 100%;
   margin-top: 0px;
-  background: #444444 !important;
+  background: #212121 !important;
   border-radius: 18px !important;
-  border: inset 2px grey !important;
+  border: inset 2px #212121!important;
   overflow: hidden;
 }
 
@@ -1624,9 +1665,9 @@ textarea {
 }
 
 .casperInput {
-  background: #444444;
+  background: #212121;
   color: white !important;
-  text-align: center;
+  text-align: center !important;
   width: 12vw;
   height: 3vh;
   font-size: large;
@@ -1635,7 +1676,7 @@ textarea {
   text-align: center;
   border-width: 2px;
   border-style: inset;
-  border: 2px inset grey;
+  border: 2px inset #212121;
   border-image: initial;
   margin-left: auto;
   margin-right: auto;
@@ -1686,6 +1727,15 @@ td {
 }
 
 #settingsfooter {
+  /* position: absolute; */
+  bottom: 0%;
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  float: right;
+}
+
+#listingsfooter {
   /* position: absolute; */
   bottom: 0%;
   width: 100%;
@@ -1803,7 +1853,7 @@ input[type=password] {
 input,
 textarea {
     font-size: 24px;
-    color: transparent !important;
+    color: #212121 !important;
     text-shadow: 0px 0px 0px #000;
     -webkit-text-fill-color: white;
 }
@@ -2104,10 +2154,10 @@ textarea::-webkit-input-placeholder{
   /* color: white !important; */
   border-radius: 25px;
   box-shadow: black 0px 0px 14px 0px;
-  border: 2px outset #eae6e6;
+  border: 2px outset #212121;
   border-radius: 15px;
   color: black !important;
-  background: grey;
+  background: #323232;
   padding: 5px;
   text-align: center;
   top: 7%;
@@ -2164,13 +2214,13 @@ textarea::-webkit-input-placeholder{
   overflow: hidden;
   /* position: fixed; */
   left: 12%;
-  background: #f0f0f8;
+  background: #323232;
   border-radius: 25px;
   box-shadow: black 0px 0px 14px 0px;
-  border: 2px outset #eae6e6;
+  border: 2px outset #323232;
   border-radius: 15px;
   color: black !important;
-  background: grey;
+  background: #323232;
 }
 
 
@@ -2185,10 +2235,10 @@ textarea::-webkit-input-placeholder{
   background: #f0f0f8;
   border-radius: 25px;
   box-shadow: black 0px 0px 14px 0px;
-  border: 2px outset #eae6e6;
+  border: 2px outset #797979;
   border-radius: 15px;
   /* color: black !important; */
-  background: grey;
+  background: #323232;
   vertical-align: middle;
   width: 25%;
   margin-left: auto;
@@ -2247,7 +2297,7 @@ textarea::-webkit-input-placeholder{
   background: #f0f0f8;
   border-radius: 25px;
   box-shadow: black 0px 0px 14px 0px;
-  border: 2px outset #eae6e6;
+  border: 2px outset #797979;
   border-radius: 15px;
   color: black !important;
   background: grey;
@@ -2369,7 +2419,7 @@ textarea::-webkit-input-placeholder{
   margin-left: -1px;
   margin-right: -1px;
   margin-bottom: -3px;
-  width: 100% !important;
+  width: 99% !important;
   /* border-bottom: 2px ridge rgba(0,0,0,0.5); */
   color: #666666;
   background: rgba(28,28, 28, 1);
@@ -2426,12 +2476,11 @@ textarea::-webkit-input-placeholder{
 
 
 
-#alertHead, #chatHead, #alertPriceHead, #jumboHead, #alertHead, #newAlertHead {
+#alertHead, #chatHead, #alertPriceHead, #jumboHead, #alertHead, #newAlertHead {min-height: 2.2vh;}
 
-}
-
-.jumboTitle, #jumboTitle, #alertTitle, #chatName, #alertName, #alertPriceTitle {
-  letter-spacing: 1px;
+.jumboTitle, #jumboTitle, #alertTitle, #chatName, #alertName, #alertPriceTitle, #spanMessage, .spanMessage {
+  text-shadow: -1px -1px rgb(0 0 0 / 50%), 1px 1px #e31337;
+  letter-spacing: 1px !important;
   width: -webkit-fill-available;
   /* float: initial; */
   top: 0%;
@@ -2443,7 +2492,7 @@ textarea::-webkit-input-placeholder{
   /* margin-top: 5px; */
   margin-bottom: 9px !important;
   position: relative;
-  display: inline-flex;
+  display: inline-block;
   /* border-bottom: 1px solid #333; */
   align-self: center;
   align-content: center;
@@ -2453,7 +2502,7 @@ textarea::-webkit-input-placeholder{
   line-height: 1.4em;
   margin: 0px !important;
   width: auto;
-  color: whitesmoke;
+  color: whitesmoke !important;
   /* text-shadow: 1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000, rgb(69 69 69) 0px 1px 0px, rgb(46 46 46) 0px 2px 1px, -1px -1px rgb(0 0 0 / 50%), 1px 1px rgb(255 255 255 / 50%) !important; */
   /* background-image: linear-gradient(rgb(245 245 245) 0%,
     rgb(250 205 63) 42%,
@@ -2466,7 +2515,8 @@ textarea::-webkit-input-placeholder{
 #jumboBack {
   color: white;
   position: absolute;
-  display: inline-block;
+  /*display: inline-block;*/
+  display: none !important;
   top: 0.3em;
   left: 0.4em !important;
   text-shadow: 1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000, rgb(69, 69, 69) 0px 1px 0px, rgb(46, 46, 46) 0px 2px 1px;
@@ -2479,7 +2529,8 @@ textarea::-webkit-input-placeholder{
 #jumboMove {
   color: white;
   position: absolute;
-  display: inline-block;
+  /*display: inline-block;*/
+  display: none !important;
   top: 0.3em;
   left: 2.75em !important;
   text-shadow: 1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000, rgb(69, 69, 69) 0px 1px 0px, rgb(46, 46, 46) 0px 2px 1px;
@@ -2489,17 +2540,7 @@ textarea::-webkit-input-placeholder{
   transition: all 0.5s;
 }
 
-#jumboForward {
-  color: white;
-  position: absolute;
-  display: inline-block;
-  top: 0.3em;
-  left: 5.1em;
-  text-shadow: 1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000, rgb(69, 69, 69) 0px 1px 0px, rgb(46, 46, 46) 0px 2px 1px;z-index: 999 !important;
-  -webkit-transition: all 0.5s;
-  -moz-transition: all 0.5s;
-  transition: all 0.5s;
-}
+#jumboForward {color: white;position: absolute;/*display: inline-block;*/display: none !important;top: 0.3em;left: 5.1em;text-shadow: 1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000, rgb(69, 69, 69) 0px 1px 0px, rgb(46, 46, 46) 0px 2px 1px;z-index: 999 !important;-webkit-transition: all 0.5s;-moz-transition: all 0.5s;transition: all 0.5s;}
 
 #jumboTitle {
     margin-bottom: 1%;
@@ -2513,12 +2554,26 @@ textarea::-webkit-input-placeholder{
     text-shadow: -1px -1px rgb(0 0 0 / 50%), 1px 1px #E31337;
 }
 
-#jumboClose, #backersClose, #panelClose, #chatClose, #alertClose, #alertPriceClose {
+#jumboClose, #backersClose, #panelClose, #chatClose, #alertClose, #alertPriceExit{
+  color: white;
+  position: absolute;
+  display: inline-block;
+  /* display: none !important; */
+  top: 0.3em;
+  right: 0.4em;
+  text-shadow: 1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000, rgb(69, 69, 69) 0px 1px 0px, rgb(46, 46, 46) 0px 2px 1px;
+  z-index: 999 !important;
+  -webkit-transition: all 0.5s;
+  -moz-transition: all 0.5s;
+  transition: all 0.5s;
+}
+
+#alertPriceClose {
   color: white;
   position: absolute;
   display: inline-block;
   top: 0.3em;
-  right: 0.4em;
+  left: 0.4em;
   text-shadow: 1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000, rgb(69, 69, 69) 0px 1px 0px, rgb(46, 46, 46) 0px 2px 1px;z-index: 999 !important;
   -webkit-transition: all 0.5s;
   -moz-transition: all 0.5s;
@@ -2526,6 +2581,7 @@ textarea::-webkit-input-placeholder{
 }
 
 #jumboWrapper {
+  min-height: fit-content;
   padding: 5px;
 }
 
@@ -2678,7 +2734,7 @@ footer {border-top: 3px inset #E31337;
     z-index: 999 !important;
 }
 
-.sexyblackoutline {text-shadow: 1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000, rgb(69, 69, 69) 0px 1px 0px, rgb(46, 46, 46) 0px 2px 1px;z-index: 999 !important;}
+.sexyblackoutline {text-shadow: 1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000, rgb(69 69 69) 0px 1px 0px, rgb(46 46 46) 0px 2px 1px !important;z-index: 999 !important;}
 
 .navbar {
   position: fixed;
@@ -3024,3 +3080,305 @@ h3 {
 .tg-sort-header:hover:after{visibility:visible}
 .tg-sort-asc:after,.tg-sort-asc:hover:after,.tg-sort-desc:after{visibility:visible;opacity:.4}
 .tg-sort-desc:after{border-bottom:none;border-width:5px 5px 0}@media screen and (max-width: 767px) {.tg {width: auto !important;}.tg col {width: auto !important;}.tg-wrap {overflow-x: auto;-webkit-overflow-scrolling: touch;margin: auto 0px;}}
+
+
+/*---------------------------------------------------
+-----------------------------------------------------
+
+RESPONSIVE CSS SHIT
+
+-----------------------------------------------------
+----------------------------------------------------*/
+
+/*LAPTOPS*/
+/* ----------- Non-Retina Screens ----------- */
+@media screen
+  and (min-device-width: 1200px)
+  and (max-device-width: 1600px)
+  and (-webkit-min-device-pixel-ratio: 1) {
+
+}
+
+/* ----------- Retina Screens ----------- */
+@media screen
+  and (min-device-width: 1200px)
+  and (max-device-width: 1600px)
+  and (-webkit-min-device-pixel-ratio: 2)
+  and (min-resolution: 192dpi) {
+
+}
+/*SMART WATCH*/
+/* ----------- Moto 360 Watch ----------- */
+@media
+  (max-device-width: 218px)
+  and (max-device-height: 281px) {
+
+}
+/*IPAD AND TABLET*/
+/* ----------- iPad 1, 2, Mini and Air ----------- */
+
+/* Portrait and Landscape */
+@media only screen
+  and (min-device-width: 768px)
+  and (max-device-width: 1024px)
+  and (-webkit-min-device-pixel-ratio: 1) {
+
+}
+
+/* Portrait */
+@media only screen
+  and (min-device-width: 768px)
+  and (max-device-width: 1024px)
+  and (orientation: portrait)
+  and (-webkit-min-device-pixel-ratio: 1) {
+
+}
+
+/* Landscape */
+@media only screen
+  and (min-device-width: 768px)
+  and (max-device-width: 1024px)
+  and (orientation: landscape)
+  and (-webkit-min-device-pixel-ratio: 1) {
+
+}
+
+/* ----------- iPad 3, 4 and Pro 9.7" ----------- */
+
+/* Portrait and Landscape */
+@media only screen
+  and (min-device-width: 768px)
+  and (max-device-width: 1024px)
+  and (-webkit-min-device-pixel-ratio: 2) {
+
+}
+
+/* Portrait */
+@media only screen
+  and (min-device-width: 768px)
+  and (max-device-width: 1024px)
+  and (orientation: portrait)
+  and (-webkit-min-device-pixel-ratio: 2) {
+
+}
+
+/* Landscape */
+@media only screen
+  and (min-device-width: 768px)
+  and (max-device-width: 1024px)
+  and (orientation: landscape)
+  and (-webkit-min-device-pixel-ratio: 2) {
+
+}
+
+/* ----------- iPad Pro 10.5" ----------- */
+
+/* Portrait and Landscape */
+@media only screen
+  and (min-device-width: 834px)
+  and (max-device-width: 1112px)
+  and (-webkit-min-device-pixel-ratio: 2) {
+
+}
+
+/* Portrait */
+/* Declare the same value for min- and max-width to avoid colliding with desktops */
+/* Source: https://medium.com/connect-the-dots/css-media-queries-for-ipad-pro-8cad10e17106*/
+@media only screen
+  and (min-device-width: 834px)
+  and (max-device-width: 834px)
+  and (orientation: portrait)
+  and (-webkit-min-device-pixel-ratio: 2) {
+
+}
+
+/* Landscape */
+/* Declare the same value for min- and max-width to avoid colliding with desktops */
+/* Source: https://medium.com/connect-the-dots/css-media-queries-for-ipad-pro-8cad10e17106*/
+@media only screen
+  and (min-device-width: 1112px)
+  and (max-device-width: 1112px)
+  and (orientation: landscape)
+  and (-webkit-min-device-pixel-ratio: 2) {
+
+}
+
+/* ----------- iPad Pro 12.9" ----------- */
+
+/* Portrait and Landscape */
+@media only screen
+  and (min-device-width: 1024px)
+  and (max-device-width: 1366px)
+  and (-webkit-min-device-pixel-ratio: 2) {
+
+}
+
+/* Portrait */
+/* Declare the same value for min- and max-width to avoid colliding with desktops */
+/* Source: https://medium.com/connect-the-dots/css-media-queries-for-ipad-pro-8cad10e17106*/
+@media only screen
+  and (min-device-width: 1024px)
+  and (max-device-width: 1024px)
+  and (orientation: portrait)
+  and (-webkit-min-device-pixel-ratio: 2) {
+
+}
+
+/* Landscape */
+/* Declare the same value for min- and max-width to avoid colliding with desktops */
+/* Source: https://medium.com/connect-the-dots/css-media-queries-for-ipad-pro-8cad10e17106*/
+@media only screen
+  and (min-device-width: 1366px)
+  and (max-device-width: 1366px)
+  and (orientation: landscape)
+  and (-webkit-min-device-pixel-ratio: 2) {
+
+}
+
+/*IPHONES*/
+/* ----------- iPhone 4 and 4S ----------- */
+
+/* Portrait and Landscape */
+@media only screen
+  and (min-device-width: 320px)
+  and (max-device-width: 480px)
+  and (-webkit-min-device-pixel-ratio: 2) {
+
+}
+
+/* Portrait */
+@media only screen
+  and (min-device-width: 320px)
+  and (max-device-width: 480px)
+  and (-webkit-min-device-pixel-ratio: 2)
+  and (orientation: portrait) {
+}
+
+/* Landscape */
+@media only screen
+  and (min-device-width: 320px)
+  and (max-device-width: 480px)
+  and (-webkit-min-device-pixel-ratio: 2)
+  and (orientation: landscape) {
+
+}
+
+/* ----------- iPhone 5, 5S, 5C and 5SE ----------- */
+
+/* Portrait and Landscape */
+@media only screen
+  and (min-device-width: 320px)
+  and (max-device-width: 568px)
+  and (-webkit-min-device-pixel-ratio: 2) {
+
+}
+
+/* Portrait */
+@media only screen
+  and (min-device-width: 320px)
+  and (max-device-width: 568px)
+  and (-webkit-min-device-pixel-ratio: 2)
+  and (orientation: portrait) {
+}
+
+/* Landscape */
+@media only screen
+  and (min-device-width: 320px)
+  and (max-device-width: 568px)
+  and (-webkit-min-device-pixel-ratio: 2)
+  and (orientation: landscape) {
+
+}
+
+/* ----------- iPhone 6, 6S, 7 and 8 ----------- */
+
+/* Portrait and Landscape */
+@media only screen
+  and (min-device-width: 375px)
+  and (max-device-width: 667px)
+  and (-webkit-min-device-pixel-ratio: 2) {
+
+}
+
+/* Portrait */
+@media only screen
+  and (min-device-width: 375px)
+  and (max-device-width: 667px)
+  and (-webkit-min-device-pixel-ratio: 2)
+  and (orientation: portrait) {
+
+}
+
+/* Landscape */
+@media only screen
+  and (min-device-width: 375px)
+  and (max-device-width: 667px)
+  and (-webkit-min-device-pixel-ratio: 2)
+  and (orientation: landscape) {
+
+}
+
+/* ----------- iPhone 6+, 7+ and 8+ ----------- */
+
+/* Portrait and Landscape */
+@media only screen
+  and (min-device-width: 414px)
+  and (max-device-width: 736px)
+  and (-webkit-min-device-pixel-ratio: 3) {
+
+}
+
+/* Portrait */
+@media only screen
+  and (min-device-width: 414px)
+  and (max-device-width: 736px)
+  and (-webkit-min-device-pixel-ratio: 3)
+  and (orientation: portrait) {
+
+}
+
+/* Landscape */
+@media only screen
+  and (min-device-width: 414px)
+  and (max-device-width: 736px)
+  and (-webkit-min-device-pixel-ratio: 3)
+  and (orientation: landscape) {
+
+}
+
+/* ----------- iPhone X ----------- */
+
+/* Portrait and Landscape */
+@media only screen
+  and (min-device-width: 375px)
+  and (max-device-width: 812px)
+  and (-webkit-min-device-pixel-ratio: 3) {
+
+}
+
+/* Portrait */
+@media only screen
+  and (min-device-width: 375px)
+  and (max-device-width: 812px)
+  and (-webkit-min-device-pixel-ratio: 3)
+  and (orientation: portrait) {
+
+}
+
+/* Landscape */
+@media only screen
+  and (min-device-width: 375px)
+  and (max-device-width: 812px)
+  and (-webkit-min-device-pixel-ratio: 3)
+  and (orientation: landscape) {
+
+}
+
+/*
+
+@media only screen and (max-width: 600px) {
+  body {
+    background-color: lightblue;
+  }
+}
+*/sssssssssssssssssssssssssssssssssssssssss

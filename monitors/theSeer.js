@@ -37,7 +37,7 @@ var calcNextPaymentByBlock = (block) => {
   return newPaymentBlock;
 };
 
-calcNextPaymentByBlock(5555);
+//calcNextPaymentByBlock(5555);
 
 var calcEndDateByWeeks = (weeks) => {
   let now = new Date();

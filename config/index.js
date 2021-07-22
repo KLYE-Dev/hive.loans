@@ -35,6 +35,8 @@ dotenv.config();
       worldcoinkey:process.env.WORLD_COIN_API_KEY,
       binanceapikey:process.env.BINANCE_API_KEY,
       binanceapisec:process.env.BINANCE_API_SEC,
+      nomicsapikey:process.env.NOMICS_API_KEY,
+      unsupportautorefund:process.env.UNSUPPORTED_AUTO_REFUND,
     };
 
 exports.config = config;

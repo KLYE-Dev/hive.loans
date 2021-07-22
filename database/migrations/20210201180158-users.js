@@ -227,6 +227,11 @@ module.exports = {
   			defaultValue: 0,
   			allowNull: false
   		},
+      twofactor: {
+        type: Sequelize.STRING,
+        defaultValue: null,
+        allowNull: true
+      },
       createdAt: {
         allowNull: false,
         defaultValue: Sequelize.NOW,

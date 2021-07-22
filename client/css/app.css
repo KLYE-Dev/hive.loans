@@ -934,8 +934,8 @@ font-weight: 700;
 
 .robotable {
 		border: none !important;
-		border: 1px solid #5f677c;
-		background: #878787;
+		border: 2px solid #212121;
+		background: #212121;
 		color: black !important;
 }
 

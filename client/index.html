@@ -1,6 +1,8 @@
 <html>
 <head>
-<title>Hive.Loans - v0.1.0</title>
+<title>Hive.Loans</title>
+<!-- Responsive Layout -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.2/css/all.css">
 <link rel="stylesheet" href="/css/mainstatic.css">
 <link rel="stylesheet" href="/css/contextMenu.css">
@@ -88,7 +90,7 @@
           <ul id="profilelogout" class="submenushit hidden"><li><a onClick="logout();"><b><i class="fas  fa-fw fa-door-open"></i> Log Out</b></a></li></ul>
         </span>
       </li>
-      <li id="chaticon" class="" ><a onclick="showChat(); $('#chaticon').addClass('hidden');" title="Click Here to Enable Chat"><b><i class="fas fa-comment-dots"></i></b></a></li>
+      <li id="chaticon" class="hidden" ><a onclick="showChat(); $('#chaticon').addClass('hidden');" title="Click Here to Enable Chat"><b><i class="fas fa-comment-dots"></i></b></a></li>
       <li id="darkmode" class="" onclick="colorChange();"><a title="Click Here to Change Site Contrast"><b><i id="coloricon" class="fas fa-adjust"></i></b></a></li>
       <!--<li><a id="logout" class="hidden" style="float: right;"  onClick="logout();showSuccess('Logging Out Now...')"><b><i class="fas   fa-fw fa-power-off" title="Power Off / Logo Out"></i> Logout</b></a></li>-->
       <li  id="login" class="hidden"><a style="float: right;" onClick="showLogin()"><b><i class="fas  fa-fw fa-sign-in-alt"></i> Login</b></a></li>
@@ -105,7 +107,7 @@
         <h3 style="color: white;">Welcome to the Public Beta Test of</h3>
         <h1 style="font-size:5.5em;">Hive.Loans</h1>
         <img src="/img/redhive.svg" id="mainLogo" style="filter: drop-shadow(0px 0px 6px white); width:20vh; padding:20px;"><br>
-        <h5>Welcome to Hive.Loans v0.1.0 Public Beta Test Phase 1<br>Some features may be disabled, broken or even worse contain dangerous bugs..<br>It's highly recommended you use a test dummy account or wait until the full launch to start exploring the site!</h5>
+        <h5>Welcome to Hive.Loans <span class="versionclass">-.-.-</span> Public Beta Test Phase 1<br>Some features may be disabled, broken or even worse contain dangerous bugs..<br>It's highly recommended you use a test dummy account or wait until the full launch to start exploring the site!</h5>
         <h3 style="color: white;"><b><span id="dotdotdot">Loading Code and Assets<span>.</span><span>.</span><span>.</span></span></b></h3>
       </span>
     </center>
@@ -127,7 +129,7 @@
         <h3 style="color: white;">Bah! Looks like you're on a Mobile or Small display (< 420px) device.<br>To continue forward and use v0.1.0 Public Beta Test Phase 1 you MUST have a greater screen resolution!</h3>
         <h1 style="font-size:5.5em;">Hive.Loans</h1>
         <img src="/img/redhive.svg" id="mainLogo" style="filter: drop-shadow(0px 0px 6px white); width:20vh; padding:20px;"><br>
-        <h5>Welcome to Hive.Loans v0.1.0 Public Beta Test Phase 1<br>Some features may be disabled, broken or even worse contain dangerous bugs..<br>It's highly recommended you use a test dummy account or wait until the full launch to start exploring the site!</h5>
+        <h5>Welcome to Hive.Loans <span class="versionclass">-.-.-</span> Public Beta Test Phase 1<br>Some features may be disabled, broken or even worse contain dangerous bugs..<br>It's highly recommended you use a test dummy account or wait until the full launch to start exploring the site!</h5>
         <h3 style="color: white;"><b><span id="dotdotdot">Loading Code and Assets<span>.</span><span>.</span><span>.</span></span></b></h3>
       </span>
     </center>
@@ -159,7 +161,7 @@
         <i class="fas fa-arrows-alt"></i>
       </span>
       <span id="alertTitle">HIVE / <span id="basetype">USD</span> Quick Chart</span>
-      <span id="alertClose" class="hidden" title="Click to Close this Panel" onclick="$('#alertpanel').animate({'bottom':'-26%'},500);$('#alertClose').html(<i class='fas fa-down-arrow'></i>)"; onmouseover="$(this).css({'color':'grey'})" onmouseout="$(this).css({'color':'grey'})">
+      <span id="alertClose" class="hidden" title="Click to Close this Panel" onclick="$('#alertpanel').animate({'bottom':'-26%'},500); $('#alertClose').html(/'<i class='fas fa-down-arrow'></i>/')"; onmouseover="$(this).css({'color':'grey'})" onmouseout="$(this).css({'color':'grey'})">
         <i class="fas fa-down-arrow"></i>
       </span>
     </div>
@@ -175,12 +177,26 @@
         <i class="fas fa-arrows-alt"></i>
       </span>
       <span id="alertPriceTitle">HIVE&nbsp;/&nbsp;<span id="basetype">USD</span>&nbsp;Quick Chart</span>
-      <span id="alertPriceClose" class="smolbutton"  title="Click to Close this Panel" onclick="$('#alertpricepanel').css({'bottom':'6%'});$('#alertpricepanel').animate({'bottom':'-33%'},500) $('#alertPriceClose').html(<i class='fa fa-caret-up'></i>)">
+      <span id="alertPriceClose" class="smolbutton"  title="Click to Close this Panel" onclick="">
         <i class="fa fa-caret-down"></i>
+      </span>
+      <span id="alertPriceExit" class="smolbutton" title="Click to Close this Panel" onclick="$('#alertpricepanel').fadeOut();" onmouseover="$(this).css({'color':'red'})" onmouseout="$(this).css({'color':'white'})" style="color: rgb(255, 255, 255);">
+        <i class="fas fa-fw fa-times"></i>
       </span>
     </div>
       <span id="alertPriceWrapper" style="height:90%;width:100%;">
-        <iframe id="alertPriceIframe" style="height:330px;width:300px;" src="https://www.worldcoinindex.com/widget/renderWidget?size=large&from=HIVE&to=usd&name=Hive&clearstyle=false">        <script src="/js/packages/flot.min.js"></script></iframe>
+        <iframe id="alertPriceIframe" style="height:330px;width:300px;" src="https://www.worldcoinindex.com/widget/renderWidget?size=large&from=HIVE&to=usd&name=Hive&clearstyle=false">
+          <script src="/js/packages/flot.min.js"></script>
+          <script>
+
+            $(document).ready(function () {
+              var pricechartmini = setInterval(function() {
+                var iframe = document.getElementById('alertPriceIframe');
+                iframe.src = iframe.src;
+              }, 15000);
+          });
+        </script>
+        </iframe>
         <code><p id="alertPriceFooter" class="sexyblackoutline">Above Price Quote from WorldCoinIndex.com</p></code>
       </span><!--END alertWrapper-->
   </span>
@@ -202,7 +218,7 @@
           <ul id="trollbox"></ul>
         </div>
         <div class="input-group" id="chatinputwidget">
-          <input type="text" id="trollslot" class="form-control" placeholder="Type a message here and hit enter or button to live chat" autocomplete="off" onfocus="this.placeholder = '';" onblur="this.placeholder = ''" aria-describedby="basic-addon1" style="color: white;">
+          <input type="text" id="trollslot" class="form-control" placeholder="Type a message here then enter to chat" autocomplete="off" onfocus="this.placeholder = '';" onblur="this.placeholder = ''" aria-describedby="basic-addon1" style="color: white;">
           <button type="button" class="sendchat button button.green sextext" id="sendChat"><i class="fas fa-paper-plane"></i></button>
         </div>
       </span>
@@ -216,14 +232,13 @@
       <i class="fas fa-arrows-alt"></i>
     </span>
     <span id="alertName" style="display: inline-block">
-      <i class="fa fa-exclamation-triangle sexyblackoutline" style="color:gold;" aria-hidden="true"></i>
-      &nbsp;<span id="spanMessage">Welcome to Hive.Loans Beta Testing</span>&nbsp;
-      <i class="fa fa-exclamation-triangle sexyblackoutline" style="color:gold;" aria-hidden="true"></i></span>
+      <span id="spanMessage">Welcome to Hive.Loans Beta Testing</span>
+    </span>
     <span id="alertClose" class="smolbutton" title="Click to Close this Panel" onclick="$(this).fadeOut();" onmouseover="$(this).css({'color':'red'})" onmouseout="$(this).css({'color':'white'})"><i class="fas fa-times"></i></span>
   </div>
     <span id="alertWrapper" class="sexyblackoutline">
       <span id="alertContent">
-        <span id="sitealertwarning">Disclaimer</span>
+        <span id="sitealertwarning">Disclaimer</span> <!--<i class="fa fa-exclamation-triangle sexyblackoutline" style="color:gold;" aria-hidden="true"></i>-->
         <br>
         <span  class="sexyblackoutline">
         We're currently in the 1st round online public testing phase!<br>
@@ -251,6 +266,7 @@
         potential damages incurred during this testing phase!<br><br>
         <div><sub><code><b>Note</b>: You'll need <a src="https://hive-keychain.com/" target="_blank"><b>Hive Keychain</b></a> installed with your account keys to continue!</code></sub></div>
         <code><span id="discoflasher" onclick="$('#disclaimerCheck').click();">
+          <br>
           &nbsp;I, <b id="pnd">
           @<input type"text" onfocus=" let value = this.value; this.value = null; this.value=value" id="disclaimerUsername" class="sexyblackoutline casperInput" placeholder="" onchange="disclaimersign(this.val);if($('#disclaimerUsername').val().length > 0){$('#disclaimerUsername').removeClass('blinking-cursor');}" onkeyup="if(this.value.length < 1){$('#disclaimerUsername').removeClass('blinking-cursor')}"></b> Hereby Sign and Agree that Hive.Loans is Free of ALL Liability</span></input>
           </span>
@@ -260,7 +276,7 @@
         <button type="button" class="button sextext" id="leaveAlertButton" onclick="window.location = 'https://google.com';">LEAVE</button>
         </span>
       <script>
-      document.getElementById("disclaimerUsername").focus();
+      $('#disclaimerUsername').focus();
       </script>
     </span>
   </span>
@@ -278,7 +294,7 @@
       </span>
       <center style="width:100%;">
         <span id="jumboTitle" style="max-width: 100%;" class="jumboTitle">
-          Welcome to Hive.Loans v0.1.0
+          Welcome to Hive.Loans
         </span>
       </center>
       <span id="jumboClose" class="smolbutton" title="Click to Close this Panel" onclick="$('#jumbotron').fadeOut();" onmouseover="$(this).css({'color':'red'})" onmouseout="$(this).css({'color':'white'})">
@@ -311,11 +327,11 @@
 </div><!--END content-->
 
  <footer style="padding:1vh;" class="sexyblackoutline">
-   <b>©2021 Hive.Loans <code>v0.1.0</code></b>
+   <b>©2021 Hive.Loans <code id="footerV">-.-.-</code></b>
    <span class="footersplitter"></span>
    <span id="blocknumber"><code>#</code>00000000<i class="fa fa-fw fa-spin fa-sync sexyblackoutline" style="color:gold;" aria-hidden="true" title="Site is Currently Syncing! Deposits May be Delayed!"></i></span>
    <span class="footersplitter"></span>
-   <i id="wcipricepopup" class="fas fa-chart-line" title="Click Here to Show Price Chart" onload="" onclick="$('#alertpricepanel').animate({'bottom':'6%'},500);">&nbsp;</i><span id="pricecheckchanger" onclick="tickerCurrency();">1 <span id="pricechecktoken">HIVE</span> <span id="pricechecktokenlogo"><i class="fab fa-hive" style="color:#E31337;"></i></span>
+   <i id="wcipricepopup" class="fas fa-chart-line" title="Click Here to Show Price Chart" onload="" onclick="$('#alertpricepanel').show();$('#alertpricepanel').animate({'bottom':'6%'},500);">&nbsp;</i><span id="pricecheckchanger" onclick="tickerCurrency();">1 <span id="pricechecktoken">HIVE</span> <span id="pricechecktokenlogo"><i class="fab fa-hive" style="color:#E31337;"></i></span>
    </span>
    <i class="fas fa-equals"></i>
     <span id="pricecheckcaret"></span>
@@ -335,8 +351,8 @@
           <li><b>Past&nbsp;Week:&nbsp;</b><span id="pricepercentticker5" class="isabsolute"></span></li><!--<span id="one">?</span>-->
           <li><b>Past&nbsp;Month:&nbsp;</b><span id="pricepercentticker6" class="isabsolute"></span></li><!--<span id="one">?</span>-->
       </ul>
+      <span class="footersplitter"></span>
   </div>
-  <span class="footersplitter"></span>
   <span id="pingholder"><span id="pingheart" onclick="stopHeart();"><i class="fas fa-fw fa-heartbeat"></i></span> <span id="ping">0</span><code>ms</code></span>
    <span id="discord" style="color:#f0f0f8 !important;text-decoration: none !important;">
      <a href="https://discord.gg/mtwvCpS" target="_blank" rel="noopener noreferrer" style="color:#f0f0f8 !important;text-decoration: none !important;" title="Visit Our Discord!">
@@ -366,7 +382,6 @@
 <script src="/js/packages/colorFader.js"></script>
 <script src="/js/packages/contextMenu.min.js"></script>
 <script src="/js/packages/openpgp.min.js"></script>
-
 <!--<script src="/js/packages/aes256.js"></script>-->
 <script src="/js/dialogs.js"></script>
 <script src="/js/variables.js"></script>
@@ -614,45 +629,7 @@ function logout() {
     //location.href = 'https://hive.loans';
   }
 });
-}
-
-
-
-
-
-
-
-function withdraw(amount, type, user){
-  console.log(`withdraw(${amount}, ${type}, ${user})`);
-  /*
-  const op = ['transfer', {
-    from: '__signer',
-    to: 'hive.loans',
-    amount: amount + " " + type.toUpperCase(),
-    memo: '__signer'
-  }];
-  hivesigner.sendOperation(op, {}, function(err, result) {
-    if(err){alert("Transfer Failed to Send!")}
-    if(result){
-      return console.log(result);
-    }
-  });
-  */
-}
-
-function withdrawPopup(amount, type, user){
-  var withdraw = window.prompt("How Much HIVE do You Wish to Withdraw?", "");
-  if (!withdraw) {
-    console.log(`User Cancelled the Withdraw`);
-  };
-  if(withdraw <= 1){
-    showErr("Your Withdraw Must be Greater Than 1!");
-  } else if (isNaN(dep)) {
-    showErr("Invalid Withdraw Amount!");
-  } else {
-    withdraw(amount, type, user);
-  }
-}
+};
 
 /*
 function renderPage(id){

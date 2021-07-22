@@ -286,56 +286,64 @@ hr {
 
 
 #refreshSiteStats {
-  display: inline-block;
+  /*display: inline-block;*/
+  display: none;
   right: 0.4em;
   position: absolute;
   top: 0.3em;
 }
 
 #jumboMove {
-  display: inline-block;
+  /*display: inline-block;*/
+  display: none;
     left: 2.0em !important;
     position: absolute;
     top: 0.3em;
 }
 
 #jumboBack {
-  display: inline-block;
+  /*display: inline-block;*/
+  display: none;
     left: 0.4em !important;
     position: absolute;
     top: 0.3em;
 }
 
 #jumboForward {
-  display: inline-block;
+  /*display: inline-block;*/
+  display: none;
     left: 3.0em !important;
     position: absolute;
     top: 0.3em;
 }
 
 #sitestatssMove {
-  display: inline-block;
+  /*display: inline-block;*/
+  display: none;
     left: 0.4em;
     position: absolute;
     top: 0.3em;
 }
 
 #refreshAcct {
-  display: inline-block;
+  /*display: inline-block;*/
+  display: none;
   right: 0.4em;
   position: absolute;
   top: 0.3em;
 }
 
 #refreshBacker {
-  display: inline-block;
+  /*display: inline-block;*/
+  display: none;
   right: 0.4em;
   position: absolute;
   top: 0.3em;
 }
 
 #panelMove {
-  display: inline-block;
+  /*display: inline-block;*/
+  display: none;
     left: 0.4em;
     position: absolute;
     top: 0.3em;

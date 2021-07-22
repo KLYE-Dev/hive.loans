@@ -47,7 +47,8 @@ module.exports = (sequelize, DataTypes) => {
     withdrawalstotal: DataTypes.BIGINT.UNSIGNED,
     withdrawalsfee: DataTypes.BIGINT.UNSIGNED,
     totalfees: DataTypes.BIGINT.UNSIGNED,
-    flags: DataTypes.STRING
+    flags: DataTypes.STRING,
+    twofactor: DataTypes.STRING,
   }, {
     sequelize,
     modelName: 'Users',

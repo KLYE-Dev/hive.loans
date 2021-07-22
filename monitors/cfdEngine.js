@@ -34,6 +34,28 @@ var priceChange = function(price) {
   }
 }
 
+var loadAllActiveFutures = async() => {
+  await Futuresdata.findAll({
+     limit: 200,
+     where: {active: true},
+     order: [[ 'createdAt', 'DESC' ]],
+     raw: true
+  }).then(async function(entries){
+      let allFutures = entries.map(await function(key) {
+          return key;
+      });
+      await allFutures.forEach((item, i) => {
+        ActiveCFDContracts.push(item);
+      });
+  });
+  //allFutures = JSON.parse(JSON.stringify(allFutures));
+  //return allFutures;
+  log(`ActiveCFDContracts:`);
+  log(ActiveCFDContracts);
+};
+
+loadAllActiveFutures();
+
 var checkValidity = async() => {
   var activeOrders = [];
   await Futuresdata.findAll({

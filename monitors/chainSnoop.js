@@ -8,6 +8,7 @@ const coldwallet = config.coldwallet;
 var refunds = config.refunds;
 var stdoutblocks = config.stdoutblocks;
 var voteclone = config.votemirror;
+var unsupportedAutoRefund = config.unsupportautorefund;
 var crypto = require("crypto");
 var hive = require("@hiveio/hive-js");
 var log = require("fancy-log");
@@ -25,11 +26,9 @@ var online = process.connected;
 var pid = process.pid;
 var hotWalletData;
 var coldWalletData;
-
-
+let adminskipsync = false;
 
 log(`CHAIN: Connected: ${online} with PID: ${pid}`);
-
 
 Object.defineProperty(global, '__stack', {
 get: function() {
@@ -56,6 +55,34 @@ get: function() {
         return __stack[1].getFunctionName();
     }
 });
+
+//specify 24 hours / one day in milliseconds
+const oneday = 60 * 60 * 24 * 1000;
+
+let scanrate = 0;
+let synced = false;
+const version = config.version;
+const apinodes = ["hived.privex.io", "api.hivekings.com", "api.deathwing.me", "api.hive.blog", "api.openhive.network", "hive.roelandp.nl", "hive-api.arcange.eu", "rpc.ausbit.dev", "anyx.io"];
+//hive.api.setOptions({ url: "https://api.hivekings.com" });//http://185.130.44.165/
+hive.api.setOptions({ url: "https://api.hivekings.com" });
+
+let apiindex = 0;
+let scanOn = false;
+let wallet = hotwallet;
+const wif = config.wif;
+const mintransfer = 0.001;
+let lastSafeBlock;
+let lastHeadBlock;
+let blockNum;
+var recentblock;
+var newCurrentBlock = 0;
+var oldOpsCount = 0;
+
+var bytesParsed = 0;
+let parseOn = false;
+const metadata = {
+    app: `hive.loans`,
+};
 
 var fetchAccountHive = async (user) => {
     log(`CHAIN: fetchAccountHive(${user})`);
@@ -111,6 +138,7 @@ process.on('message', async function(m) {
       if(m.username != owner) {
         log(`CHAIN: ERROR: User ${m.username} Tried to skipsync!`);
       } else if (m.username == owner) {
+        adminskipsync = true;
         await skipsync();
       } else {
         log(`CHAIN: ERROR: No User Was Specified!`);
@@ -137,26 +165,23 @@ process.on('message', async function(m) {
 });
 
 var dbconnect = async() => {
-
-await auth.startup().then(reply => {
-  log(reply);
-   return reply;
- }).catch(e => {
+  await auth.startup().then(reply => {
+    if(debug == true) log(reply);
+      return reply;
+    }).catch(e => {
    log(e)
- });
-};
+  });
+};//END dbconnect
 
 
-
+//fetch the last saved block in database
 var fetchLastBlockDB = async() => {
-
-  log(`dbconnect`);
-  log(dbconnect);
   log(`CHAIN: Connect to DB for Last Scanned Block`);
     var thedata = await ChainData.findOne({where:{id:1}, raw:true, nest: true}).then(result => {return result}).catch(error => {console.log(error)});
     return thedata['siteblock'];
-}
+};//END fetchLastBlockDB
 
+//fetch a specified database
 var fetchUserDBQuery = async (table, name) => {
     log(`SOCKET: fetchUserDBQuery(${table}, ${name})`);
     await DataBase.query("SELECT `" + name + "` FROM `" + table + "`", { type: sequelize.QueryTypes.SELECT })
@@ -167,8 +192,9 @@ var fetchUserDBQuery = async (table, name) => {
         .catch((err) => {
             console.log(err);
         });
-};
+};//END fetchUserDBQuery
 
+//fetch last safe or confirmed 100% block
 var fetchSafe = async() => {
   hive.api.getDynamicGlobalProperties(await function (err, result) {
       if(err) {
@@ -182,8 +208,9 @@ var fetchSafe = async() => {
           //return result["last_irreversible_block_num"];
       }
   });
-};
+};//END fetchsafe
 
+//fetch absolute latest head block number
 var fetchHead = async() => {
   hive.api.getDynamicGlobalProperties(await function (err, result) {
       if(err) {
@@ -197,8 +224,9 @@ var fetchHead = async() => {
           //return result["last_irreversible_block_num"];
       }
   });
-};
+};//END fetchHead
 
+//save the absolute latest head block number to database
 var saveHeadBlock = async() => {
   hive.api.getDynamicGlobalProperties(await function (err, result) {
       if(err) {
@@ -212,16 +240,17 @@ var saveHeadBlock = async() => {
   });
 }
 
+//write the specified block in the database
 function saveBlock(blockSave) {
   ChainData.update({siteblock: blockSave, synced:synced},{where:{id:1}});
 }
 
+//write the sspecified head block to database
 function saveHead(blockSent) {
   ChainData.update({headblock: blockSent, synced:synced},{where:{id:1}});
 }
 
-
-
+//return bytes as human readable strings
 function formatByteSizeDisplay(bytes) {
     if(bytes < 1024) return bytes + " bytes";
     else if(bytes < 1048576) return(bytes / 1024).toFixed(3) + " KB";
@@ -229,9 +258,9 @@ function formatByteSizeDisplay(bytes) {
     else return(bytes / 1073741824).toFixed(3) + " GB";
 };
 
+//get the size of an array in bytes
 function byteSize(obj) {
     var bytes = 0;
-
     function sizeOf(obj) {
         if(obj !== null && obj !== undefined) {
             switch(typeof obj) {
@@ -262,10 +291,9 @@ function byteSize(obj) {
       return bytes;
     };
     return formatByteSize(sizeOf(obj));
-};
+};//END bytesize
 
-const oneday = 60 * 60 * 24 * 1000;
-
+//fetch the current time as a human readable string
 function returnTime(){
   var time = new Date();
   time.setHours(time.getHours() + 18);
@@ -274,75 +302,11 @@ function returnTime(){
   return time;
 }
 
-let scanrate = 0;
-let synced = false;
-const version = "0.0.9";
-const apinodes = ["hived.privex.io", "api.hivekings.com", "api.deathwing.me", "api.hive.blog", "api.openhive.network", "hive.roelandp.nl", "hive-api.arcange.eu", "rpc.ausbit.dev", "anyx.io"];
-//hive.api.setOptions({ url: "https://api.hivekings.com" });//http://185.130.44.165/
-hive.api.setOptions({ url: "https://api.hivekings.com" });
-//ourhive.api.setOptions({ url: "http://185.130.44.165:8091" });
-/*
-    stream.on('data', function(block) {
-            var x = 0;
-            while (x < block.length) {
-              var operation = block.op[0];
-
-              log(x + " " + operation);
-
-              switch(operation){
-                case 'proposal_pay':
-                  log(block.transactions[x].operations[0]);
-                  var proposalop = block.transactions[x].operations[1];
-                  var opuser = proposalop.receiver;
-                  var opamount = proposalop.amount;
-                  if(opuser == 'klye') {
-                    //pause strem
-                    log(`KLYE PROPOSAL PAYOUT DETECTED`);
-                    state = stream.pause();
-
-                    //resume stream
-                    //window.resumeStream = async () => {
-                    //    state = state.resume();
-                    //};
-                    }
-                break;
-                default:
-                x++;
-                break;
-              }
-
-            }
-        });
-        */
-
-let apiindex = 0;
-
-let scanOn = false;
-
-// Add your Account Info Here!
-let wallet = hotwallet;
-const wif = config.wif;
-const mintransfer = 0.001;
-let lastSafeBlock;
-let lastHeadBlock;
-let blockNum;
-var recentblock;
-var newCurrentBlock = 0;
-var oldOpsCount = 0;
-
-var bytesParsed = 0;
-let parseOn = false;
-const metadata = {
-    app: `hive.loans`,
-};
-
 async function skipsync() {
   if (blockNum < lastHeadBlock){
-
     log(`CHAIN: ADMIN: skipsync() set blockNum to lastHeadBlock`);
-
-
     recentblock = await fetchHead();
+    blockNum = await fetchHead();
     scanOn = false;
     parseOn = false;
     synced = true;
@@ -381,10 +345,7 @@ async function grabAcct(u) {
   var acctData = await hive.api.callAsync('condenser_api.get_accounts', [[`${u}`]]).then((res) => {return JSON.parse(JSON.stringify(res))}).catch((e) => log(e));
   return acctData;
 }
-
 //changenode();
-
-
 
 //DEPOSIT SHIT
 var DepositToAccount = async(uid, depositamt, type, depositID, tx, block, transaction, promo) => {
@@ -473,6 +434,7 @@ if(promo === true){
 
 
 var stallBlock;
+
 setInterval(function(){
   //log(stallBlock);
   //log(newCurrentBlock)
@@ -553,7 +515,7 @@ let recoverscan = 0;
 let filltransferfrombankscan = 0;
 let createproposalscan = 0;
 
-
+//searches blockchain for core operations used by the site
 function coreOps(action, transaction){
   const data = transaction;
   let operation = transaction.op;
@@ -589,7 +551,7 @@ function coreOps(action, transaction){
   }
 };
 
-
+//searches blockchian for all other operations
 function blockOpFoo(action){
   switch (action) {
     case 'comment_reward':
@@ -719,6 +681,7 @@ function blockOpFoo(action){
   }
 }
 
+//route block operations to the sorters
 function blockRipper(blockdata, blocknumber) {
   oldnonce = nonce;
   for(var i = 0; i < blockdata.length; i++) {
@@ -736,8 +699,13 @@ function blockRipper(blockdata, blocknumber) {
   }
 };
 
-
+//parse a block and loop through it's operations
 async function blockGrabber(blockNum) {
+  if(adminskipsync == true) {
+    blockNum = await fetchHead();
+    saveBlock(blockNum);
+    adminskipsync == false;
+  }
    hive.api.getOpsInBlock(blockNum, false, async function (err, block) {
     if(err){
       log(err);
@@ -783,7 +751,7 @@ async function blockGrabber(blockNum) {
       }
       blockRipper(block, blockNum);
       if (stdoutblocks === true) {
-        process.stdout.write(`[${returnTime()}] CHAIN: Syncing Block ${blockNum} / ${lastHeadBlock} (${(lastHeadBlock - blockNum)} Left) (Block Size: ${formatByteSizeDisplay(newbytesParsed)} / ${formatByteSizeDisplay(bytesParsed)} Total) (${scansecondstepdown} BpS) (${opscan} Ops Scanned - ${opspersec} OpS) (${transferscan} transfer, ${votescan} vote, ${customjsonscan} custom_json, ${witnesspayscan} wtnessrewards)`);
+        process.stdout.write(`[${returnTime()}] CHAIN: Syncing Block ${blockNum} / ${lastHeadBlock} (${(lastHeadBlock - blockNum)} Blocks Left - (${timeest}s remain) ) (Block Size: ${formatByteSizeDisplay(newbytesParsed)} / ${formatByteSizeDisplay(bytesParsed)} Total) (${scansecondstepdown} BpS) (${opscan} Ops Scanned - ${opspersec} OpS) (${transferscan} transfer, ${votescan} vote, ${customjsonscan} custom_json, ${witnesspayscan} wtnessrewards)`);
         process.stdout.cursorTo(0);
       }
       blockNum++;
@@ -811,7 +779,7 @@ parseOn = true;
     newCurrentBlock = blockNum;
     scanrate++;
     await blockGrabber(blockNum);
-}
+};//END parseBlock
 
 // Lets Start this script!
 log("CHAIN: Starting HIVE Network Overwatch Daemon");
@@ -821,11 +789,13 @@ let shutdown = false;
 var letsgo = async() => {
   var syncOutput = setInterval(function(){
     if(synced === false) {
-      process.stdout.write(`[${returnTime()}] CHAIN: SYNCING - Block ${newCurrentBlock} / ${lastHeadBlock} (${(lastHeadBlock - newCurrentBlock)} Left) (${scansecondstepdown} BpS) (${opscan} Ops Scanned - ${opspersec} OpS)`);
+      process.stdout.write(`[${returnTime()}] CHAIN: SYNCING - Block ${newCurrentBlock} / ${lastHeadBlock} (${(lastHeadBlock - newCurrentBlock)} Blocks Left - (${timeest}s remain)) (${scansecondstepdown} BpS) (${opscan} Ops Scanned - ${opspersec} OpS)`);
       process.stdout.cursorTo(0);
     }
     if(synced === true) clearInterval(syncOutput);
   }, 1000);
+
+
   if (!process.argv[2]) {
     blockNum = await fetchLastBlockDB();
     /*
@@ -864,6 +834,7 @@ var letsgo = async() => {
 }
 letsgo();
 
+//calculate the current rate of operations scanned a second
 var opspersec;
 var scansecondstepdown;
 var scanRateScanner = () => {
@@ -877,7 +848,18 @@ var scanRateScanner = () => {
 };
 scanRateScanner();
 
+//calculate the time remaining to sync
+var timeest;
+var syncTimeEst = () => {
+  setTimeout(function(){
+    var blocksleft = (lastHeadBlock - blockNum);
+    timeest = (blocksleft / opspersec).toFixed(1);
+    syncTimeEst();
+  }, 1000);
+};
+syncTimeEst();
 
+//fetch the current head block
 var fetchHeadScanner = async() => {
   var head = await fetchHead();
   //saveHead(head);
@@ -887,6 +869,18 @@ var fetchHeadScanner = async() => {
 };
 fetchHeadScanner();
 
+//DHF proposal routing to KLYE account (Depreciated)
+var routeProposalPay = async (operation) => {
+  hive.broadcast.transfer(config.bankwif, config.appName, 'klye', operation.payment, "Hive.Loans Proposal Payment Auto-Routing", await function (fuckeduptransfer, senttransfer) {
+    if (fuckeduptransfer) log("Routing Payment Fucked Up: " + fuckeduptransfer);
+    if (senttransfer) {
+        log("Routing Payment Transfer Sent on Block #" + senttransfer.block_num);
+        saveBlock(blockNum);
+    }
+  }); //end refund transfer
+};//END routeProposalPay
+
+//process a voting operation
 var process_vote = async function(op) {
   log(op);
   await hive.broadcast.vote(config.bankwif, config.appName, op.author, op.permlink, op.weight, function(err, result) {
@@ -898,17 +892,7 @@ var process_vote = async function(op) {
       saveBlock(blockNum);
     }
   });
-}
-
-var routeProposalPay = async (operation) => {
-  hive.broadcast.transfer(config.bankwif, config.appName, 'klye', operation.payment, "Hive.Loans Proposal Payment Auto-Routing", await function (fuckeduptransfer, senttransfer) {
-    if (fuckeduptransfer) log("Routing Payment Fucked Up: " + fuckeduptransfer);
-    if (senttransfer) {
-        log("Routing Payment Transfer Sent on Block #" + senttransfer.block_num);
-        saveBlock(blockNum);
-    }
-  }); //end refund transfer
-}
+};//END process_vote
 
 // Transfer operation found? Lets see if it is for us!
 var process_transfer = async function (transaction, op) {
@@ -950,7 +934,7 @@ var process_transfer = async function (transaction, op) {
         log(`CHAIN: Attempting to Add ${depoamount} ${type} to Account with Address: ${depositmemo}`)
       return DepositToAccount(depositmemo, parseInt(depoamount * 1000), type, 'new', op, recentblock, transaction, false); //      DepositToAccount(depositmemo, parseInt(depoamount * 1000), type, 'new', op, recentblock, transaction);
       } else {
-      return log("CHAIN: Deposit Detected is NOT a Hive.Loans Supported Token..." + depositer);
+        if (unsupportedAutoRefund == true){
           /*
           hive.broadcast.transfer(config.bankwif, config.appName, depositer, op.data.amount, "Hive.Loans Deposit Refund - Please Only Send HIVE / HBD!", function (fuckeduptransfer, senttransfer) {
               if (fuckeduptransfer) {
@@ -961,14 +945,17 @@ var process_transfer = async function (transaction, op) {
               }
           }); //end refund transfer
           */
+          return log(`CHAIN: Deposit Detected is NOT a Hive.Loans Supported Token from ${depositer}... Unsupported Auto Refund: true - REFUNDING`);
+        } else {
+          return log(`CHAIN: Deposit Detected is NOT a Hive.Loans Supported Token from ${depositer}... Unsupported Auto Refund: false`);
+        }
       }
     }
 }; //END process_transfer
 
 
-
+//bail function triggered by SIGINT
 async function bail(err) {
-
   switch (err) {
     case 'shutdown':
     log(`CHAIN: Shutting down in 1 seconds, start again with block ${blockNum}`);
@@ -991,7 +978,7 @@ async function bail(err) {
       await timeout(500);
       return setTimeout(() => parseBlock(blockNum));
     }
-}
+};//END bail
 
 
 process.on("SIGINT", function () {
@@ -1001,9 +988,10 @@ process.on("SIGINT", function () {
     setTimeout(bail('shutdown'), 1000);
 });
 
+//a hacky way to delay things
 function timeout(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
-}
+};
 
 //----- SLEEP Function to unfuck some nodeJS things - NO modify
 function sleep(milliseconds) {
